@@ -197,6 +197,7 @@ export const COURSES: Course[] = [
   { id: 'btech-petroleum', name: 'B.Tech Petroleum Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'jee-advanced'], durationYears: 4 },
   { id: 'btech-production', name: 'B.Tech Production Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam'], durationYears: 4 },
   { id: 'btech-textile', name: 'B.Tech Textile Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main'], durationYears: 4 },
+  { id: 'btech-electronics-computer', name: 'B.Tech Electronics & Computer Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam', 'cusat-cat'], durationYears: 4 },
   { id: 'ame', name: 'Aircraft Maintenance Engineering (AME)', categoryId: 'engineering', streams: ['pcm'], examIds: [], durationYears: 3 },
   // AYUSH
   { id: 'bsms', name: 'BSMS (Siddha Medicine & Surgery)', categoryId: 'ayush', streams: ['pcb'], examIds: ['neet-ug'], durationYears: 5.5 },
