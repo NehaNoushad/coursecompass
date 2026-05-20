@@ -63,6 +63,7 @@ export const EXAMS: Exam[] = [
   // Polytechnic / Education
   { id: 'kerala-polytechnic', name: 'Kerala Polytechnic Entrance', fullName: 'Kerala Polytechnic Diploma Admission (LBS Centre)', scope: '3-year engineering and allied diplomas.' },
   { id: 'kerala-deled', name: 'Kerala D.El.Ed Entrance', fullName: 'Kerala Diploma in Elementary Education Entrance', scope: 'D.El.Ed admissions at DIETs and TTIs.' },
+  { id: 'ncet', name: 'NCET', fullName: 'National Common Entrance Test', scope: 'Integrated Teacher Education Programme (ITEP) admissions.' },
 ];
 
 export const EXAM_BY_ID: Record<string, Exam> = Object.fromEntries(

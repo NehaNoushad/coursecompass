@@ -185,6 +185,68 @@ export const COURSES: Course[] = [
   { id: 'bcom-taxation', name: 'B.Com Taxation', categoryId: 'commerce', streams: ['commerce'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance', 'kannur-univ-entrance'], durationYears: 3 },
   // Engineering
   { id: 'btech-electronics-instrumentation', name: 'B.Tech Electronics & Instrumentation', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam', 'cusat-cat'], durationYears: 4 },
+
+  // ===== COMPLETENESS-AUDIT ADDITIONS =====
+  // Engineering
+  { id: 'btech-biomedical', name: 'B.Tech Biomedical Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam'], durationYears: 4 },
+  { id: 'btech-mechatronics', name: 'B.Tech Mechatronics Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam'], durationYears: 4 },
+  { id: 'btech-metallurgy', name: 'B.Tech Metallurgical & Materials Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'jee-advanced', 'keam'], durationYears: 4 },
+  { id: 'btech-naval-architecture', name: 'B.Tech Naval Architecture & Ship Building', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam', 'imu-cet'], durationYears: 4 },
+  { id: 'btech-safety-fire', name: 'B.Tech Safety & Fire Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam'], durationYears: 4 },
+  { id: 'btech-food-tech', name: 'B.Tech Food Technology', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam', 'icar-aieea'], durationYears: 4 },
+  { id: 'btech-petroleum', name: 'B.Tech Petroleum Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'jee-advanced'], durationYears: 4 },
+  { id: 'btech-production', name: 'B.Tech Production Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam'], durationYears: 4 },
+  { id: 'btech-textile', name: 'B.Tech Textile Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main'], durationYears: 4 },
+  { id: 'ame', name: 'Aircraft Maintenance Engineering (AME)', categoryId: 'engineering', streams: ['pcm'], examIds: [], durationYears: 3 },
+  // AYUSH
+  { id: 'bsms', name: 'BSMS (Siddha Medicine & Surgery)', categoryId: 'ayush', streams: ['pcb'], examIds: ['neet-ug'], durationYears: 5.5 },
+  // Nursing
+  { id: 'anm', name: 'ANM (Auxiliary Nurse Midwifery diploma)', categoryId: 'nursing', streams: ['pcb', 'arts', 'commerce'], examIds: ['lbs-allied-health'], durationYears: 2 },
+  // Pharmacy
+  { id: 'dpharm', name: 'D.Pharm (Diploma in Pharmacy)', categoryId: 'pharmacy', streams: ['pcb', 'pcm'], examIds: ['keam'], durationYears: 2 },
+  // Paramedical & Allied Health
+  { id: 'bsc-emergency-medical', name: 'B.Sc Emergency Medical Technology', categoryId: 'paramedical', streams: ['pcb'], examIds: ['kuhs-paramedical', 'lbs-allied-health'], durationYears: 3.5 },
+  { id: 'bsc-physician-assistant', name: 'B.Sc Physician Assistant', categoryId: 'paramedical', streams: ['pcb'], examIds: ['kuhs-paramedical', 'lbs-allied-health'], durationYears: 4 },
+  { id: 'bsc-cardiovascular-tech', name: 'B.Sc Cardiovascular Technology', categoryId: 'paramedical', streams: ['pcb'], examIds: ['kuhs-paramedical', 'lbs-allied-health'], durationYears: 3.5 },
+  { id: 'bsc-radiotherapy', name: 'B.Sc Radiotherapy Technology', categoryId: 'paramedical', streams: ['pcb'], examIds: ['kuhs-paramedical', 'lbs-allied-health'], durationYears: 3.5 },
+  { id: 'bsc-orthotics-prosthetics', name: 'B.Sc Orthotics & Prosthetics', categoryId: 'paramedical', streams: ['pcb'], examIds: ['kuhs-paramedical', 'lbs-allied-health'], durationYears: 4.5 },
+  { id: 'bsc-neuroscience-tech', name: 'B.Sc Neuroscience Technology', categoryId: 'paramedical', streams: ['pcb'], examIds: ['kuhs-paramedical', 'lbs-allied-health'], durationYears: 3.5 },
+  { id: 'dmlt', name: 'DMLT (Diploma in Medical Lab Technology)', categoryId: 'paramedical', streams: ['pcb'], examIds: ['lbs-allied-health'], durationYears: 2 },
+  // Law
+  { id: 'bsc-llb', name: 'B.Sc LLB (5-year integrated)', categoryId: 'law', streams: ['pcm', 'pcb'], examIds: ['clat', 'klee', 'cusat-cat'], durationYears: 5 },
+  // Agriculture & Allied
+  { id: 'bsc-sericulture', name: 'B.Sc Sericulture', categoryId: 'agriculture', streams: ['pcb'], examIds: ['icar-aieea', 'kau-entrance'], durationYears: 3 },
+  { id: 'bsc-dairy-technology', name: 'B.Tech Dairy Technology', categoryId: 'agriculture', streams: ['pcb', 'pcm'], examIds: ['icar-aieea', 'kvasu-entrance'], durationYears: 4 },
+  { id: 'bsc-agribusiness', name: 'B.Sc Agribusiness Management', categoryId: 'agriculture', streams: ['pcb', 'commerce'], examIds: ['icar-aieea', 'kau-entrance'], durationYears: 4 },
+  { id: 'bsc-agri-biotech', name: 'B.Sc Agricultural Biotechnology', categoryId: 'agriculture', streams: ['pcb'], examIds: ['icar-aieea', 'kau-entrance'], durationYears: 4 },
+  { id: 'bsc-poultry', name: 'B.Sc Poultry Science', categoryId: 'agriculture', streams: ['pcb'], examIds: ['icar-aieea', 'kvasu-entrance'], durationYears: 3 },
+  // Fisheries
+  { id: 'bsc-aquaculture', name: 'B.Sc Aquaculture', categoryId: 'fisheries', streams: ['pcb'], examIds: ['kufos-entrance', 'icar-aieea'], durationYears: 3 },
+  // Pure Sciences
+  { id: 'bsc-it', name: 'B.Sc Information Technology', categoryId: 'science', streams: ['pcm'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance', 'kannur-univ-entrance'], durationYears: 3 },
+  { id: 'bsc-data-science', name: 'B.Sc Data Science', categoryId: 'science', streams: ['pcm'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance'], durationYears: 3 },
+  // Commerce
+  { id: 'bcom-banking-insurance', name: 'B.Com Banking & Insurance', categoryId: 'commerce', streams: ['commerce'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance', 'kannur-univ-entrance'], durationYears: 3 },
+  // Arts & Humanities
+  { id: 'ba-anthropology', name: 'BA Anthropology', categoryId: 'arts', streams: ['arts'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance'], durationYears: 3 },
+  { id: 'ba-public-administration', name: 'BA Public Administration', categoryId: 'arts', streams: ['arts'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance'], durationYears: 3 },
+  { id: 'bmm', name: 'Bachelor of Mass Media (BMM)', categoryId: 'arts', streams: ['arts', 'commerce', 'pcm', 'pcb'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance'], durationYears: 3 },
+  { id: 'ba-german', name: 'BA German', categoryId: 'arts', streams: ['arts'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance'], durationYears: 3 },
+  { id: 'ba-spanish', name: 'BA Spanish', categoryId: 'arts', streams: ['arts'], examIds: ['cuet-ug', 'kerala-univ-entrance'], durationYears: 3 },
+  // Design
+  { id: 'bdes-interior', name: 'B.Des Interior Design', categoryId: 'design', streams: ['pcm', 'pcb', 'commerce', 'arts'], examIds: ['nid-dat', 'uceed', 'nata'], durationYears: 4 },
+  { id: 'bdes-interaction', name: 'B.Des Interaction & UX Design', categoryId: 'design', streams: ['pcm', 'pcb', 'commerce', 'arts'], examIds: ['uceed', 'nid-dat'], durationYears: 4 },
+  // Hotel Management
+  { id: 'bsc-culinary-arts', name: 'B.Sc Culinary Arts', categoryId: 'hotel-management', streams: ['pcm', 'pcb', 'commerce', 'arts'], examIds: ['nchmct-jee'], durationYears: 3 },
+  // Education
+  { id: 'bsc-bed-integrated', name: 'B.Sc B.Ed (4-year integrated)', categoryId: 'education', streams: ['pcm', 'pcb'], examIds: ['cuet-ug'], durationYears: 4 },
+  { id: 'bcom-bed-integrated', name: 'B.Com B.Ed (4-year integrated)', categoryId: 'education', streams: ['commerce'], examIds: ['cuet-ug'], durationYears: 4 },
+  { id: 'itep', name: 'ITEP (Integrated Teacher Education Programme)', categoryId: 'education', streams: ['pcm', 'pcb', 'commerce', 'arts'], examIds: ['ncet'], durationYears: 4 },
+  // Polytechnic Diplomas
+  { id: 'diploma-chemical', name: 'Diploma in Chemical Engineering', categoryId: 'polytechnic', streams: ['pcm', 'pcb', 'commerce', 'arts'], examIds: ['kerala-polytechnic'], durationYears: 3 },
+  { id: 'diploma-automobile', name: 'Diploma in Automobile Engineering', categoryId: 'polytechnic', streams: ['pcm', 'pcb', 'commerce', 'arts'], examIds: ['kerala-polytechnic'], durationYears: 3 },
+  { id: 'diploma-architecture', name: 'Diploma in Architecture', categoryId: 'polytechnic', streams: ['pcm', 'pcb', 'commerce', 'arts'], examIds: ['kerala-polytechnic'], durationYears: 3 },
+  { id: 'diploma-ece', name: 'Diploma in Electronics & Communication', categoryId: 'polytechnic', streams: ['pcm', 'pcb', 'commerce', 'arts'], examIds: ['kerala-polytechnic'], durationYears: 3 },
 ];
 
 export const COURSE_BY_ID: Record<string, Course> = Object.fromEntries(
