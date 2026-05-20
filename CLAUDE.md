@@ -95,6 +95,7 @@ Build Product 1 so the unique-code system and shared UI components can carry ove
 - Source material: the ~297 Kerala colleges list and the "Courses After 12th" catalogue gathered earlier in the project (see conversation history; PDFs may not be in the repo).
 - College records need at minimum: **district**, **type** (government / aided / private/self-financing), **course categories offered**, and a **fee band** (Low / Medium / High). Exact per-college fees are not reliably public for all 297 — use fee bands, not invented exact figures; the founder refines real numbers later via the Supabase admin panel.
 - Entrance exams: scope is the 37 Kerala-relevant exams (engineering, medical/allied, architecture, agriculture, law, management/general UG, design, hotel management, science/research, defence, polytechnic, education). Exams must map to the courses they unlock and the colleges that accept them.
+- **Per-college courses:** a college may carry an explicit `courses` list (course ids it actually offers). `getCoursesForCollege` returns `confirmed: true` for these; colleges without a list fall back to category-level display (`confirmed: false`) with an honest "exact programmes not confirmed" disclaimer. `getCollegesForCourse` is the inverse lookup. Engineering colleges have researched `courses`; other categories are still on fallback and get populated progressively.
 
 ## Working with the founder
 

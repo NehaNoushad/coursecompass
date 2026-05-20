@@ -173,6 +173,18 @@ export const COURSES: Course[] = [
   // Education & Design
   { id: 'bped', name: 'B.P.Ed (Physical Education)', categoryId: 'education', streams: ['arts', 'commerce', 'pcm', 'pcb'], examIds: ['cuet-ug'], durationYears: 4 },
   { id: 'bsc-animation-game', name: 'B.Sc Animation & Game Design', categoryId: 'design', streams: ['pcm', 'pcb', 'commerce', 'arts'], examIds: [], durationYears: 3 },
+
+  // ===== GRANULAR ADDITIONS FOR PER-COLLEGE MAPPING =====
+  // Language degrees
+  { id: 'ba-tamil', name: 'BA Tamil Literature', categoryId: 'arts', streams: ['arts'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'calicut-univ-entrance', 'kannur-univ-entrance'], durationYears: 3 },
+  { id: 'ba-kannada', name: 'BA Kannada Literature', categoryId: 'arts', streams: ['arts'], examIds: ['cuet-ug', 'kannur-univ-entrance'], durationYears: 3 },
+  { id: 'ba-urdu', name: 'BA Urdu Literature', categoryId: 'arts', streams: ['arts'], examIds: ['cuet-ug', 'calicut-univ-entrance', 'kannur-univ-entrance'], durationYears: 3 },
+  { id: 'ba-french', name: 'BA French', categoryId: 'arts', streams: ['arts'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance'], durationYears: 3 },
+  { id: 'ba-functional-english', name: 'BA Functional English', categoryId: 'arts', streams: ['arts', 'commerce', 'pcm', 'pcb'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance', 'kannur-univ-entrance'], durationYears: 3 },
+  // Commerce
+  { id: 'bcom-taxation', name: 'B.Com Taxation', categoryId: 'commerce', streams: ['commerce'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance', 'kannur-univ-entrance'], durationYears: 3 },
+  // Engineering
+  { id: 'btech-electronics-instrumentation', name: 'B.Tech Electronics & Instrumentation', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam', 'cusat-cat'], durationYears: 4 },
 ];
 
 export const COURSE_BY_ID: Record<string, Course> = Object.fromEntries(

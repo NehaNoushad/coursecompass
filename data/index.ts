@@ -9,6 +9,7 @@
 import type {
   College,
   CollegeType,
+  Course,
   CourseCategoryId,
   District,
   FeeBand,
@@ -84,11 +85,6 @@ export function getExamsForCourse(courseId: string) {
   return course.examIds.map((id) => EXAM_BY_ID[id]).filter(Boolean);
 }
 
-/** Colleges that offer a given course category. */
-export function getCollegesForCategory(categoryId: CourseCategoryId) {
-  return COLLEGES.filter((c) => c.categories.includes(categoryId));
-}
-
 /** Colleges in a given district. */
 export function getCollegesByDistrict(district: District) {
   return COLLEGES.filter((c) => c.district === district);
@@ -97,6 +93,42 @@ export function getCollegesByDistrict(district: District) {
 /** Course categories a college offers, resolved to full category objects. */
 export function getCategoriesForCollege(college: College) {
   return college.categories.map((id) => CATEGORY_BY_ID[id]).filter(Boolean);
+}
+
+/**
+ * Courses a college offers.
+ * - `confirmed: true`  — the college has an explicit, researched course list.
+ * - `confirmed: false` — fallback: every course in the college's categories
+ *   (the exact programmes for this college aren't confirmed yet).
+ */
+export function getCoursesForCollege(college: College): {
+  confirmed: boolean;
+  courses: Course[];
+} {
+  if (college.courses && college.courses.length > 0) {
+    const courses = college.courses
+      .map((id) => COURSE_BY_ID[id])
+      .filter((c): c is Course => Boolean(c));
+    return { confirmed: true, courses };
+  }
+  const courses = COURSES.filter((c) => college.categories.includes(c.categoryId));
+  return { confirmed: false, courses };
+}
+
+/**
+ * Colleges that offer a given course. A college qualifies if its explicit
+ * `courses` list includes the course; or, when it has no explicit list, if its
+ * `categories` cover the course's category (best-effort fallback). A college
+ * with an explicit list that omits the course is excluded.
+ */
+export function getCollegesForCourse(courseId: string): College[] {
+  const course = COURSE_BY_ID[courseId];
+  if (!course) return [];
+  return COLLEGES.filter((college) =>
+    college.courses
+      ? college.courses.includes(courseId)
+      : college.categories.includes(course.categoryId),
+  );
 }
 
 export const COUNTS = {

@@ -6,7 +6,7 @@ import {
   COLLEGE_BY_ID,
   FEE_BAND_LABELS,
   TYPE_LABELS,
-  getCoursesByCategory,
+  getCoursesForCollege,
 } from '@/data';
 import { colors, spacing } from '@/constants/theme';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +32,19 @@ export default function CollegeDetailScreen() {
     );
   }
 
+  const { confirmed, courses } = getCoursesForCollege(college);
+
+  // Group the courses by category, keeping the college's category order.
+  const groups = college.categories
+    .map((catId) => {
+      const category = CATEGORY_BY_ID[catId];
+      if (!category) return null;
+      const groupCourses = courses.filter((c) => c.categoryId === catId);
+      if (groupCourses.length === 0) return null;
+      return { category, courses: groupCourses };
+    })
+    .filter((g) => g !== null);
+
   return (
     <Screen>
       <Text variant="title">{college.name}</Text>
@@ -50,29 +63,36 @@ export default function CollegeDetailScreen() {
       </Card>
 
       <Text variant="heading" style={styles.sectionTitle}>
-        Courses you can study here
+        {confirmed ? 'Courses offered here' : 'Course fields offered'}
       </Text>
 
-      {college.categories.map((categoryId) => {
-        const category = CATEGORY_BY_ID[categoryId];
-        const courses = getCoursesByCategory(categoryId);
-        if (!category) return null;
-        return (
-          <View key={categoryId} style={styles.categoryBlock}>
-            <Text variant="subheading">{category.name}</Text>
+      {!confirmed ? (
+        <Card muted style={styles.disclaimer}>
+          <Text variant="bodySmall" muted>
+            This college offers courses in the fields below. We&apos;re still confirming its
+            exact list of programmes — treat these as the typical courses in each field, and
+            check with the college directly.
+          </Text>
+        </Card>
+      ) : null}
+
+      {groups.map(({ category, courses: groupCourses }) => (
+        <View key={category.id} style={styles.categoryBlock}>
+          <Text variant="subheading">{category.name}</Text>
+          {!confirmed ? (
             <Text variant="bodySmall" muted style={styles.categoryDesc}>
               {category.description}
             </Text>
-            <View style={styles.grid}>
-              {courses.map((course) => (
-                <View key={course.id} style={styles.cell}>
-                  <CourseCard course={course} />
-                </View>
-              ))}
-            </View>
+          ) : null}
+          <View style={styles.grid}>
+            {groupCourses.map((course) => (
+              <View key={course.id} style={styles.cell}>
+                <CourseCard course={course} />
+              </View>
+            ))}
           </View>
-        );
-      })}
+        </View>
+      ))}
 
       <View style={styles.footer}>
         <LinkButton href="/colleges" label="Back to all colleges" variant="secondary" />
@@ -94,6 +114,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginTop: spacing.x2l,
     marginBottom: spacing.md,
+  },
+  disclaimer: {
+    marginBottom: spacing.lg,
+    borderColor: colors.accent,
   },
   categoryBlock: {
     marginBottom: spacing.xl,

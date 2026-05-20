@@ -5,7 +5,7 @@ import {
   CATEGORY_BY_ID,
   COURSE_BY_ID,
   STREAM_LABELS,
-  getCollegesForCategory,
+  getCollegesForCourse,
   getExamsForCourse,
 } from '@/data';
 import { colors, spacing } from '@/constants/theme';
@@ -36,7 +36,7 @@ export default function CourseDetailScreen() {
 
   const category = CATEGORY_BY_ID[course.categoryId];
   const exams = getExamsForCourse(course.id);
-  const colleges = getCollegesForCategory(course.categoryId);
+  const colleges = getCollegesForCourse(course.id);
   const previewColleges = colleges.slice(0, COLLEGE_PREVIEW_COUNT);
   const remaining = colleges.length - previewColleges.length;
 
@@ -83,7 +83,7 @@ export default function CourseDetailScreen() {
         Where to study
       </Text>
       <Text muted style={{ marginBottom: spacing.md }}>
-        {colleges.length} colleges in Kerala offer {category?.name ?? 'this'} courses.
+        {colleges.length} {colleges.length === 1 ? 'college' : 'colleges'} in Kerala offer this course.
       </Text>
       <View style={styles.grid}>
         {previewColleges.map((college) => (
@@ -95,7 +95,7 @@ export default function CourseDetailScreen() {
       {remaining > 0 ? (
         <View style={styles.seeAll}>
           <LinkButton
-            href={{ pathname: '/colleges', params: { category: course.categoryId } }}
+            href={{ pathname: '/colleges', params: { course: course.id } }}
             label={`See all ${colleges.length} colleges`}
           />
         </View>

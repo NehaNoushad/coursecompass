@@ -5,13 +5,16 @@ import { StyleSheet, View } from 'react-native';
 import type { CollegeType, CourseCategoryId, District, FeeBand } from '@/types';
 import {
   COLLEGES,
+  COURSE_BY_ID,
   COURSE_CATEGORIES,
   DISTRICTS,
   FEE_BAND_LABELS,
   TYPE_LABELS,
+  getCollegesForCourse,
 } from '@/data';
 import { colors, spacing } from '@/constants/theme';
-import { Button } from '@/components/ui/button';
+import { Button, LinkButton } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { ChipRow, type ChipOption } from '@/components/ui/chip-row';
 import { CollegeCard } from '@/components/college-card';
 import { Screen } from '@/components/ui/screen';
@@ -48,7 +51,16 @@ const FEE_OPTIONS: ChipOption<FeeFilter>[] = [
 ];
 
 export default function CollegesScreen() {
-  const params = useLocalSearchParams<{ category?: string; district?: string }>();
+  const params = useLocalSearchParams<{
+    category?: string;
+    district?: string;
+    course?: string;
+  }>();
+
+  // A `?course=` param restricts the catalogue to colleges offering that course.
+  const courseParam =
+    params.course && COURSE_BY_ID[params.course] ? params.course : undefined;
+  const activeCourse = courseParam ? COURSE_BY_ID[courseParam] : undefined;
 
   const initialCategory: CategoryFilter = CATEGORY_OPTIONS.some(
     (o) => o.value === params.category,
@@ -68,8 +80,9 @@ export default function CollegesScreen() {
   const [fee, setFee] = useState<FeeFilter>('all');
 
   const results = useMemo(() => {
+    const base = courseParam ? getCollegesForCourse(courseParam) : COLLEGES;
     const q = search.trim().toLowerCase();
-    return COLLEGES.filter((c) => {
+    return base.filter((c) => {
       if (q && !c.name.toLowerCase().includes(q)) return false;
       if (category !== 'all' && !c.categories.includes(category)) return false;
       if (district !== 'all' && c.district !== district) return false;
@@ -77,7 +90,7 @@ export default function CollegesScreen() {
       if (fee !== 'all' && c.feeBand !== fee) return false;
       return true;
     });
-  }, [search, category, district, type, fee]);
+  }, [search, category, district, type, fee, courseParam]);
 
   function resetFilters() {
     setSearch('');
@@ -93,6 +106,20 @@ export default function CollegesScreen() {
       <Text muted style={styles.intro}>
         {COLLEGES.length} colleges across Kerala. Filter by course, district, type and fees.
       </Text>
+
+      {activeCourse ? (
+        <Card muted style={styles.courseBanner}>
+          <Text variant="label" color={colors.primary}>
+            SHOWING COLLEGES THAT OFFER
+          </Text>
+          <Text variant="subheading" style={{ marginTop: spacing.xs }}>
+            {activeCourse.name}
+          </Text>
+          <View style={{ marginTop: spacing.md }}>
+            <LinkButton href="/colleges" label="Browse all colleges instead" variant="secondary" />
+          </View>
+        </Card>
+      ) : null}
 
       <View style={styles.filters}>
         <TextInput
@@ -136,6 +163,10 @@ export default function CollegesScreen() {
 const styles = StyleSheet.create({
   intro: {
     marginTop: spacing.sm,
+  },
+  courseBanner: {
+    marginTop: spacing.lg,
+    borderColor: colors.primary,
   },
   filters: {
     gap: spacing.lg,

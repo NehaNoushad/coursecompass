@@ -90,8 +90,13 @@ export interface College {
   district: District;
   type: CollegeType;
   feeBand: FeeBand;
-  /** Course categories this college offers. */
+  /** Course categories this college offers. Always present — drives the
+   *  catalogue filter and the fallback display. */
   categories: CourseCategoryId[];
+  /** Explicit list of course ids this college actually offers. When present
+   *  it is authoritative; when absent the college falls back to showing all
+   *  courses in `categories`. Populated progressively via research/admin. */
+  courses?: string[];
   /** Optional — filled in later via the admin panel. */
   website?: string;
   established?: number;
