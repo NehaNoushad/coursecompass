@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "new",
-    "slug": "new",
+    "name": "CourseCompass",
+    "slug": "coursecompass",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "new",
-    "userInterfaceStyle": "automatic",
+    "scheme": "coursecompass",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
