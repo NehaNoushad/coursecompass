@@ -19,6 +19,21 @@ npx tsc --noEmit # TypeScript type-check
 
 There is no test runner configured yet. Verify changes with `npx tsc --noEmit`, `npm run lint`, and by loading the affected route on the web server.
 
+## Collaboration
+
+Two non-technical collaborators work on this repo through Claude Code:
+**NehaNoushad** (owner) and **nairah373**. Both push directly to `main` — no
+branches or pull requests.
+
+To keep their work from colliding, follow this discipline every session:
+- **Start of session:** run `git pull` before making any edits, so the local
+  copy has the other person's latest work.
+- **End of session:** `git commit` and `git push` so the other person can pull
+  it. Don't leave finished work uncommitted.
+- Only one person edits at a time — they coordinate timing between themselves.
+- If a `git pull` ever reports a merge conflict, resolve it (don't discard
+  either side's work) before continuing.
+
 ## Project structure
 
 - `app/` — Expo Router file-based routes. `_layout.tsx` is the root Stack (headers hidden — the app draws its own `SiteHeader`). Routes: `/` (home), `/colleges` + `/colleges/[id]`, `/courses` + `/courses/[id]`, `/quiz`. The `/colleges` catalogue reads optional `?category=` / `?district=` query params as initial filter state.
