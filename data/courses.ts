@@ -198,6 +198,10 @@ export const COURSES: Course[] = [
   { id: 'btech-production', name: 'B.Tech Production Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam'], durationYears: 4 },
   { id: 'btech-textile', name: 'B.Tech Textile Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main'], durationYears: 4 },
   { id: 'btech-electronics-computer', name: 'B.Tech Electronics & Computer Engineering', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam', 'cusat-cat'], durationYears: 4 },
+  { id: 'btech-csbs', name: 'B.Tech Computer Science & Business Systems', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam', 'cusat-cat'], durationYears: 4 },
+  { id: 'btech-csd', name: 'B.Tech Computer Science & Design', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam', 'cusat-cat'], durationYears: 4 },
+  { id: 'btech-ai-ds', name: 'B.Tech Artificial Intelligence & Data Science', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam', 'cusat-cat'], durationYears: 4 },
+  { id: 'btech-cse-iot', name: 'B.Tech Computer Science & Engineering (IoT)', categoryId: 'engineering', streams: ['pcm'], examIds: ['jee-main', 'keam', 'cusat-cat'], durationYears: 4 },
   { id: 'ame', name: 'Aircraft Maintenance Engineering (AME)', categoryId: 'engineering', streams: ['pcm'], examIds: [], durationYears: 3 },
   // AYUSH
   { id: 'bsms', name: 'BSMS (Siddha Medicine & Surgery)', categoryId: 'ayush', streams: ['pcb'], examIds: ['neet-ug'], durationYears: 5.5 },
