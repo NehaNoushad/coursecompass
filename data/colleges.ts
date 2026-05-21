@@ -247,7 +247,6 @@ export const COLLEGES: College[] = [
   { id: 'mes-dental-malappuram', name: 'MES Dental College Perinthalmanna', district: 'Malappuram', type: 'private', feeBand: 'high', categories: ['dental'], courses: ['bds'] },
   { id: 'mes-medical-malappuram', name: 'MES Medical College Perinthalmanna', district: 'Malappuram', type: 'private', feeBand: 'high', categories: ['medical', 'nursing', 'paramedical'], courses: ['mbbs', 'bsc-nursing', 'gnm', 'bsc-mlt'] },
   { id: 'mes-hotel-management', name: 'MES College of Hotel Management Malappuram', district: 'Malappuram', type: 'private', feeBand: 'high', categories: ['hotel-management'], courses: ['bhm', 'bsc-hotel-admin'] },
-  { id: 'mes-law-college', name: 'MES Law College Malappuram', district: 'Malappuram', type: 'private', feeBand: 'high', categories: ['law'] },
   { id: 'malabar-dental', name: 'Malabar Dental College Edappal', district: 'Malappuram', type: 'private', feeBand: 'high', categories: ['dental'], courses: ['bds'] },
   { id: 'kmct-engineering', name: 'KMCT College of Engineering Kozhikode', district: 'Kozhikode', type: 'private', feeBand: 'high', categories: ['engineering'], courses: ['btech-cse', 'btech-it', 'btech-ece', 'btech-eee', 'btech-mech', 'btech-civil', 'btech-automobile'] },
   { id: 'kmct-medical', name: 'KMCT Medical College Kozhikode', district: 'Kozhikode', type: 'private', feeBand: 'high', categories: ['medical', 'nursing', 'paramedical'], courses: ['mbbs', 'bsc-nursing', 'gnm', 'bpt', 'bot', 'baslp', 'bsc-mlt', 'bsc-optometry', 'bsc-radiology', 'bsc-perfusion-tech', 'bsc-cardiovascular-tech', 'bsc-dialysis-tech', 'bsc-emergency-medical'] },
@@ -370,7 +369,6 @@ export const COLLEGES: College[] = [
   { id: 'nss-college-nenmara', name: 'NSS College Nenmara', district: 'Palakkad', type: 'aided', feeBand: 'medium', categories: ['arts', 'science', 'commerce'] },
   { id: 'sn-college-alathur', name: 'Sree Narayana College Alathur', district: 'Palakkad', type: 'aided', feeBand: 'medium', categories: ['arts', 'science', 'commerce'] },
   { id: 'govt-polytechnic-shoranur', name: 'Government Polytechnic College Shoranur', district: 'Palakkad', type: 'government', feeBand: 'low', categories: ['polytechnic'], courses: ['diploma-computer', 'diploma-electronics'] },
-  { id: 'govt-polytechnic-cherpulassery', name: 'Government Polytechnic College Cherpulassery', district: 'Palakkad', type: 'government', feeBand: 'low', categories: ['polytechnic'] },
   // Malappuram
   { id: 'ptm-govt-college-perinthalmanna', name: 'PTM Government College Perinthalmanna', district: 'Malappuram', type: 'government', feeBand: 'low', categories: ['arts', 'science', 'commerce'] },
   { id: 'thunchan-memorial-govt-college', name: 'Thunchan Memorial Government College Tirur', district: 'Malappuram', type: 'government', feeBand: 'low', categories: ['arts', 'science', 'commerce'] },
