@@ -257,12 +257,26 @@ export default function QuizScreen() {
       {step === 5 && (
         <Question
           title="Any entrance exams you've taken or plan to?"
-          subtitle="Optional — pick any that apply, or skip this step.">
-          <MultiSelect
-            options={EXAMS.map((e) => ({ value: e.id, label: e.name }))}
-            selected={exams}
-            onToggle={(v) => setExams((prev) => toggle(prev, v))}
-          />
+          subtitle="Optional — pick any that apply, or tap None if you haven't taken any."
+        >
+          <View style={styles.chipWrap}>
+            {/* "None" is a clear-all toggle. Selected state is implicit
+                when no exams are picked — clicking it explicitly clears
+                whatever was selected. */}
+            <Chip
+              label="None"
+              selected={exams.length === 0}
+              onPress={() => setExams([])}
+            />
+            {EXAMS.map((e) => (
+              <Chip
+                key={e.id}
+                label={e.name}
+                selected={exams.includes(e.id)}
+                onPress={() => setExams((prev) => toggle(prev, e.id))}
+              />
+            ))}
+          </View>
         </Question>
       )}
 
