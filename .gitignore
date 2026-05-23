@@ -42,10 +42,7 @@ app-example
 /ios
 /android
 
-# Playwright MCP debug artifacts
+# Playwright MCP debug artifacts — screenshots and snapshots dumped
+# at the repo root or in .playwright-mcp/ during verification sessions.
 .playwright-mcp/
-ecm-button-fixed.png
-ecm-page-verify.png
-ecm-see-all-area.png
-ecm-see-all-fixed.png
-*.playwright-mcp.png
+/*.png
