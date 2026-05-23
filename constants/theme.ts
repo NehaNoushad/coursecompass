@@ -7,25 +7,43 @@ import { DefaultTheme, type Theme } from '@react-navigation/native';
 import { Platform } from 'react-native';
 
 export const colors = {
-  // Brand
-  primary: '#2563EB',
-  primaryDark: '#1D4ED8',
-  primaryLight: '#DBEAFE',
-  accent: '#F59E0B',
-  accentDark: '#D97706',
+  // ─── Brand (sky palette — see design_prototypes/4prototype.html) ───
+  // `primary` is `skyDeep`, `primaryDark` is `skyAnchor`, `primaryLight`
+  // is `skyPale`. The full scale (bright/mid/deep/anchor/pale) lives
+  // below for gradient stops and tinted backgrounds.
+  primary: '#2D7DD2',
+  primaryDark: '#1F5FA0',
+  primaryLight: '#E8F4FD',
 
-  // Text
-  text: '#0F172A',
-  textMuted: '#64748B',
+  // Sky scale — use these for gradient stops, hero backgrounds, tile
+  // washes, and any place that needs a specific shade in the blue arc.
+  skyPale: '#E8F4FD',
+  skyBright: '#87CEEB',
+  skyMid: '#4FA3E0',
+  skyDeep: '#2D7DD2',
+  skyAnchor: '#1F5FA0',
+
+  // ─── Accent — coral (CTA hover, highlights, paper-plane underside) ───
+  accent: '#FF8C7A',
+  accentDark: '#FF6B57',
+
+  // ─── Sun (warm highlight — final-CTA gradient stop, glow effects) ───
+  sun: '#FFD93D',
+  sunGlow: '#FFE680',
+
+  // ─── Text ───
+  text: '#0D2840',
+  textMuted: '#4A5A6E',
+  textSubtle: '#8895A6',
   textInverse: '#FFFFFF',
 
-  // Surfaces
+  // ─── Surfaces ───
   background: '#FFFFFF',
-  surface: '#F8FAFC',
-  surfaceAlt: '#F1F5F9',
+  surface: '#FBFCFE',
+  surfaceAlt: '#F2F6FB',
   border: '#E2E8F0',
 
-  // Semantic
+  // ─── Semantic ───
   success: '#16A34A',
   danger: '#DC2626',
   locked: '#94A3B8',
