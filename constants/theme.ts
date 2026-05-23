@@ -84,6 +84,23 @@ export const fontWeight = {
   medium: '500',
   semibold: '600',
   bold: '700',
+  extrabold: '800',
+} as const;
+
+/**
+ * Font-family tokens that map to the actual fonts loaded in _layout.tsx.
+ * Use these instead of hardcoded family strings so we have one place to
+ * swap fonts later. Sora is the brand display face; Inter / system stays
+ * the body face; Caveat is the handwritten accent (sparingly).
+ */
+export const fontFamily = {
+  display: 'Sora-Bold',
+  displayHeavy: 'Sora-ExtraBold',
+  displaySemibold: 'Sora-SemiBold',
+  displayMedium: 'Sora-Medium',
+  displayRegular: 'Sora-Regular',
+  hand: 'Caveat-Bold',
+  handLight: 'Caveat-Medium',
 } as const;
 
 /** Max width of centred content on wide (web/desktop) screens. */
