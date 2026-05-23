@@ -26,10 +26,14 @@ import React, {
 import { AppState, type AppStateStatus, Platform } from 'react-native';
 
 import {
+  BROWSE_GATE_FIRM_GRACE_MINUTES,
   BROWSE_GATE_FIRM_MINUTES,
   BROWSE_GATE_NUDGE_MINUTES,
 } from '@/constants/app';
 
+// Bumped to v2 because the persisted schema gained two fields below.
+// Older v1 payloads (which lack firmGraceClaimed/firmGraceClaimedAtMs)
+// are still readable — the load step just defaults the new fields.
 const STORAGE_KEY = 'cc.browseGate.v1';
 const TICK_MS = 1000;
 
@@ -38,32 +42,47 @@ export type BrowseGateState = 'free' | 'nudge' | 'firm';
 type Persisted = {
   activeMs: number;
   nudgeDismissed: boolean;
+  /** True once the user has spent their one-time firm-modal close (✕). */
+  firmGraceClaimed: boolean;
+  /** Snapshot of activeMs at the moment the ✕ was clicked. */
+  firmGraceClaimedAtMs: number | null;
 };
 
 export interface BrowseGateValue {
-  /** Current gate state derived from `activeMs` + `nudgeDismissed`. */
+  /** Current gate state derived from `activeMs` + dismissal flags. */
   state: BrowseGateState;
   /** Cumulative active-browsing time, in milliseconds. */
   activeMs: number;
   /** Threshold values (ms) — exposed so UI can show progress / "X min left". */
-  thresholds: { nudgeMs: number; firmMs: number };
+  thresholds: { nudgeMs: number; firmMs: number; firmGraceMs: number };
   /** True once the user has dismissed the soft nudge. */
   nudgeDismissed: boolean;
+  /** True once the firm-modal close (✕) has been spent. */
+  firmGraceClaimed: boolean;
   /** Dismiss the soft nudge; the firm gate still applies after the grace period. */
   dismissNudge: () => void;
+  /**
+   * Spend the one-time firm-modal close (✕). Hides firm for
+   * BROWSE_GATE_FIRM_GRACE_MINUTES of active time, then it returns
+   * without a close button.
+   */
+  claimFirmGrace: () => void;
   /** Reset everything (e.g. after successful signup). */
   reset: () => void;
 }
 
 const NUDGE_MS = BROWSE_GATE_NUDGE_MINUTES * 60_000;
 const FIRM_MS = BROWSE_GATE_FIRM_MINUTES * 60_000;
+const FIRM_GRACE_MS = BROWSE_GATE_FIRM_GRACE_MINUTES * 60_000;
 
 const defaultValue: BrowseGateValue = {
   state: 'free',
   activeMs: 0,
-  thresholds: { nudgeMs: NUDGE_MS, firmMs: FIRM_MS },
+  thresholds: { nudgeMs: NUDGE_MS, firmMs: FIRM_MS, firmGraceMs: FIRM_GRACE_MS },
   nudgeDismissed: false,
+  firmGraceClaimed: false,
   dismissNudge: () => {},
+  claimFirmGrace: () => {},
   reset: () => {},
 };
 
@@ -73,18 +92,30 @@ function isWeb() {
   return Platform.OS === 'web' && typeof window !== 'undefined';
 }
 
+const EMPTY: Persisted = {
+  activeMs: 0,
+  nudgeDismissed: false,
+  firmGraceClaimed: false,
+  firmGraceClaimedAtMs: null,
+};
+
 function loadPersisted(): Persisted {
-  if (!isWeb()) return { activeMs: 0, nudgeDismissed: false };
+  if (!isWeb()) return EMPTY;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { activeMs: 0, nudgeDismissed: false };
+    if (!raw) return EMPTY;
     const parsed = JSON.parse(raw) as Partial<Persisted>;
     return {
       activeMs: typeof parsed.activeMs === 'number' ? parsed.activeMs : 0,
       nudgeDismissed: Boolean(parsed.nudgeDismissed),
+      firmGraceClaimed: Boolean(parsed.firmGraceClaimed),
+      firmGraceClaimedAtMs:
+        typeof parsed.firmGraceClaimedAtMs === 'number'
+          ? parsed.firmGraceClaimedAtMs
+          : null,
     };
   } catch {
-    return { activeMs: 0, nudgeDismissed: false };
+    return EMPTY;
   }
 }
 
@@ -114,8 +145,20 @@ function isDocumentVisible() {
 function computeState(
   activeMs: number,
   nudgeDismissed: boolean,
+  firmGraceClaimed: boolean,
+  firmGraceClaimedAtMs: number | null,
 ): BrowseGateState {
-  if (activeMs >= FIRM_MS) return 'firm';
+  if (activeMs >= FIRM_MS) {
+    // If they claimed the one-time grace and we're still inside it, stay free.
+    if (
+      firmGraceClaimed &&
+      firmGraceClaimedAtMs !== null &&
+      activeMs - firmGraceClaimedAtMs < FIRM_GRACE_MS
+    ) {
+      return 'free';
+    }
+    return 'firm';
+  }
   if (activeMs >= NUDGE_MS && !nudgeDismissed) return 'nudge';
   return 'free';
 }
@@ -129,6 +172,8 @@ export function BrowseGateProvider({
 }) {
   const [activeMs, setActiveMs] = useState(0);
   const [nudgeDismissed, setNudgeDismissed] = useState(false);
+  const [firmGraceClaimed, setFirmGraceClaimed] = useState(false);
+  const [firmGraceClaimedAtMs, setFirmGraceClaimedAtMs] = useState<number | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   const lastTickAt = useRef<number | null>(null);
@@ -143,14 +188,16 @@ export function BrowseGateProvider({
     const p = loadPersisted();
     setActiveMs(p.activeMs);
     setNudgeDismissed(p.nudgeDismissed);
+    setFirmGraceClaimed(p.firmGraceClaimed);
+    setFirmGraceClaimedAtMs(p.firmGraceClaimedAtMs);
     setHydrated(true);
   }, [loggedIn]);
 
   // Persist whenever values change (after hydration, to avoid clobbering on load).
   useEffect(() => {
     if (!hydrated || loggedIn) return;
-    savePersisted({ activeMs, nudgeDismissed });
-  }, [hydrated, loggedIn, activeMs, nudgeDismissed]);
+    savePersisted({ activeMs, nudgeDismissed, firmGraceClaimed, firmGraceClaimedAtMs });
+  }, [hydrated, loggedIn, activeMs, nudgeDismissed, firmGraceClaimed, firmGraceClaimedAtMs]);
 
   // Tick while foregrounded.
   useEffect(() => {
@@ -167,7 +214,13 @@ export function BrowseGateProvider({
         // stretch setInterval in hidden tabs even before visibilitychange
         // fires) can't add more than a tick's worth.
         const delta = Math.min(now - last, TICK_MS * 2);
-        setActiveMs((ms) => Math.min(ms + delta, FIRM_MS + 60_000));
+        // Cap high enough to let firm-grace fully expire. If we cap at
+        // FIRM_MS itself, the timer freezes the moment firm fires and the
+        // post-grace state computation (activeMs - firmGraceClaimedAtMs >=
+        // FIRM_GRACE_MS) can never become true. FIRM_MS + FIRM_GRACE_MS +
+        // a minute of buffer is enough; once the user is firmly gated
+        // there's no value in accumulating further.
+        setActiveMs((ms) => Math.min(ms + delta, FIRM_MS + FIRM_GRACE_MS + 60_000));
       }, TICK_MS);
     };
 
@@ -205,22 +258,36 @@ export function BrowseGateProvider({
 
   const dismissNudge = useCallback(() => setNudgeDismissed(true), []);
 
+  // Use the functional setter form so we snapshot the *current* activeMs
+  // (not a stale closure value) when the user clicks the ✕.
+  const claimFirmGrace = useCallback(() => {
+    setFirmGraceClaimed(true);
+    setActiveMs((ms) => {
+      setFirmGraceClaimedAtMs(ms);
+      return ms;
+    });
+  }, []);
+
   const reset = useCallback(() => {
     setActiveMs(0);
     setNudgeDismissed(false);
+    setFirmGraceClaimed(false);
+    setFirmGraceClaimedAtMs(null);
     clearPersisted();
   }, []);
 
   const state: BrowseGateState = loggedIn
     ? 'free'
-    : computeState(activeMs, nudgeDismissed);
+    : computeState(activeMs, nudgeDismissed, firmGraceClaimed, firmGraceClaimedAtMs);
 
   const value: BrowseGateValue = {
     state,
     activeMs,
-    thresholds: { nudgeMs: NUDGE_MS, firmMs: FIRM_MS },
+    thresholds: { nudgeMs: NUDGE_MS, firmMs: FIRM_MS, firmGraceMs: FIRM_GRACE_MS },
     nudgeDismissed,
+    firmGraceClaimed,
     dismissNudge,
+    claimFirmGrace,
     reset,
   };
 

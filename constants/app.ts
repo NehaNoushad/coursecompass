@@ -23,6 +23,13 @@ export const APP_TAGLINE = 'Find the right course and college after 12th — in 
  */
 export const BROWSE_GATE_NUDGE_MINUTES = 10;
 export const BROWSE_GATE_FIRM_MINUTES = 12;
+/**
+ * Extra browsing time granted once the user dismisses the firm modal via
+ * the close (✕) button. The X is available only the first time the firm
+ * modal appears; after this grace runs out the modal returns without an X
+ * and signup is truly required.
+ */
+export const BROWSE_GATE_FIRM_GRACE_MINUTES = 2;
 
 /**
  * Monetization master switch. CLAUDE.md mandates 2026 stays entirely free;

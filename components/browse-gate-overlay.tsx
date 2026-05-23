@@ -12,12 +12,12 @@
  * parent can swap in.
  */
 
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
-import { colors, layout, radius, spacing } from '@/constants/theme';
+import { colors, fontSize, layout, radius, spacing } from '@/constants/theme';
 import { useBrowseGate } from '@/lib/browse-gate';
 
 interface Props {
@@ -28,7 +28,7 @@ interface Props {
 }
 
 export function BrowseGateOverlay({ onSignupPress, onLoginPress }: Props) {
-  const { state, dismissNudge } = useBrowseGate();
+  const { state, dismissNudge, claimFirmGrace, firmGraceClaimed } = useBrowseGate();
 
   if (state === 'free') return null;
 
@@ -64,11 +64,23 @@ export function BrowseGateOverlay({ onSignupPress, onLoginPress }: Props) {
   }
 
   // state === 'firm'
+  // The ✕ close button only appears the first time firm fires — claimFirmGrace()
+  // spends the one-time grace, hiding the modal for FIRM_GRACE_MS of active
+  // time. On its second appearance there's no escape but signup.
   return (
     <View style={styles.firmWrap} pointerEvents="auto">
       <View style={styles.backdrop} />
       <View style={styles.firmInner}>
         <Card style={styles.firmCard}>
+          {!firmGraceClaimed ? (
+            <Pressable
+              style={styles.closeButton}
+              onPress={claimFirmGrace}
+              accessibilityRole="button"
+              accessibilityLabel="Close — give me a couple more minutes">
+              <Text style={styles.closeIcon}>✕</Text>
+            </Pressable>
+          ) : null}
           <Text variant="title" center>
             Create a free account to keep going
           </Text>
@@ -184,6 +196,24 @@ const styles = StyleSheet.create({
     shadowRadius: 40,
     shadowOffset: { width: 0, height: 16 },
     elevation: 16,
+    // `position: relative` so the absolute-positioned ✕ anchors to the card.
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: spacing.md,
+    right: spacing.md,
+    width: 32,
+    height: 32,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeIcon: {
+    color: colors.textMuted,
+    fontSize: fontSize.xl,
+    lineHeight: fontSize.xl,
+    fontWeight: '500',
   },
   firmActions: {
     marginTop: spacing.xl,
