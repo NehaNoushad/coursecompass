@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { SkyCourses } from '@/components/sky-courses';
 import { SkyFeatures } from '@/components/sky-features';
@@ -32,6 +33,7 @@ export default function HomeScreen() {
         <SkyHow />
         <SkyCourses />
         <SkyFinal />
+        <SiteFooter />
       </ScrollView>
     </View>
   );
