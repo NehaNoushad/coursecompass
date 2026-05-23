@@ -41,3 +41,11 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Playwright MCP debug artifacts
+.playwright-mcp/
+ecm-button-fixed.png
+ecm-page-verify.png
+ecm-see-all-area.png
+ecm-see-all-fixed.png
+*.playwright-mcp.png
