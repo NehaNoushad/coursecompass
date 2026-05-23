@@ -1,0 +1,94 @@
+- generic [ref=e9]:
+  - generic [ref=e11]:
+    - link "C CourseCompass" [ref=e12] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e14]: C
+      - generic [ref=e15]: CourseCompass
+    - generic [ref=e16]:
+      - link "Colleges" [ref=e17] [cursor=pointer]:
+        - /url: /colleges
+        - generic [ref=e18]: Colleges
+      - link "Courses" [ref=e19] [cursor=pointer]:
+        - /url: /courses
+        - generic [ref=e20]: Courses
+      - link "Quiz" [ref=e21] [cursor=pointer]:
+        - /url: /quiz
+        - generic [ref=e22]: Quiz
+  - generic [ref=e25]:
+    - generic [ref=e26]: B.Tech Electronics & Computer Engineering
+    - generic [ref=e27]:
+      - generic [ref=e29]: Engineering & Technology
+      - generic [ref=e31]: 4 years
+    - generic [ref=e32]: Who can apply
+    - generic [ref=e33]: "Open to students from: Science (PCM)."
+    - generic [ref=e34]: Entrance exams
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - generic [ref=e37]: JEE Main
+        - generic [ref=e38]: Joint Entrance Examination (Main)
+        - generic [ref=e39]: B.Tech/B.E. at NITs, IIITs, CFTIs and many Kerala colleges.
+      - generic [ref=e40]:
+        - generic [ref=e41]: KEAM
+        - generic [ref=e42]: Kerala Engineering Architecture Medical
+        - generic [ref=e43]: Kerala state-quota engineering, pharmacy, architecture and allied courses.
+      - generic [ref=e44]:
+        - generic [ref=e45]: CUSAT CAT
+        - generic [ref=e46]: CUSAT Common Admission Test
+        - generic [ref=e47]: B.Tech and other UG programmes at CUSAT, Kochi.
+    - generic [ref=e48]: Where to study
+    - generic [ref=e49]: 10 colleges in Kerala offer this course.
+    - generic [ref=e50]:
+      - link "Saintgits College of Engineering Kottayam Kottayam Private Higher fees Engineering & Technology" [ref=e52] [cursor=pointer]:
+        - /url: /colleges/saintgits-engineering
+        - generic [ref=e53]: Saintgits College of Engineering Kottayam
+        - generic [ref=e54]:
+          - generic [ref=e56]: Kottayam
+          - generic [ref=e58]: Private
+          - generic [ref=e60]: Higher fees
+        - generic [ref=e61]: Engineering & Technology
+      - link "Marian Engineering College Thiruvananthapuram Thiruvananthapuram Private Higher fees Engineering & Technology" [ref=e63] [cursor=pointer]:
+        - /url: /colleges/marian-engineering
+        - generic [ref=e64]: Marian Engineering College Thiruvananthapuram
+        - generic [ref=e65]:
+          - generic [ref=e67]: Thiruvananthapuram
+          - generic [ref=e69]: Private
+          - generic [ref=e71]: Higher fees
+        - generic [ref=e72]: Engineering & Technology
+      - link "LBS Institute of Technology for Women Poojappura Thiruvananthapuram Aided Low fees Engineering & Technology" [ref=e74] [cursor=pointer]:
+        - /url: /colleges/lbs-it-women-tvm
+        - generic [ref=e75]: LBS Institute of Technology for Women Poojappura
+        - generic [ref=e76]:
+          - generic [ref=e78]: Thiruvananthapuram
+          - generic [ref=e80]: Aided
+          - generic [ref=e82]: Low fees
+        - generic [ref=e83]: Engineering & Technology
+      - link "Mohandas College of Engineering and Technology Anad Thiruvananthapuram Private Higher fees Engineering & Technology" [ref=e85] [cursor=pointer]:
+        - /url: /colleges/mohandas-engineering-tvm
+        - generic [ref=e86]: Mohandas College of Engineering and Technology Anad
+        - generic [ref=e87]:
+          - generic [ref=e89]: Thiruvananthapuram
+          - generic [ref=e91]: Private
+          - generic [ref=e93]: Higher fees
+        - generic [ref=e94]: Engineering & Technology
+      - link "College of Engineering Perumon Kollam Government Low fees Engineering & Technology" [ref=e96] [cursor=pointer]:
+        - /url: /colleges/ce-perumon
+        - generic [ref=e97]: College of Engineering Perumon
+        - generic [ref=e98]:
+          - generic [ref=e100]: Kollam
+          - generic [ref=e102]: Government
+          - generic [ref=e104]: Low fees
+        - generic [ref=e105]: Engineering & Technology
+      - link "Sree Narayana Institute of Technology Adoor Pathanamthitta Private Higher fees Engineering & Technology" [ref=e107] [cursor=pointer]:
+        - /url: /colleges/snit-adoor
+        - generic [ref=e108]: Sree Narayana Institute of Technology Adoor
+        - generic [ref=e109]:
+          - generic [ref=e111]: Pathanamthitta
+          - generic [ref=e113]: Private
+          - generic [ref=e115]: Higher fees
+        - generic [ref=e116]: Engineering & Technology
+    - link "See all 10 colleges" [ref=e118] [cursor=pointer]:
+      - /url: /colleges?course=btech-electronics-computer
+      - generic [ref=e119]: See all 10 colleges
+    - link "Back to all courses" [ref=e121] [cursor=pointer]:
+      - /url: /courses
+      - generic [ref=e122]: Back to all courses

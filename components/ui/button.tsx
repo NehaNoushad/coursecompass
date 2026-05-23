@@ -50,14 +50,16 @@ export function LinkButton({
   fullWidth,
   style,
 }: BaseProps & { href: Href }) {
+  // NOTE: `<Link asChild>` clones the child onto an <a> on web and forwards
+  // its `style` prop straight to the DOM. A function-style silently does
+  // nothing (invisible button); an array-style throws because the DOM can't
+  // index-assign onto CSSStyleDeclaration. Must pass a single flattened
+  // object. Press feedback is sacrificed for LinkButton; the browser's own
+  // hover/active styles on <a> still apply.
+  const flat = StyleSheet.flatten([buttonStyle(variant, size, fullWidth), style]);
   return (
     <Link href={href} asChild>
-      <Pressable
-        style={({ pressed }) => [
-          buttonStyle(variant, size, fullWidth),
-          pressed && styles.pressed,
-          style,
-        ]}>
+      <Pressable style={flat}>
         <Text
           color={FG[variant]}
           style={{ fontSize: size === 'lg' ? fontSize.md : fontSize.sm, fontWeight: fontWeight.semibold }}>
