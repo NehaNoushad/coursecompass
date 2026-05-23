@@ -22,7 +22,7 @@ import { Card } from '@/components/ui/card';
 import { Chip } from '@/components/ui/chip';
 import { CollegeCard } from '@/components/college-card';
 import { CourseCard } from '@/components/course-card';
-import { OptionList, type Option } from '@/components/ui/option-list';
+import { MultiOptionList, OptionList, type Option } from '@/components/ui/option-list';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 
@@ -75,7 +75,7 @@ function MultiSelect<T extends string>({
 
 export default function QuizScreen() {
   const [step, setStep] = useState(0);
-  const [stream, setStream] = useState<Stream | null>(null);
+  const [streams, setStreams] = useState<Stream[]>([]);
   const [marks, setMarks] = useState<MarksBand | null>(null);
   const [district, setDistrict] = useState<District | 'any' | null>(null);
   const [budget, setBudget] = useState<FeeBand | 'any' | null>(null);
@@ -84,7 +84,7 @@ export default function QuizScreen() {
   const [result, setResult] = useState<Recommendation | null>(null);
 
   const canContinue = [
-    stream !== null,
+    streams.length > 0,
     marks !== null,
     district !== null,
     budget !== null,
@@ -97,9 +97,9 @@ export default function QuizScreen() {
   }
 
   function finish() {
-    if (stream === null || marks === null || district === null || budget === null) return;
+    if (streams.length === 0 || marks === null || district === null || budget === null) return;
     const answers: QuizAnswers = {
-      stream,
+      streams,
       marksBand: marks,
       district,
       budget,
@@ -111,7 +111,7 @@ export default function QuizScreen() {
 
   function restart() {
     setStep(0);
-    setStream(null);
+    setStreams([]);
     setMarks(null);
     setDistrict(null);
     setBudget(null);
@@ -134,8 +134,15 @@ export default function QuizScreen() {
       </Text>
 
       {step === 0 && (
-        <Question title="Which stream did you study in 12th?" subtitle="This decides which courses you're eligible for.">
-          <OptionList options={STREAM_OPTIONS} value={stream} onChange={setStream} />
+        <Question
+          title="Which stream did you study in 12th?"
+          subtitle="Pick one — or both if you studied bio-maths (PCM + PCB)."
+        >
+          <MultiOptionList
+            options={STREAM_OPTIONS}
+            selected={streams}
+            onToggle={(v) => setStreams((prev) => toggle(prev, v))}
+          />
         </Question>
       )}
 

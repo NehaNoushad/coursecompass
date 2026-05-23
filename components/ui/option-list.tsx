@@ -9,14 +9,20 @@ export interface Option<T extends string> {
   description?: string;
 }
 
-interface Props<T extends string> {
+interface SingleProps<T extends string> {
   options: Option<T>[];
   value: T | null;
   onChange: (value: T) => void;
 }
 
+interface MultiProps<T extends string> {
+  options: Option<T>[];
+  selected: T[];
+  onToggle: (value: T) => void;
+}
+
 /** A vertical list of large, single-select option rows. */
-export function OptionList<T extends string>({ options, value, onChange }: Props<T>) {
+export function OptionList<T extends string>({ options, value, onChange }: SingleProps<T>) {
   return (
     <View style={styles.list}>
       {options.map((opt) => {
@@ -32,6 +38,47 @@ export function OptionList<T extends string>({ options, value, onChange }: Props
             ]}>
             <View style={[styles.radio, selected && styles.radioSelected]}>
               {selected ? <View style={styles.radioDot} /> : null}
+            </View>
+            <View style={styles.text}>
+              <Text variant="subheading">{opt.label}</Text>
+              {opt.description ? (
+                <Text variant="bodySmall" muted style={{ marginTop: 2 }}>
+                  {opt.description}
+                </Text>
+              ) : null}
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/**
+ * Multi-select variant. Same visual style as OptionList but renders
+ * a rounded-square checkbox affordance instead of a radio circle to
+ * signal that more than one is allowed.
+ */
+export function MultiOptionList<T extends string>({
+  options,
+  selected,
+  onToggle,
+}: MultiProps<T>) {
+  return (
+    <View style={styles.list}>
+      {options.map((opt) => {
+        const isSelected = selected.includes(opt.value);
+        return (
+          <Pressable
+            key={opt.value}
+            onPress={() => onToggle(opt.value)}
+            style={({ pressed }) => [
+              styles.row,
+              isSelected && styles.rowSelected,
+              pressed && styles.pressed,
+            ]}>
+            <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+              {isSelected ? <Text style={styles.checkmark}>✓</Text> : null}
             </View>
             <View style={styles.text}>
               <Text variant="subheading">{opt.label}</Text>
@@ -86,6 +133,25 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     backgroundColor: colors.primary,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  checkmark: {
+    color: colors.textInverse,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 13,
   },
   text: {
     flex: 1,

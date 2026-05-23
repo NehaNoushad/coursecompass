@@ -20,7 +20,12 @@ import { CATEGORY_BY_ID, COLLEGES, COURSES, EXAM_BY_ID } from '@/data';
 export type MarksBand = 'below60' | '60to75' | '75to85' | 'above85';
 
 export interface QuizAnswers {
-  stream: Stream;
+  /**
+   * Streams the student studied in 12th. Usually one (e.g. `['pcm']`)
+   * but bio-maths students may have studied both PCM and PCB and should
+   * pick both — the engine ORs eligibility across the array.
+   */
+  streams: Stream[];
   marksBand: MarksBand;
   district: District | 'any';
   budget: FeeBand | 'any';
@@ -48,9 +53,11 @@ const MAX_COLLEGES = 12;
 
 const FEE_ORDER: Record<FeeBand, number> = { low: 0, medium: 1, high: 2 };
 
-/** Rank courses against the student's stream, interests and exams attempted. */
+/** Rank courses against the student's stream(s), interests and exams attempted. */
 function rankCourses(answers: QuizAnswers): CourseMatch[] {
-  const eligible = COURSES.filter((c) => c.streams.includes(answers.stream));
+  const eligible = COURSES.filter((c) =>
+    c.streams.some((s) => answers.streams.includes(s)),
+  );
 
   const scored = eligible
     .map((course) => {
