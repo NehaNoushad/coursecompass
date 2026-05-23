@@ -3,7 +3,7 @@ import { Link } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { LinkButton } from '@/components/ui/button';
+import { Button, LinkButton } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { APP_NAME } from '@/constants/app';
 import {
@@ -14,6 +14,7 @@ import {
   radius,
   spacing,
 } from '@/constants/theme';
+import { useAuth } from '@/lib/auth';
 
 const NAV_LINKS = [
   { label: 'Colleges', href: '/colleges' as const },
@@ -23,9 +24,16 @@ const NAV_LINKS = [
 
 /**
  * Top navigation bar — paper-plane circle mark + Sora wordmark + nav
- * links + "Take the quiz" CTA on the right. Matches prototype 4.
+ * links + auth controls + "Take the quiz" CTA on the right.
+ *
+ * Auth controls depend on session state:
+ *   - signed out → "Sign in" link
+ *   - signed in  → "Sign out" link (and we surface the email on hover
+ *                   via the title attribute on web)
  */
 export function SiteHeader() {
+  const { session, signOut } = useAuth();
+
   return (
     <View style={styles.bar}>
       <View style={styles.inner}>
@@ -64,6 +72,23 @@ export function SiteHeader() {
               </Link>
             ))}
           </View>
+
+          {session ? (
+            <Button
+              label="Sign out"
+              variant="ghost"
+              onPress={signOut}
+              style={styles.authBtn}
+            />
+          ) : (
+            <LinkButton
+              href="/signin"
+              label="Sign in"
+              variant="ghost"
+              style={styles.authBtn}
+            />
+          )}
+
           <LinkButton href="/quiz" label="Take the quiz" />
         </View>
       </View>
@@ -140,5 +165,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: fontWeight.medium,
     color: colors.textMuted,
+  },
+  authBtn: {
+    // Tighter padding than the default ghost button so the bar stays compact.
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderWidth: 0,
   },
 });
