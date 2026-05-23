@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import {
@@ -10,11 +10,20 @@ import {
 } from '@/data';
 import { colors, spacing } from '@/constants/theme';
 import { Badge } from '@/components/ui/badge';
+import { Button, LinkButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CollegeCard } from '@/components/college-card';
-import { LinkButton } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
+
+/** Same goBack pattern as the college detail page — see that file. */
+function goBack() {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace('/courses');
+  }
+}
 
 const COLLEGE_PREVIEW_COUNT = 6;
 
@@ -29,7 +38,7 @@ export default function CourseDetailScreen() {
         <Text muted style={{ marginVertical: spacing.lg }}>
           We couldn&apos;t find that course.
         </Text>
-        <LinkButton href="/courses" label="Back to all courses" variant="secondary" />
+        <Button label="← Back" variant="secondary" onPress={goBack} />
       </Screen>
     );
   }
@@ -102,7 +111,7 @@ export default function CourseDetailScreen() {
       ) : null}
 
       <View style={styles.footer}>
-        <LinkButton href="/courses" label="Back to all courses" variant="secondary" />
+        <Button label="← Back" variant="secondary" onPress={goBack} />
       </View>
     </Screen>
   );

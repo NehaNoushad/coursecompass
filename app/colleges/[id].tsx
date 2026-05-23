@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import {
@@ -10,11 +10,26 @@ import {
 } from '@/data';
 import { colors, spacing } from '@/constants/theme';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CourseCard } from '@/components/course-card';
-import { LinkButton } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
+
+/**
+ * Goes back to whatever the user came from — quiz results, the
+ * filtered catalogue, search, etc. — rather than hard-navigating to
+ * `/colleges` and discarding the previous page's state. Falls back
+ * to `/colleges` only when there's no history to go back to (e.g.
+ * the user landed on the detail page directly via URL).
+ */
+function goBack() {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace('/colleges');
+  }
+}
 
 export default function CollegeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -27,7 +42,7 @@ export default function CollegeDetailScreen() {
         <Text muted style={{ marginVertical: spacing.lg }}>
           We couldn&apos;t find that college. It may have been renamed or removed.
         </Text>
-        <LinkButton href="/colleges" label="Back to all colleges" variant="secondary" />
+        <Button label="← Back" variant="secondary" onPress={goBack} />
       </Screen>
     );
   }
@@ -95,7 +110,7 @@ export default function CollegeDetailScreen() {
       ))}
 
       <View style={styles.footer}>
-        <LinkButton href="/colleges" label="Back to all colleges" variant="secondary" />
+        <Button label="← Back" variant="secondary" onPress={goBack} />
       </View>
     </Screen>
   );
