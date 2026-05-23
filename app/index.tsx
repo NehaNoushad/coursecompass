@@ -1,11 +1,11 @@
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { APP_TAGLINE } from '@/constants/app';
-import { colors, layout, spacing } from '@/constants/theme';
 import { Card } from '@/components/ui/card';
 import { LinkButton } from '@/components/ui/button';
-import { Screen } from '@/components/ui/screen';
+import { SiteHeader } from '@/components/site-header';
+import { SkyHero } from '@/components/sky-hero';
 import { Text } from '@/components/ui/text';
+import { colors, layout, spacing } from '@/constants/theme';
 
 const PATHS = [
   {
@@ -24,69 +24,58 @@ const PATHS = [
   },
 ];
 
+/**
+ * Home page. The hero is full-bleed sky (see components/sky-hero.tsx);
+ * the two-paths section below is the existing layout, kept in place
+ * until Step 5 of the design port rebuilds the rest of the page
+ * (stats / features / how-it-works / courses / final CTA).
+ */
 export default function HomeScreen() {
   return (
-    <Screen>
-      {/* Hero */}
-      <View style={styles.hero}>
-        <Text variant="label" color={colors.primary}>
-          FOR KERALA 12TH-PASS STUDENTS
-        </Text>
-        <Text variant="display" style={styles.headline}>
-          Confused about what to do after 12th?
-        </Text>
-        <Text variant="subheading" muted style={styles.sub}>
-          {APP_TAGLINE}
-        </Text>
-        <View style={styles.heroCtas}>
-          <LinkButton href="/quiz" label="Take the quiz" size="lg" />
-          <LinkButton href="/colleges" label="Browse colleges" size="lg" variant="ghost" />
-        </View>
-      </View>
+    <View style={styles.root}>
+      <SiteHeader />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <SkyHero />
 
-      {/* Two paths */}
-      <View style={styles.paths}>
-        {PATHS.map((path) => (
-          <Card key={path.title} style={styles.pathCard}>
-            <Text variant="label" color={colors.accentDark}>
-              {path.eyebrow}
-            </Text>
-            <Text variant="heading" style={styles.pathTitle}>
-              {path.title}
-            </Text>
-            <Text muted style={styles.pathBody}>
-              {path.body}
-            </Text>
-            <LinkButton href={path.href} label={path.cta} variant="secondary" />
-          </Card>
-        ))}
-      </View>
-    </Screen>
+        <View style={styles.belowHero}>
+          <View style={styles.paths}>
+            {PATHS.map((path) => (
+              <Card key={path.title} style={styles.pathCard}>
+                <Text variant="label" color={colors.primary}>
+                  {path.eyebrow}
+                </Text>
+                <Text variant="heading" style={styles.pathTitle}>
+                  {path.title}
+                </Text>
+                <Text muted style={styles.pathBody}>
+                  {path.body}
+                </Text>
+                <LinkButton href={path.href} label={path.cta} variant="secondary" />
+              </Card>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: {
+  root: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  belowHero: {
+    width: '100%',
+    maxWidth: layout.maxContentWidth,
+    alignSelf: 'center',
+    paddingHorizontal: spacing.xl,
     paddingVertical: spacing.x2l,
-    maxWidth: 720,
-  },
-  headline: {
-    marginTop: spacing.md,
-  },
-  sub: {
-    marginTop: spacing.md,
-  },
-  heroCtas: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginTop: spacing.xl,
   },
   paths: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.lg,
-    marginTop: spacing.lg,
   },
   pathCard: {
     flexGrow: 1,
