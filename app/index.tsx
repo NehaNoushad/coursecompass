@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { LinkButton } from '@/components/ui/button';
 import { SiteHeader } from '@/components/site-header';
 import { SkyHero } from '@/components/sky-hero';
+import { SkyStats } from '@/components/sky-stats';
 import { Text } from '@/components/ui/text';
 import { colors, layout, spacing } from '@/constants/theme';
 
@@ -36,6 +37,7 @@ export default function HomeScreen() {
       <SiteHeader />
       <ScrollView showsVerticalScrollIndicator={false}>
         <SkyHero />
+        <SkyStats />
 
         <View style={styles.belowHero}>
           <View style={styles.paths}>
