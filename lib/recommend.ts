@@ -9,10 +9,10 @@
 
 import type {
   College,
+  CollegeType,
   Course,
   CourseCategoryId,
   District,
-  FeeBand,
   Stream,
 } from '@/types';
 import { CATEGORY_BY_ID, COLLEGES, COURSES, EXAM_BY_ID } from '@/data';
@@ -32,7 +32,14 @@ export interface QuizAnswers {
    * "anywhere in Kerala" — no district filter applied.
    */
   districts: District[];
-  budget: FeeBand | 'any';
+  /**
+   * Types of college the student is open to (government, aided,
+   * private/self-financing). Empty array means "no preference".
+   * Replaced the older `budget: FeeBand` question because the same
+   * fee band varies wildly across seat-categories (merit vs management
+   * vs NRI quota) — college type is a more stable, meaningful signal.
+   */
+  collegeTypes: CollegeType[];
   interests: CourseCategoryId[];
   examsAttempted: string[];
 }
@@ -54,8 +61,6 @@ export interface Recommendation {
 
 const MAX_COURSES = 8;
 const MAX_COLLEGES = 12;
-
-const FEE_ORDER: Record<FeeBand, number> = { low: 0, medium: 1, high: 2 };
 
 /** Rank courses against the student's stream(s), interests and exams attempted. */
 function rankCourses(answers: QuizAnswers): CourseMatch[] {
@@ -97,17 +102,13 @@ function rankCourses(answers: QuizAnswers): CourseMatch[] {
   return list.slice(0, MAX_COURSES).map(({ course, reasons }) => ({ course, reasons }));
 }
 
-/** Rank colleges against the student's district(s), budget and interests. */
+/** Rank colleges against the student's district(s), college type(s) and interests. */
 function rankColleges(answers: QuizAnswers): CollegeMatch[] {
   const anyDistrict = answers.districts.length === 0;
+  const anyType = answers.collegeTypes.length === 0;
   const scored = COLLEGES.filter((college) => {
     if (!anyDistrict && !answers.districts.includes(college.district)) return false;
-    if (
-      answers.budget !== 'any' &&
-      FEE_ORDER[college.feeBand] > FEE_ORDER[answers.budget]
-    ) {
-      return false;
-    }
+    if (!anyType && !answers.collegeTypes.includes(college.type)) return false;
     return college.categories.some((cat) => answers.interests.includes(cat));
   })
     .map((college) => {
@@ -129,9 +130,9 @@ function rankColleges(answers: QuizAnswers): CollegeMatch[] {
         score += 2;
         reasons.push('In one of your preferred districts');
       }
-      if (answers.budget !== 'any' && college.feeBand === answers.budget) {
+      if (!anyType && answers.collegeTypes.includes(college.type)) {
         score += 1;
-        reasons.push('Fits your budget');
+        reasons.push(`${TYPE_REASON[college.type]} (your preferred type)`);
       }
       return { college, score, reasons };
     })
@@ -139,6 +140,12 @@ function rankColleges(answers: QuizAnswers): CollegeMatch[] {
 
   return scored.slice(0, MAX_COLLEGES).map(({ college, reasons }) => ({ college, reasons }));
 }
+
+const TYPE_REASON: Record<CollegeType, string> = {
+  government: 'Government college',
+  aided: 'Aided college',
+  private: 'Private / self-financing',
+};
 
 export function recommend(answers: QuizAnswers): Recommendation {
   return {

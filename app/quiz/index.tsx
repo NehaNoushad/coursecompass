@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import type { CourseCategoryId, District, FeeBand, Stream } from '@/types';
+import type { CollegeType, CourseCategoryId, District, Stream } from '@/types';
 import {
   COURSE_CATEGORIES,
   DISTRICTS,
@@ -42,11 +42,22 @@ const MARKS_OPTIONS: Option<MarksBand>[] = [
   { value: 'below60', label: 'Below 60%' },
 ];
 
-const BUDGET_OPTIONS: Option<FeeBand | 'any'>[] = [
-  { value: 'any', label: 'No preference', description: 'Show me all options' },
-  { value: 'low', label: 'Lowest fees', description: 'Mainly government colleges' },
-  { value: 'medium', label: 'Moderate fees', description: 'Government and aided colleges' },
-  { value: 'high', label: 'Higher fees are fine', description: 'Private and self-financing too' },
+const COLLEGE_TYPE_OPTIONS: Option<CollegeType>[] = [
+  {
+    value: 'government',
+    label: 'Government',
+    description: 'Lowest fees overall but most competitive — merit + entrance score really matter.',
+  },
+  {
+    value: 'aided',
+    label: 'Aided',
+    description: 'Government-funded with private management. Mid-range fees; often the strongest reputation in arts and sciences.',
+  },
+  {
+    value: 'private',
+    label: 'Private / Self-financing',
+    description: 'More seats and easier admission, but fees vary widely between colleges and between seat categories.',
+  },
 ];
 
 /** A wrapping group of multi-select chips. */
@@ -85,7 +96,11 @@ export default function QuizScreen() {
   // Anywhere, which sets districts back to [] but flips this to true)
   // the step is satisfied.
   const [districtTouched, setDistrictTouched] = useState(false);
-  const [budget, setBudget] = useState<FeeBand | 'any' | null>(null);
+  // College types is multi-select. Empty array = no preference.
+  // Same touched flag pattern as district so picking "no preference"
+  // still counts as having answered the step.
+  const [collegeTypes, setCollegeTypes] = useState<CollegeType[]>([]);
+  const [collegeTypeTouched, setCollegeTypeTouched] = useState(false);
   const [interests, setInterests] = useState<CourseCategoryId[]>([]);
   const [exams, setExams] = useState<string[]>([]);
   const [result, setResult] = useState<Recommendation | null>(null);
@@ -94,7 +109,7 @@ export default function QuizScreen() {
     streams.length > 0,
     marks !== null,
     districtTouched,
-    budget !== null,
+    collegeTypeTouched,
     interests.length > 0,
     true, // exams step is optional
   ][step];
@@ -104,12 +119,12 @@ export default function QuizScreen() {
   }
 
   function finish() {
-    if (streams.length === 0 || marks === null || !districtTouched || budget === null) return;
+    if (streams.length === 0 || marks === null || !districtTouched || !collegeTypeTouched) return;
     const answers: QuizAnswers = {
       streams,
       marksBand: marks,
       districts,
-      budget,
+      collegeTypes,
       interests,
       examsAttempted: exams,
     };
@@ -122,7 +137,8 @@ export default function QuizScreen() {
     setMarks(null);
     setDistricts([]);
     setDistrictTouched(false);
-    setBudget(null);
+    setCollegeTypes([]);
+    setCollegeTypeTouched(false);
     setInterests([]);
     setExams([]);
     setResult(null);
@@ -190,8 +206,41 @@ export default function QuizScreen() {
       )}
 
       {step === 3 && (
-        <Question title="What about fees?" subtitle="Government colleges cost the least; private ones cost more.">
-          <OptionList options={BUDGET_OPTIONS} value={budget} onChange={setBudget} />
+        <Question
+          title="What type of college are you looking for?"
+          subtitle="Fees vary too much within categories to filter by directly — but the type of college (government / aided / private) is a stable signal of what to expect. Pick one or more, or skip with No preference."
+        >
+          <View style={styles.chipWrap}>
+            <Chip
+              label="No preference"
+              selected={collegeTypes.length === 0 && collegeTypeTouched}
+              onPress={() => {
+                setCollegeTypes([]);
+                setCollegeTypeTouched(true);
+              }}
+            />
+            {COLLEGE_TYPE_OPTIONS.map((opt) => (
+              <Chip
+                key={opt.value}
+                label={opt.label}
+                selected={collegeTypes.includes(opt.value)}
+                onPress={() => {
+                  setCollegeTypes((prev) => toggle(prev, opt.value));
+                  setCollegeTypeTouched(true);
+                }}
+              />
+            ))}
+          </View>
+          <View style={styles.collegeTypeNotes}>
+            {COLLEGE_TYPE_OPTIONS.map((opt) => (
+              <View key={opt.value} style={styles.collegeTypeNote}>
+                <Text variant="label">{opt.label}</Text>
+                <Text variant="bodySmall" muted style={{ marginTop: spacing.xs }}>
+                  {opt.description}
+                </Text>
+              </View>
+            ))}
+          </View>
         </Question>
       )}
 
@@ -373,6 +422,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+  },
+  collegeTypeNotes: {
+    marginTop: spacing.xl,
+    gap: spacing.md,
+  },
+  collegeTypeNote: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primaryLight,
+    paddingLeft: spacing.md,
   },
   nav: {
     flexDirection: 'row',
