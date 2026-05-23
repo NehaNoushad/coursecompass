@@ -1,8 +1,9 @@
 /**
- * App-level metadata. The brand name is a working-title placeholder —
- * change it here (one place) once the real name is decided.
+ * App-level metadata. APP_NAME is the brand — change it here (one place)
+ * and it ripples to the SiteHeader, SiteFooter, hero copy, browse-gate
+ * overlay, and any other component that references it.
  */
-export const APP_NAME = 'CourseCompass';
+export const APP_NAME = 'Paper Plane';
 export const APP_TAGLINE = 'Find the right course and college after 12th — in Kerala.';
 
 /**

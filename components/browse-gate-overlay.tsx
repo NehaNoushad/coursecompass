@@ -17,6 +17,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
+import { APP_NAME } from '@/constants/app';
 import { colors, fontSize, layout, radius, spacing } from '@/constants/theme';
 import { useBrowseGate } from '@/lib/browse-gate';
 
@@ -39,7 +40,7 @@ export function BrowseGateOverlay({ onSignupPress, onLoginPress }: Props) {
           <Card style={styles.nudgeCard}>
             <View style={styles.nudgeRow}>
               <View style={styles.nudgeText}>
-                <Text variant="subheading">Enjoying CourseCompass?</Text>
+                <Text variant="subheading">Enjoying {APP_NAME}?</Text>
                 <Text variant="bodySmall" muted>
                   Create a free account to save shortlists and keep browsing.
                 </Text>

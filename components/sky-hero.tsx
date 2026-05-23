@@ -36,6 +36,7 @@ import Svg, {
 
 import { LinkButton } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import { APP_NAME } from '@/constants/app';
 import {
   colors,
   fontFamily,
@@ -194,7 +195,7 @@ export function SkyHero() {
         </Text>
 
         <Text style={styles.heroSub}>
-          382 colleges. 176 courses. <Text style={styles.handAccent}>endless</Text> directions. CourseCompass helps you pick the one that fits — built for Kerala 12th-pass students.
+          382 colleges. 176 courses. <Text style={styles.handAccent}>endless</Text> directions. {APP_NAME} helps you pick the one that fits — built for Kerala 12th-pass students.
         </Text>
 
         <View style={styles.ctaRow}>
