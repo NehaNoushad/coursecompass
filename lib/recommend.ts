@@ -27,7 +27,11 @@ export interface QuizAnswers {
    */
   streams: Stream[];
   marksBand: MarksBand;
-  district: District | 'any';
+  /**
+   * Districts the student wants to study in. Empty array means
+   * "anywhere in Kerala" — no district filter applied.
+   */
+  districts: District[];
   budget: FeeBand | 'any';
   interests: CourseCategoryId[];
   examsAttempted: string[];
@@ -93,10 +97,11 @@ function rankCourses(answers: QuizAnswers): CourseMatch[] {
   return list.slice(0, MAX_COURSES).map(({ course, reasons }) => ({ course, reasons }));
 }
 
-/** Rank colleges against the student's district, budget and interests. */
+/** Rank colleges against the student's district(s), budget and interests. */
 function rankColleges(answers: QuizAnswers): CollegeMatch[] {
+  const anyDistrict = answers.districts.length === 0;
   const scored = COLLEGES.filter((college) => {
-    if (answers.district !== 'any' && college.district !== answers.district) return false;
+    if (!anyDistrict && !answers.districts.includes(college.district)) return false;
     if (
       answers.budget !== 'any' &&
       FEE_ORDER[college.feeBand] > FEE_ORDER[answers.budget]
@@ -120,9 +125,9 @@ function rankColleges(answers: QuizAnswers): CollegeMatch[] {
             .join(', ')}`,
         );
       }
-      if (answers.district !== 'any' && college.district === answers.district) {
+      if (!anyDistrict && answers.districts.includes(college.district)) {
         score += 2;
-        reasons.push('In your preferred district');
+        reasons.push('In one of your preferred districts');
       }
       if (answers.budget !== 'any' && college.feeBand === answers.budget) {
         score += 1;

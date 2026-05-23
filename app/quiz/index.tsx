@@ -77,7 +77,14 @@ export default function QuizScreen() {
   const [step, setStep] = useState(0);
   const [streams, setStreams] = useState<Stream[]>([]);
   const [marks, setMarks] = useState<MarksBand | null>(null);
-  const [district, setDistrict] = useState<District | 'any' | null>(null);
+  // Districts is multi-select. Empty array = "anywhere in Kerala".
+  // The "Anywhere" chip is treated as a clear-all toggle, not a value.
+  const [districts, setDistricts] = useState<District[]>([]);
+  // `null` = the student hasn't touched the district step yet (so we can
+  // gate the Continue button); after first interaction (including picking
+  // Anywhere, which sets districts back to [] but flips this to true)
+  // the step is satisfied.
+  const [districtTouched, setDistrictTouched] = useState(false);
   const [budget, setBudget] = useState<FeeBand | 'any' | null>(null);
   const [interests, setInterests] = useState<CourseCategoryId[]>([]);
   const [exams, setExams] = useState<string[]>([]);
@@ -86,7 +93,7 @@ export default function QuizScreen() {
   const canContinue = [
     streams.length > 0,
     marks !== null,
-    district !== null,
+    districtTouched,
     budget !== null,
     interests.length > 0,
     true, // exams step is optional
@@ -97,11 +104,11 @@ export default function QuizScreen() {
   }
 
   function finish() {
-    if (streams.length === 0 || marks === null || district === null || budget === null) return;
+    if (streams.length === 0 || marks === null || !districtTouched || budget === null) return;
     const answers: QuizAnswers = {
       streams,
       marksBand: marks,
-      district,
+      districts,
       budget,
       interests,
       examsAttempted: exams,
@@ -113,7 +120,8 @@ export default function QuizScreen() {
     setStep(0);
     setStreams([]);
     setMarks(null);
-    setDistrict(null);
+    setDistricts([]);
+    setDistrictTouched(false);
     setBudget(null);
     setInterests([]);
     setExams([]);
@@ -153,11 +161,29 @@ export default function QuizScreen() {
       )}
 
       {step === 2 && (
-        <Question title="Where would you like to study?" subtitle="Pick a district, or choose anywhere in Kerala.">
+        <Question
+          title="Where would you like to study?"
+          subtitle="Pick one or more districts — or choose anywhere in Kerala."
+        >
           <View style={styles.chipWrap}>
-            <Chip label="Anywhere in Kerala" selected={district === 'any'} onPress={() => setDistrict('any')} />
+            <Chip
+              label="Anywhere in Kerala"
+              selected={districts.length === 0 && districtTouched}
+              onPress={() => {
+                setDistricts([]);
+                setDistrictTouched(true);
+              }}
+            />
             {DISTRICTS.map((d) => (
-              <Chip key={d} label={d} selected={district === d} onPress={() => setDistrict(d)} />
+              <Chip
+                key={d}
+                label={d}
+                selected={districts.includes(d)}
+                onPress={() => {
+                  setDistricts((prev) => toggle(prev, d));
+                  setDistrictTouched(true);
+                }}
+              />
             ))}
           </View>
         </Question>

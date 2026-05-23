@@ -15,6 +15,7 @@ import {
 import { colors, spacing } from '@/constants/theme';
 import { Button, LinkButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Chip } from '@/components/ui/chip';
 import { ChipRow, type ChipOption } from '@/components/ui/chip-row';
 import { CollegeCard } from '@/components/college-card';
 import { Screen } from '@/components/ui/screen';
@@ -22,18 +23,12 @@ import { TextInput } from '@/components/ui/text-input';
 import { Text } from '@/components/ui/text';
 
 type CategoryFilter = 'all' | CourseCategoryId;
-type DistrictFilter = 'all' | District;
 type TypeFilter = 'all' | CollegeType;
 type FeeFilter = 'all' | FeeBand;
 
 const CATEGORY_OPTIONS: ChipOption<CategoryFilter>[] = [
   { value: 'all', label: 'All courses' },
   ...COURSE_CATEGORIES.map((c) => ({ value: c.id, label: c.name })),
-];
-
-const DISTRICT_OPTIONS: ChipOption<DistrictFilter>[] = [
-  { value: 'all', label: 'All districts' },
-  ...DISTRICTS.map((d) => ({ value: d, label: d })),
 ];
 
 const TYPE_OPTIONS: ChipOption<TypeFilter>[] = [
@@ -67,15 +62,15 @@ export default function CollegesScreen() {
   )
     ? (params.category as CategoryFilter)
     : 'all';
-  const initialDistrict: DistrictFilter = DISTRICT_OPTIONS.some(
-    (o) => o.value === params.district,
-  )
-    ? (params.district as DistrictFilter)
-    : 'all';
+  // Districts is multi-select. URL `?district=` is honoured as a single
+  // initial pick; the user can add more on the page.
+  const initialDistricts: District[] = DISTRICTS.includes(params.district as District)
+    ? [params.district as District]
+    : [];
 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<CategoryFilter>(initialCategory);
-  const [district, setDistrict] = useState<DistrictFilter>(initialDistrict);
+  const [districts, setDistricts] = useState<District[]>(initialDistricts);
   const [type, setType] = useState<TypeFilter>('all');
   const [fee, setFee] = useState<FeeFilter>('all');
 
@@ -85,17 +80,23 @@ export default function CollegesScreen() {
     return base.filter((c) => {
       if (q && !c.name.toLowerCase().includes(q)) return false;
       if (category !== 'all' && !c.categories.includes(category)) return false;
-      if (district !== 'all' && c.district !== district) return false;
+      if (districts.length > 0 && !districts.includes(c.district)) return false;
       if (type !== 'all' && c.type !== type) return false;
       if (fee !== 'all' && c.feeBand !== fee) return false;
       return true;
     });
-  }, [search, category, district, type, fee, courseParam]);
+  }, [search, category, districts, type, fee, courseParam]);
+
+  function toggleDistrict(d: District) {
+    setDistricts((prev) =>
+      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d],
+    );
+  }
 
   function resetFilters() {
     setSearch('');
     setCategory('all');
-    setDistrict('all');
+    setDistricts([]);
     setType('all');
     setFee('all');
   }
@@ -130,7 +131,26 @@ export default function CollegesScreen() {
           autoCapitalize="none"
         />
         <ChipRow label="Course" options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
-        <ChipRow label="District" options={DISTRICT_OPTIONS} value={district} onChange={setDistrict} />
+        <View>
+          <Text variant="label" muted style={styles.filterLabel}>
+            District
+          </Text>
+          <View style={styles.districtRow}>
+            <Chip
+              label="All districts"
+              selected={districts.length === 0}
+              onPress={() => setDistricts([])}
+            />
+            {DISTRICTS.map((d) => (
+              <Chip
+                key={d}
+                label={d}
+                selected={districts.includes(d)}
+                onPress={() => toggleDistrict(d)}
+              />
+            ))}
+          </View>
+        </View>
         <ChipRow label="Type" options={TYPE_OPTIONS} value={type} onChange={setType} />
         <ChipRow label="Fees" options={FEE_OPTIONS} value={fee} onChange={setFee} />
       </View>
@@ -172,6 +192,14 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     marginTop: spacing.xl,
     marginBottom: spacing.lg,
+  },
+  filterLabel: {
+    marginBottom: spacing.sm,
+  },
+  districtRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
   },
   count: {
     marginBottom: spacing.md,
