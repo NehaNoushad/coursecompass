@@ -135,8 +135,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
+  // Nested <Text> on RN-web doesn't reliably inherit the parent's font
+  // properties — must repeat them or the accented word falls back to the
+  // default ~14px. Keeping size + family + spacing identical to .h2 so
+  // only the colour changes.
   h2Accent: {
-    color: colors.accent,
+    fontFamily: fontFamily.displayHeavy,
+    fontSize: 80,
+    lineHeight: 84,
+    letterSpacing: -3,
+    color: colors.accentDark,
   },
   sub: {
     fontSize: 19,
