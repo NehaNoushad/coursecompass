@@ -5,6 +5,7 @@ import { LinkButton } from '@/components/ui/button';
 import { SiteHeader } from '@/components/site-header';
 import { SkyFeatures } from '@/components/sky-features';
 import { SkyHero } from '@/components/sky-hero';
+import { SkyHow } from '@/components/sky-how';
 import { SkyStats } from '@/components/sky-stats';
 import { Text } from '@/components/ui/text';
 import { colors, layout, spacing } from '@/constants/theme';
@@ -40,6 +41,7 @@ export default function HomeScreen() {
         <SkyHero />
         <SkyStats />
         <SkyFeatures />
+        <SkyHow />
 
         <View style={styles.belowHero}>
           <View style={styles.paths}>
