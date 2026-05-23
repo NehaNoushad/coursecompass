@@ -20,6 +20,7 @@ import 'react-native-reanimated';
 
 import { BrowseGateOverlay } from '@/components/browse-gate-overlay';
 import { navigationTheme } from '@/constants/theme';
+import { AuthProvider, useAuth } from '@/lib/auth';
 import { BrowseGateProvider } from '@/lib/browse-gate';
 
 // Keep the splash up until our fonts are ready — otherwise the first
@@ -51,14 +52,30 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={navigationTheme}>
-      <BrowseGateProvider>
-        <View style={styles.root}>
-          <Stack screenOptions={{ headerShown: false }} />
-          <BrowseGateOverlay />
-        </View>
-      </BrowseGateProvider>
+      <AuthProvider>
+        <GatedShell />
+      </AuthProvider>
       <StatusBar style="dark" />
     </ThemeProvider>
+  );
+}
+
+/**
+ * Reads the auth session from AuthProvider and forwards `loggedIn`
+ * into BrowseGateProvider so signed-in users bypass the timer +
+ * overlay entirely. Has to live inside AuthProvider (which is why
+ * it's its own component — hooks can't run in RootLayout where
+ * AuthProvider is the immediate parent).
+ */
+function GatedShell() {
+  const { session } = useAuth();
+  return (
+    <BrowseGateProvider loggedIn={!!session}>
+      <View style={styles.root}>
+        <Stack screenOptions={{ headerShown: false }} />
+        <BrowseGateOverlay />
+      </View>
+    </BrowseGateProvider>
   );
 }
 

@@ -7,11 +7,13 @@
  *                        dismissable via "Not now"
  *   state === 'firm'   → blocking full-screen modal with backdrop
  *
- * Signup buttons are stubs for now — they'll route to `/signup` once those
- * screens exist (Phase 3 Step 4). Until then `onSignupPress` is a no-op the
- * parent can swap in.
+ * The signup / login buttons both route to `/signin` — Supabase's email
+ * OTP doesn't distinguish new vs returning users at the API, and that
+ * screen handles both flows. Parent components can still override via
+ * `onSignupPress` / `onLoginPress` if they want different behaviour.
  */
 
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
@@ -22,13 +24,14 @@ import { colors, fontSize, layout, radius, spacing } from '@/constants/theme';
 import { useBrowseGate } from '@/lib/browse-gate';
 
 interface Props {
-  /** Called when the user taps "Sign up". Stub until signup screens land. */
   onSignupPress?: () => void;
-  /** Called when the user taps "Log in" on the firm modal. */
   onLoginPress?: () => void;
 }
 
-export function BrowseGateOverlay({ onSignupPress, onLoginPress }: Props) {
+export function BrowseGateOverlay({
+  onSignupPress = () => router.push('/signin'),
+  onLoginPress = () => router.push('/signin'),
+}: Props) {
   const { state, dismissNudge, claimFirmGrace, firmGraceClaimed } = useBrowseGate();
 
   if (state === 'free') return null;
