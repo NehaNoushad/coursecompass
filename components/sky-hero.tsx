@@ -65,34 +65,41 @@ function CloudShape({ size }: { size: number }) {
 }
 
 /**
- * Drifting cloud. Wraps a CloudShape in an Animated.View that translates
- * horizontally on a long linear loop. Direction `right` starts at the
- * cloud's base position and moves it well off-screen to the right
- * (~120% of the viewport width), then snaps back. `left` does the
- * mirror. Long durations (50-90s) keep the motion ambient — you only
- * notice it on a second look.
+ * Drifting cloud. Wraps a CloudShape in an Animated.View that gently
+ * oscillates horizontally — drifts a short distance in one direction,
+ * then reverses, then forward again. Reads as ambient air-motion rather
+ * than a one-way march off-screen.
+ *
+ * `direction` decides which way the first half of each cycle goes:
+ *   right → 0 → +distance → 0 → +distance → …
+ *   left  → 0 → -distance → 0 → -distance → …
+ *
+ * Using `withRepeat(..., -1, true)` so reanimated handles the reversal
+ * with a smooth ease curve and no visible snap. `distance` is kept
+ * small (40-100px) so the motion is subtle, not theatrical.
  */
 function DriftingCloud({
   size,
   duration,
   direction,
+  distance,
   style,
 }: {
   size: number;
   duration: number;
   direction: 'right' | 'left';
+  distance: number;
   style: object;
 }) {
   const x = useSharedValue(0);
   useEffect(() => {
-    const distance = SCREEN_W * 1.2 + size;
     const target = direction === 'right' ? distance : -distance;
     x.value = withRepeat(
-      withTiming(target, { duration, easing: Easing.linear }),
-      -1, // infinite repeat
-      false, // restart from 0 each iteration (no reverse)
+      withTiming(target, { duration, easing: Easing.inOut(Easing.sin) }),
+      -1, // infinite
+      true, // reverse on each iteration → smooth back-and-forth
     );
-  }, [x, duration, direction, size]);
+  }, [x, duration, direction, distance]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: x.value }],
@@ -160,11 +167,14 @@ export function SkyHero() {
         </View>
       </View>
 
-      {/* Clouds drifting at different speeds. Long durations keep it ambient. */}
-      <DriftingCloud size={260} duration={60_000} direction="right" style={styles.cloud1} />
-      <DriftingCloud size={180} duration={75_000} direction="left"  style={styles.cloud2} />
-      <DriftingCloud size={300} duration={90_000} direction="right" style={styles.cloud3} />
-      <DriftingCloud size={200} duration={50_000} direction="left"  style={styles.cloud4} />
+      {/* Clouds gently oscillate. Short distances (50-100px) + long
+          durations (15-22s one-way) read as ambient air-motion. Each
+          cloud has its own period + amplitude so the motion stays
+          desynced and natural-looking. */}
+      <DriftingCloud size={260} duration={18_000} direction="right" distance={80}  style={styles.cloud1} />
+      <DriftingCloud size={180} duration={22_000} direction="left"  distance={60}  style={styles.cloud2} />
+      <DriftingCloud size={300} duration={25_000} direction="right" distance={100} style={styles.cloud3} />
+      <DriftingCloud size={200} duration={15_000} direction="left"  distance={70}  style={styles.cloud4} />
 
       {/* Paper plane — the brand mascot */}
       <View style={styles.planeWrap} pointerEvents="none">
@@ -255,12 +265,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     opacity: 0.95,
   },
-  // Cloud base positions. Two start off-screen left (drifting right)
-  // and two off-screen right (drifting left), so the parallax reads
-  // as ambient sky-motion rather than a one-way march.
-  cloud1: { top: '20%', left: '-8%' },
-  cloud2: { top: '14%', right: '-4%', opacity: 0.85 },
-  cloud3: { top: '58%', left: '-10%', opacity: 0.7 },
+  // Cloud base positions. With the new back-and-forth motion the
+  // clouds stay roughly where they're placed; the offsets pull each
+  // one partly off-screen so the oscillation slides them in and out
+  // of view without revealing the snap-back of a one-directional loop.
+  cloud1: { top: '20%', left: '-4%' },
+  cloud2: { top: '14%', right: '5%', opacity: 0.85 },
+  cloud3: { top: '58%', left: '-6%', opacity: 0.7 },
   cloud4: { top: '68%', right: '-3%', opacity: 0.85 },
 
   // ─── Paper plane ───
