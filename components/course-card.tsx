@@ -7,15 +7,28 @@ import { colors, radius, spacing } from '@/constants/theme';
 import { Badge } from '@/components/ui/badge';
 import { Text } from '@/components/ui/text';
 
-export function CourseCard({ course }: { course: Course }) {
+export function CourseCard({
+  course,
+  from,
+}: {
+  course: Course;
+  /** See CollegeCard — same source-marker pattern. */
+  from?: string;
+}) {
   const category = CATEGORY_BY_ID[course.categoryId];
   const examCount = course.examIds.length;
+
+  // Typed routes don't accept arbitrary `?from=…` on a string href; use
+  // the object form so the `from` becomes a query param.
+  const href = from
+    ? ({ pathname: '/courses/[id]', params: { id: course.id, from } } as const)
+    : ({ pathname: '/courses/[id]', params: { id: course.id } } as const);
 
   // NOTE: `<Link asChild>` clones onto an <a> on web and drops function-
   // and array-styles on the inner Pressable, leaving the card unstyled.
   // Pass a single object. See ui/button.tsx for the same fix.
   return (
-    <Link href={`/courses/${course.id}`} asChild>
+    <Link href={href} asChild>
       <Pressable style={styles.card}>
         <Text variant="subheading" numberOfLines={2}>
           {course.name}

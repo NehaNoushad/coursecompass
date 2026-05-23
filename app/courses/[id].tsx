@@ -16,7 +16,7 @@ import { CollegeCard } from '@/components/college-card';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 
-/** Same goBack pattern as the college detail page — see that file. */
+/** Same goBack + backLabel pattern as the college detail page — see that file. */
 function goBack() {
   if (router.canGoBack()) {
     router.back();
@@ -25,11 +25,17 @@ function goBack() {
   }
 }
 
+function backLabel(from: string | undefined): string {
+  if (from === 'quiz') return '← Back to your matches';
+  return '← Back';
+}
+
 const COLLEGE_PREVIEW_COUNT = 6;
 
 export default function CourseDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const course = id ? COURSE_BY_ID[id] : undefined;
+  const back = backLabel(from);
 
   if (!course) {
     return (
@@ -38,7 +44,7 @@ export default function CourseDetailScreen() {
         <Text muted style={{ marginVertical: spacing.lg }}>
           We couldn&apos;t find that course.
         </Text>
-        <Button label="← Back" variant="secondary" onPress={goBack} />
+        <Button label={back} variant="secondary" onPress={goBack} />
       </Screen>
     );
   }
@@ -111,7 +117,7 @@ export default function CourseDetailScreen() {
       ) : null}
 
       <View style={styles.footer}>
-        <Button label="← Back" variant="secondary" onPress={goBack} />
+        <Button label={back} variant="secondary" onPress={goBack} />
       </View>
     </Screen>
   );

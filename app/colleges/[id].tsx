@@ -31,9 +31,16 @@ function goBack() {
   }
 }
 
+/** Pretty label for the back button based on where the user came from. */
+function backLabel(from: string | undefined): string {
+  if (from === 'quiz') return '← Back to your matches';
+  return '← Back';
+}
+
 export default function CollegeDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const college = id ? COLLEGE_BY_ID[id] : undefined;
+  const back = backLabel(from);
 
   if (!college) {
     return (
@@ -42,7 +49,7 @@ export default function CollegeDetailScreen() {
         <Text muted style={{ marginVertical: spacing.lg }}>
           We couldn&apos;t find that college. It may have been renamed or removed.
         </Text>
-        <Button label="← Back" variant="secondary" onPress={goBack} />
+        <Button label={back} variant="secondary" onPress={goBack} />
       </Screen>
     );
   }
@@ -110,7 +117,7 @@ export default function CollegeDetailScreen() {
       ))}
 
       <View style={styles.footer}>
-        <Button label="← Back" variant="secondary" onPress={goBack} />
+        <Button label={back} variant="secondary" onPress={goBack} />
       </View>
     </Screen>
   );

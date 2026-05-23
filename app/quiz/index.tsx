@@ -361,7 +361,7 @@ function QuizResult({
       <View style={styles.resultGrid}>
         {result.courses.map((m) => (
           <View key={m.course.id} style={styles.resultCell}>
-            <CourseCard course={m.course} />
+            <CourseCard course={m.course} from="quiz" />
             <MatchReasons reasons={m.reasons} />
           </View>
         ))}
@@ -382,7 +382,7 @@ function QuizResult({
         <View style={styles.resultGrid}>
           {result.colleges.map((m) => (
             <View key={m.college.id} style={styles.resultCell}>
-              <CollegeCard college={m.college} />
+              <CollegeCard college={m.college} from="quiz" />
               <MatchReasons reasons={m.reasons} />
             </View>
           ))}
