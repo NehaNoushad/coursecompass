@@ -1,6 +1,6 @@
 import { Text as RNText, type TextProps, type TextStyle } from 'react-native';
 
-import { colors, fontSize, fontWeight } from '@/constants/theme';
+import { colors, fontFamily, fontSize, fontWeight } from '@/constants/theme';
 
 export type TextVariant =
   | 'display'
@@ -12,15 +12,20 @@ export type TextVariant =
   | 'label'
   | 'caption';
 
+// Display variants use Sora (the brand display face). The weight comes
+// baked into the loaded font file, so we set fontFamily but NOT
+// fontWeight on these — having both can produce platform-specific
+// synthesis weirdness. Body / label / caption stay on the system stack
+// since Inter isn't loaded yet and the system fonts render well enough.
 const VARIANT_STYLES: Record<TextVariant, TextStyle> = {
-  display: { fontSize: fontSize.x3l, fontWeight: fontWeight.bold, lineHeight: fontSize.x3l * 1.15 },
-  title: { fontSize: fontSize.x2l, fontWeight: fontWeight.bold, lineHeight: fontSize.x2l * 1.2 },
-  heading: { fontSize: fontSize.xl, fontWeight: fontWeight.semibold, lineHeight: fontSize.xl * 1.3 },
-  subheading: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, lineHeight: fontSize.lg * 1.4 },
-  body: { fontSize: fontSize.md, fontWeight: fontWeight.regular, lineHeight: fontSize.md * 1.5 },
-  bodySmall: { fontSize: fontSize.sm, fontWeight: fontWeight.regular, lineHeight: fontSize.sm * 1.5 },
-  label: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, lineHeight: fontSize.sm * 1.4 },
-  caption: { fontSize: fontSize.xs, fontWeight: fontWeight.medium, lineHeight: fontSize.xs * 1.4 },
+  display:    { fontFamily: fontFamily.displayHeavy,    fontSize: fontSize.x3l, lineHeight: fontSize.x3l * 1.05, letterSpacing: -1.2 },
+  title:      { fontFamily: fontFamily.display,         fontSize: fontSize.x2l, lineHeight: fontSize.x2l * 1.15, letterSpacing: -0.8 },
+  heading:    { fontFamily: fontFamily.displaySemibold, fontSize: fontSize.xl,  lineHeight: fontSize.xl  * 1.25, letterSpacing: -0.4 },
+  subheading: { fontFamily: fontFamily.displayMedium,   fontSize: fontSize.lg,  lineHeight: fontSize.lg  * 1.35, letterSpacing: -0.2 },
+  body:       { fontSize: fontSize.md, fontWeight: fontWeight.regular,  lineHeight: fontSize.md * 1.5 },
+  bodySmall:  { fontSize: fontSize.sm, fontWeight: fontWeight.regular,  lineHeight: fontSize.sm * 1.5 },
+  label:      { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, lineHeight: fontSize.sm * 1.4 },
+  caption:    { fontSize: fontSize.xs, fontWeight: fontWeight.medium,   lineHeight: fontSize.xs * 1.4 },
 };
 
 interface Props extends TextProps {
