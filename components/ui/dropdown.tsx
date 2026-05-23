@@ -5,19 +5,17 @@
  *   <Dropdown>             — single-select (Course / Stream / Type / Fees)
  *   <MultiSelectDropdown>  — multi-select with an "All" clear-all row (District)
  *
- * Both share the same trigger styling (chip-pill + chevron) and panel
- * styling (white card, soft shadow, scrollable). The panel closes when
- * the user clicks the dimmed backdrop, taps a single-select option, or
- * presses the trigger again.
+ * The panel is rendered via `position: 'fixed'` and positioned from the
+ * trigger's measured bounding rect. This sidesteps any z-index / stacking
+ * context / overflow:hidden issues from parent scroll containers — the
+ * panel always paints above the viewport, not inside its container.
  *
- * RN-web only for the backdrop: we use `position: fixed` so the
- * full-viewport hit area works no matter how deeply nested the
- * dropdown is. On native, the same pattern still works because
- * position:fixed in RN-web is just absolute relative to the viewport.
+ * Click-outside closes the panel via a document mousedown listener.
+ * Web only — RN native would need a Modal-based variant, deferred.
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { Text } from '@/components/ui/text';
@@ -32,6 +30,12 @@ import {
 export interface DropdownOption<T extends string> {
   value: T;
   label: string;
+}
+
+interface PanelPosition {
+  top: number;
+  left: number;
+  width: number;
 }
 
 function Chevron({ open }: { open: boolean }) {
@@ -98,20 +102,31 @@ export function Dropdown<T extends string>({
   value,
   onChange,
 }: DropdownProps<T>) {
+  const triggerRef = useRef<View>(null);
+  const panelRef = useRef<View>(null);
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<View>(null);
-  useOutsideClick(containerRef, open, () => setOpen(false));
+  const [pos, setPos] = useState<PanelPosition | null>(null);
+
+  const openPanel = () => {
+    const rect = measureTrigger(triggerRef);
+    if (rect) setPos(rect);
+    setOpen(true);
+  };
+
+  useOutsideClick(triggerRef, panelRef, open, () => setOpen(false));
+  useReposition(triggerRef, open, setPos);
 
   const selected = options.find((opt) => opt.value === value);
   const displayLabel = selected?.label ?? '—';
 
   return (
-    <View ref={containerRef} style={styles.container}>
+    <View style={styles.container}>
       <Text variant="label" muted style={styles.label}>
         {label}
       </Text>
       <Pressable
-        onPress={() => setOpen((o) => !o)}
+        ref={triggerRef}
+        onPress={() => (open ? setOpen(false) : openPanel())}
         style={({ pressed }) => [
           styles.trigger,
           open && styles.triggerOpen,
@@ -124,8 +139,8 @@ export function Dropdown<T extends string>({
         <Chevron open={open} />
       </Pressable>
 
-      {open ? (
-        <View style={styles.panel}>
+      {open && pos ? (
+        <View ref={panelRef} style={[styles.panel, panelStyle(pos)]}>
           <ScrollView
             style={styles.panelScroll}
             showsVerticalScrollIndicator={false}
@@ -188,9 +203,19 @@ export function MultiSelectDropdown<T extends string>({
   allLabel,
   pluralNoun,
 }: MultiSelectDropdownProps<T>) {
+  const triggerRef = useRef<View>(null);
+  const panelRef = useRef<View>(null);
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<View>(null);
-  useOutsideClick(containerRef, open, () => setOpen(false));
+  const [pos, setPos] = useState<PanelPosition | null>(null);
+
+  const openPanel = () => {
+    const rect = measureTrigger(triggerRef);
+    if (rect) setPos(rect);
+    setOpen(true);
+  };
+
+  useOutsideClick(triggerRef, panelRef, open, () => setOpen(false));
+  useReposition(triggerRef, open, setPos);
 
   // Display label on the trigger:
   //   0 selected → "All districts"
@@ -204,12 +229,13 @@ export function MultiSelectDropdown<T extends string>({
   }
 
   return (
-    <View ref={containerRef} style={styles.container}>
+    <View style={styles.container}>
       <Text variant="label" muted style={styles.label}>
         {label}
       </Text>
       <Pressable
-        onPress={() => setOpen((o) => !o)}
+        ref={triggerRef}
+        onPress={() => (open ? setOpen(false) : openPanel())}
         style={({ pressed }) => [
           styles.trigger,
           open && styles.triggerOpen,
@@ -222,8 +248,8 @@ export function MultiSelectDropdown<T extends string>({
         <Chevron open={open} />
       </Pressable>
 
-      {open ? (
-        <View style={styles.panel}>
+      {open && pos ? (
+        <View ref={panelRef} style={[styles.panel, panelStyle(pos)]}>
           <ScrollView
             style={styles.panelScroll}
             showsVerticalScrollIndicator={false}
@@ -274,14 +300,30 @@ export function MultiSelectDropdown<T extends string>({
   );
 }
 
+// ───────── Helpers ─────────
+
+/** Read the trigger's bounding rect, returning null on native (no DOM). */
+function measureTrigger(ref: React.RefObject<View | null>): PanelPosition | null {
+  if (typeof window === 'undefined') return null;
+  const node = ref.current as unknown as HTMLElement | null;
+  if (!node) return null;
+  const r = node.getBoundingClientRect();
+  return {
+    top: r.bottom + 4, // small gap below the trigger
+    left: r.left,
+    // Panel can be wider than the trigger so labels don't truncate, but
+    // never narrower.
+    width: Math.max(r.width, 240),
+  };
+}
+
 /**
  * Closes the dropdown when the user clicks anywhere outside the
- * container ref. Uses a document mousedown listener — only active
- * while `open` is true, and only on web (RN native doesn't have
- * `document`).
+ * trigger and panel. Web-only listener.
  */
 function useOutsideClick(
-  ref: React.RefObject<View | null>,
+  triggerRef: React.RefObject<View | null>,
+  panelRef: React.RefObject<View | null>,
   open: boolean,
   onClose: () => void,
 ) {
@@ -289,27 +331,56 @@ function useOutsideClick(
     if (!open) return;
     if (typeof document === 'undefined') return;
     function handler(e: MouseEvent) {
-      const node = ref.current as unknown as HTMLElement | null;
-      if (node && !node.contains(e.target as Node)) {
-        onClose();
-      }
+      const t = triggerRef.current as unknown as HTMLElement | null;
+      const p = panelRef.current as unknown as HTMLElement | null;
+      const target = e.target as Node;
+      if (t && t.contains(target)) return;
+      if (p && p.contains(target)) return;
+      onClose();
     }
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [ref, open, onClose]);
+  }, [triggerRef, panelRef, open, onClose]);
+}
+
+/**
+ * While the panel is open, re-measure on window resize / scroll so the
+ * panel stays glued under the trigger as the layout shifts.
+ */
+function useReposition(
+  ref: React.RefObject<View | null>,
+  open: boolean,
+  setPos: (p: PanelPosition) => void,
+) {
+  useEffect(() => {
+    if (!open) return;
+    if (typeof window === 'undefined') return;
+    function update() {
+      const r = measureTrigger(ref);
+      if (r) setPos(r);
+    }
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true); // capture phase
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [ref, open, setPos]);
+}
+
+function panelStyle(pos: PanelPosition): ViewStyle {
+  return {
+    position: 'fixed',
+    top: pos.top,
+    left: pos.left,
+    width: pos.width,
+  } as ViewStyle;
 }
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
     gap: spacing.sm,
-    // Each dropdown should be wide enough to fit "All districts" without
-    // truncation but not stretch to fill an entire row.
     minWidth: 200,
-    // High enough that the absolutely-positioned panel inside paints
-    // above any siblings (college / course cards in the grid below).
-    // 50 covers normal page content; the panel itself bumps to 100.
-    zIndex: 50,
   },
   label: {
     marginBottom: 0,
@@ -345,12 +416,6 @@ const styles = StyleSheet.create({
 
   // ─── Panel ───
   panel: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    marginTop: spacing.xs,
-    minWidth: 240,
-    maxWidth: 320,
     backgroundColor: colors.background,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -360,7 +425,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 32,
     elevation: 12,
-    zIndex: 100,
+    zIndex: 9999,
     overflow: 'hidden',
   },
   panelScroll: {
