@@ -94,7 +94,15 @@ export function SkyFinal() {
         <Text style={styles.sub}>
           Free, no signup needed for the first 10 minutes. The quiz takes 5.
         </Text>
-        <LinkButton href="/quiz" label="Start the quiz →" size="lg" />
+        {/* LinkButton bakes alignSelf:'flex-start' into its base style;
+            override it to alignSelf:'center' so the button sits in the
+            middle of the section instead of clinging to the left edge. */}
+        <LinkButton
+          href="/quiz"
+          label="Start the quiz →"
+          size="lg"
+          style={{ alignSelf: 'center' }}
+        />
       </View>
     </View>
   );
