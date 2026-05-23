@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CourseCompass — Plot your course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400;9..144,700;9..144,900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ───────── DESIGN TOKENS ─────────
+     This sketch reads as an aerial navigation chart. Cream parchment
+     paper, navy chart ink, a coral pin colour for "destination", and
+     a chart-blue for route lines and water. The brand is `CourseCompass`
+     — this prototype leans hard into the *compass* half. */
+  :root {
+    --paper:        #F4EBE0;
+    --paper-deep:   #ECE1D2;
+    --ink:          #0C1421;
+    --ink-soft:     #2C384A;
+    --ink-muted:    #6B7280;
+    --pin-coral:    #E8504D;
+    --pin-amber:    #F4A93A;
+    --route:        #6B97D8;
+    --haze:         #C8B89F;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  /* Subtle chart grid behind everything — tiny dots like a survey chart. */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: radial-gradient(circle, rgba(12, 20, 33, 0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  main, nav, footer { position: relative; z-index: 1; }
+
+  /* ───────── NAV ─────────
+     Top bar fixed; uses chart-tick lines and mono coordinates instead
+     of the conventional logo-and-links. */
+  .nav {
+    position: fixed; inset: 0 0 auto 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+    transition: background 0.3s ease, backdrop-filter 0.3s ease;
+    border-bottom: 1px solid transparent;
+  }
+  .nav.scrolled {
+    background: rgba(244, 235, 224, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom-color: rgba(12, 20, 33, 0.08);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 28px; height: 28px;
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: var(--ink);
+    font-family: 'Fraunces', serif;
+    font-weight: 900; font-size: 13px;
+  }
+  .brand-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+  }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 13px; font-weight: 500;
+    transition: color 0.2s;
+    position: relative;
+  }
+  .nav-links a::before {
+    content: '— ';
+    color: var(--haze);
+  }
+  .nav-links a:hover { color: var(--pin-coral); }
+  .nav-cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 0;
+    font-size: 13px; font-weight: 500;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .nav-cta:hover { background: var(--pin-coral); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+
+  /* ───────── HERO ─────────
+     Asymmetric: massive serif headline drops in, big rotating compass
+     rose ghosted at right, mono coordinate eyebrow, "you are here"
+     pin floats in the corner. */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    padding: 140px 32px 80px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    align-items: center;
+    gap: 40px;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+  .hero-text { position: relative; z-index: 2; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 2px;
+    color: var(--ink-soft);
+    margin-bottom: 36px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--ink);
+    width: fit-content;
+  }
+  .eyebrow .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--pin-coral); animation: ping 1.6s ease-in-out infinite; }
+  @keyframes ping { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
+
+  .h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(56px, 9vw, 144px);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    margin-bottom: 32px;
+    font-variation-settings: 'opsz' 144, 'SOFT' 0;
+  }
+  .h1 .your {
+    font-style: italic;
+    color: var(--pin-coral);
+    font-weight: 400;
+    font-variation-settings: 'opsz' 144, 'SOFT' 80;
+  }
+  .h1-line { display: block; opacity: 0; transform: translateY(40px); animation: fade-up 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  .h1-line:nth-child(1) { animation-delay: 0.3s; }
+  .h1-line:nth-child(2) { animation-delay: 0.5s; }
+  @keyframes fade-up { to { opacity: 1; transform: translateY(0); } }
+
+  .hero-sub {
+    font-size: 17px;
+    color: var(--ink-soft);
+    max-width: 460px;
+    margin-bottom: 40px;
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 0.7s forwards;
+  }
+
+  .cta-row {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 0.9s forwards;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 22px;
+    font-weight: 500; font-size: 14px;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    cursor: pointer; border: none;
+    border-radius: 0;
+  }
+  .btn-primary { background: var(--pin-coral); color: var(--paper); }
+  .btn-primary:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--ink); }
+  .btn-outline {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+  }
+  .btn-outline:hover { background: var(--ink); color: var(--paper); transform: translate(-2px, -2px); }
+
+  /* Hero compass illustration — big rotating SVG ghosted in. */
+  .hero-compass {
+    position: relative;
+    width: 100%; aspect-ratio: 1;
+    max-width: 520px;
+    margin-left: auto;
+    opacity: 0;
+    animation: rose-in 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 0.4s forwards;
+  }
+  @keyframes rose-in { to { opacity: 1; } }
+  .hero-compass svg { width: 100%; height: 100%; }
+  .hero-compass .rotating {
+    animation: spin 80s linear infinite;
+    transform-origin: 50% 50%;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* "You are here" pin in the corner */
+  .you-here {
+    position: absolute;
+    top: 110px; right: 32px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px;
+    color: var(--ink-soft);
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 1.2s forwards;
+  }
+  .you-here::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--pin-coral);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(232, 80, 77, 0.2);
+    animation: ping 2s ease-in-out infinite;
+  }
+
+  /* Marquee under hero — Kerala milestones tickering across like a chart legend. */
+  .marquee {
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding: 14px 0;
+    overflow: hidden;
+    background: var(--paper-deep);
+  }
+  .marquee-track {
+    display: inline-flex;
+    gap: 60px;
+    animation: marquee 40s linear infinite;
+    white-space: nowrap;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .marquee-track span::before {
+    content: '✦  ';
+    color: var(--pin-coral);
+    margin-right: 6px;
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* ───────── COORDINATES STRIP / STATS ─────────
+     Stats presented as instrument readings: big numerals, mono labels. */
+  .readings {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 80px 32px;
+    max-width: 1320px;
+    margin: 0 auto;
+    gap: 0;
+    border-bottom: 1px solid var(--ink);
+  }
+  .reading {
+    padding: 24px 24px;
+    border-right: 1px dashed var(--ink);
+    position: relative;
+  }
+  .reading:last-child { border-right: none; }
+  .reading-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--ink-muted);
+    margin-bottom: 16px;
+  }
+  .reading-num {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(48px, 5.5vw, 80px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+  .reading-suffix {
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  /* ───────── PLOT YOUR COURSE ─────────
+     Three feature cards laid out at staggered offsets, with a dotted
+     route SVG line connecting them that draws itself on scroll. */
+  .plot {
+    padding: 140px 32px;
+    max-width: 1320px; margin: 0 auto;
+    position: relative;
+  }
+  .section-eyebrow {
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 2px;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .section-eyebrow::before {
+    content: '— ';
+    color: var(--pin-coral);
+  }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(36px, 5vw, 72px);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+    max-width: 720px;
+    margin-bottom: 80px;
+  }
+  .section-title .italic { font-style: italic; color: var(--pin-coral); font-weight: 400; }
+
+  .waypoints {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+  }
+  .route-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 0;
+  }
+  .route-path {
+    fill: none;
+    stroke: var(--route);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 8;
+    stroke-dashoffset: 1000;
+    transition: stroke-dashoffset 2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .route-path.drawn { stroke-dashoffset: 0; }
+
+  .waypoint {
+    position: relative;
+    background: var(--paper-deep);
+    border: 1px solid var(--ink);
+    padding: 32px;
+    z-index: 1;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s;
+  }
+  .waypoint:nth-child(2) { transform: translateY(40px); }
+  .waypoint:nth-child(3) { transform: translateY(0); }
+  .waypoint:hover { transform: translateY(-8px); box-shadow: 8px 8px 0 var(--ink); }
+  .waypoint:nth-child(2):hover { transform: translate(0, 32px) translateY(-8px); }
+  .waypoint-marker {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed var(--ink);
+  }
+  .waypoint-step {
+    font-family: 'Fraunces', serif;
+    font-size: 48px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--pin-coral);
+  }
+  .waypoint-coords { font-size: 10px; color: var(--ink-muted); text-align: right; line-height: 1.5; }
+  .waypoint h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 26px; font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+  }
+  .waypoint p { font-size: 14px; color: var(--ink-soft); line-height: 1.65; }
+
+  /* ───────── THE COMPASS ROSE / HOW IT WORKS ─────────
+     A literal compass — large circular SVG with the 4 steps placed at
+     N/E/S/W. Hover a direction to highlight it. */
+  .rose-section {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 140px 32px;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    position: relative;
+    overflow: hidden;
+  }
+  .rose-section::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(244, 235, 224, 0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .rose-section .section-eyebrow { color: var(--haze); }
+  .rose-section .section-eyebrow::before { color: var(--pin-amber); }
+  .rose-section .section-title { color: var(--paper); }
+  .rose-section .section-title .italic { color: var(--pin-amber); }
+
+  .rose-layout {
+    max-width: 1320px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  .rose-illust { aspect-ratio: 1; position: relative; }
+  .rose-illust svg { width: 100%; height: 100%; }
+  .rose-illust .rotating { animation: spin 120s linear infinite; transform-origin: 50% 50%; }
+  .rose-illust .label {
+    position: absolute;
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 20px;
+    color: var(--paper);
+    letter-spacing: 0.1em;
+  }
+  .rose-illust .label-n { top: 0; left: 50%; transform: translate(-50%, -8px); }
+  .rose-illust .label-e { right: 0; top: 50%; transform: translate(8px, -50%); }
+  .rose-illust .label-s { bottom: 0; left: 50%; transform: translate(-50%, 8px); }
+  .rose-illust .label-w { left: 0; top: 50%; transform: translate(-8px, -50%); }
+
+  .steps-list { list-style: none; }
+  .steps-list li {
+    display: flex; gap: 24px;
+    padding: 28px 0;
+    border-bottom: 1px solid rgba(244, 235, 224, 0.1);
+    transition: padding 0.3s ease;
+    cursor: default;
+  }
+  .steps-list li:hover { padding-left: 16px; }
+  .steps-list li:last-child { border-bottom: none; }
+  .step-letter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--pin-amber);
+    letter-spacing: 2px;
+    margin-top: 4px;
+    min-width: 24px;
+  }
+  .step-content h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px; font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .step-content p { font-size: 14px; color: rgba(244, 235, 224, 0.7); line-height: 1.6; }
+
+  /* ───────── COURSES AS MAP PINS ───────── */
+  .pins {
+    padding: 140px 32px;
+    max-width: 1320px; margin: 0 auto;
+  }
+  .pin-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 24px;
+    margin-top: 40px;
+  }
+  .pin-card {
+    position: relative;
+    background: var(--paper-deep);
+    border: 1px solid var(--ink);
+    padding: 28px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+  }
+  .pin-card:hover { transform: translateY(-6px); box-shadow: 6px 6px 0 var(--ink); }
+  .pin-1 { grid-column: 1 / span 5; }
+  .pin-2 { grid-column: 6 / span 4; margin-top: 40px; }
+  .pin-3 { grid-column: 10 / span 3; }
+  .pin-4 { grid-column: 2 / span 4; margin-top: -20px; }
+  .pin-5 { grid-column: 6 / span 4; }
+  .pin-6 { grid-column: 10 / span 3; margin-top: 40px; }
+
+  .pin-marker {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 16px;
+  }
+  .pin-dot {
+    width: 10px; height: 10px;
+    background: var(--pin-coral);
+    border-radius: 50%;
+    transform: translateY(2px);
+  }
+  .pin-label {
+    font-size: 10px; letter-spacing: 2px;
+    color: var(--ink-muted);
+  }
+  .pin-card h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px; font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .pin-meta {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--ink);
+    display: flex; justify-content: space-between;
+  }
+
+  /* ───────── FINAL CTA ─────────
+     Horizon strip: deep ink block above, coral stripe at the bottom. */
+  .final {
+    position: relative;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 160px 32px 80px;
+    text-align: left;
+    overflow: hidden;
+  }
+  .final::after {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 40px;
+    background: var(--pin-coral);
+  }
+  .final-inner {
+    max-width: 1320px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 60px;
+    align-items: end;
+    position: relative;
+    z-index: 1;
+  }
+  .final h2 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(48px, 8vw, 128px);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 0.95;
+    color: var(--paper);
+  }
+  .final h2 .italic { font-style: italic; color: var(--pin-amber); font-weight: 400; }
+  .final-side p {
+    font-size: 15px;
+    color: rgba(244, 235, 224, 0.7);
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+  .final-side .btn {
+    background: var(--paper);
+    color: var(--ink);
+    padding: 16px 26px;
+    font-size: 14px;
+  }
+  .final-side .btn:hover {
+    background: var(--pin-amber);
+    color: var(--ink);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--pin-coral);
+  }
+
+  /* ───────── FOOTER ───────── */
+  footer {
+    background: var(--ink);
+    color: rgba(244, 235, 224, 0.5);
+    font-size: 12px;
+    padding: 60px 32px 32px;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid rgba(244, 235, 224, 0.1);
+  }
+  footer .coords { font-family: 'JetBrains Mono', monospace; }
+
+  /* ───────── SCROLL REVEAL ───────── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+                transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ───────── RESPONSIVE ───────── */
+  @media (max-width: 960px) {
+    .hero { grid-template-columns: 1fr; padding: 120px 24px 60px; }
+    .hero-compass { max-width: 320px; margin: 40px 0 0; }
+    .you-here { display: none; }
+    .readings { grid-template-columns: 1fr 1fr; }
+    .reading:nth-child(2n) { border-right: none; }
+    .reading:nth-child(-n+2) { border-bottom: 1px dashed var(--ink); }
+    .waypoints { grid-template-columns: 1fr; }
+    .waypoint:nth-child(2), .waypoint:nth-child(3) { transform: none; }
+    .route-svg { display: none; }
+    .rose-layout { grid-template-columns: 1fr; }
+    .pin-grid { grid-template-columns: 1fr; }
+    .pin-1, .pin-2, .pin-3, .pin-4, .pin-5, .pin-6 { grid-column: 1; margin-top: 0; }
+    .final-inner { grid-template-columns: 1fr; gap: 32px; align-items: start; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="brand">
+    <div class="brand-mark">C</div>
+    <span class="brand-name">CourseCompass</span>
+  </div>
+  <div class="nav-links">
+    <a href="#plot">Plot</a>
+    <a href="#rose">How it works</a>
+    <a href="#pins">Courses</a>
+  </div>
+  <a href="#final" class="nav-cta">Plot a route →</a>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="you-here mono">N 10.8505° · E 76.2711° · KERALA</div>
+
+    <div class="hero-text">
+      <div class="eyebrow mono">
+        <span class="dot"></span>
+        FOR KERALA 12TH-PASS · EST. 2026
+      </div>
+      <h1 class="h1">
+        <span class="h1-line">What's <span class="your">your</span></span>
+        <span class="h1-line">course?</span>
+      </h1>
+      <p class="hero-sub">
+        382 colleges. 176 courses. 37 entrance exams. CourseCompass turns the noise of <em>"what next?"</em> into a chart you can actually read.
+      </p>
+      <div class="cta-row">
+        <a href="#final" class="btn btn-primary">Plot a route <span aria-hidden="true">→</span></a>
+        <a href="#pins" class="btn btn-outline">View the chart</a>
+      </div>
+    </div>
+
+    <!-- COMPASS ROSE — large, slowly rotating, ghosted -->
+    <div class="hero-compass" aria-hidden="true">
+      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <!-- Outer rings -->
+        <circle cx="200" cy="200" r="195" fill="none" stroke="#0C1421" stroke-width="1"/>
+        <circle cx="200" cy="200" r="170" fill="none" stroke="#0C1421" stroke-width="0.5" stroke-dasharray="2 4"/>
+        <circle cx="200" cy="200" r="120" fill="none" stroke="#0C1421" stroke-width="0.5"/>
+        <!-- Rotating rose -->
+        <g class="rotating">
+          <!-- Star points (N E S W and diagonals) -->
+          <polygon points="200,30 215,200 200,200" fill="#E8504D"/>
+          <polygon points="200,30 185,200 200,200" fill="#0C1421"/>
+          <polygon points="370,200 200,215 200,200" fill="#0C1421"/>
+          <polygon points="370,200 200,185 200,200" fill="#0C1421"/>
+          <polygon points="200,370 215,200 200,200" fill="#0C1421"/>
+          <polygon points="200,370 185,200 200,200" fill="#0C1421"/>
+          <polygon points="30,200 200,215 200,200" fill="#0C1421"/>
+          <polygon points="30,200 200,185 200,200" fill="#0C1421"/>
+          <!-- Diagonal smaller points -->
+          <polygon points="320,80 210,200 200,200" fill="#0C1421" opacity="0.6"/>
+          <polygon points="320,80 200,210 200,200" fill="#0C1421" opacity="0.6"/>
+          <polygon points="320,320 210,200 200,200" fill="#0C1421" opacity="0.6"/>
+          <polygon points="320,320 200,190 200,200" fill="#0C1421" opacity="0.6"/>
+          <polygon points="80,320 190,200 200,200" fill="#0C1421" opacity="0.6"/>
+          <polygon points="80,320 200,210 200,200" fill="#0C1421" opacity="0.6"/>
+          <polygon points="80,80 190,200 200,200" fill="#0C1421" opacity="0.6"/>
+          <polygon points="80,80 200,190 200,200" fill="#0C1421" opacity="0.6"/>
+        </g>
+        <!-- Fixed labels -->
+        <text x="200" y="20" text-anchor="middle" font-family="Fraunces, serif" font-weight="900" font-size="18" fill="#0C1421">N</text>
+        <text x="385" y="205" text-anchor="middle" font-family="Fraunces, serif" font-weight="900" font-size="18" fill="#0C1421">E</text>
+        <text x="200" y="395" text-anchor="middle" font-family="Fraunces, serif" font-weight="900" font-size="18" fill="#0C1421">S</text>
+        <text x="15" y="205" text-anchor="middle" font-family="Fraunces, serif" font-weight="900" font-size="18" fill="#0C1421">W</text>
+        <!-- Centre dot -->
+        <circle cx="200" cy="200" r="4" fill="#E8504D"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- MARQUEE / CHART LEGEND -->
+  <div class="marquee mono">
+    <div class="marquee-track">
+      <span>KEAM 2026 OPENS APRIL</span>
+      <span>NEET UG 2026 — MAY 04</span>
+      <span>CUET UG — MAY 13 TO MAY 31</span>
+      <span>14 DISTRICTS · 382 COLLEGES</span>
+      <span>176 COURSES AFTER 12TH</span>
+      <span>FREE TO BROWSE · NO ADS</span>
+      <!-- duplicate so the loop is seamless -->
+      <span>KEAM 2026 OPENS APRIL</span>
+      <span>NEET UG 2026 — MAY 04</span>
+      <span>CUET UG — MAY 13 TO MAY 31</span>
+      <span>14 DISTRICTS · 382 COLLEGES</span>
+      <span>176 COURSES AFTER 12TH</span>
+      <span>FREE TO BROWSE · NO ADS</span>
+    </div>
+  </div>
+
+  <!-- COORDINATES / STATS STRIP -->
+  <section class="readings">
+    <div class="reading reveal">
+      <div class="reading-label mono">// COLLEGES</div>
+      <div class="reading-num" data-target="382">382</div>
+      <div class="reading-suffix mono">across 14 districts</div>
+    </div>
+    <div class="reading reveal">
+      <div class="reading-label mono">// COURSES</div>
+      <div class="reading-num" data-target="176">176</div>
+      <div class="reading-suffix mono">undergraduate programmes</div>
+    </div>
+    <div class="reading reveal">
+      <div class="reading-label mono">// EXAMS</div>
+      <div class="reading-num" data-target="37">37</div>
+      <div class="reading-suffix mono">entrance exams mapped</div>
+    </div>
+    <div class="reading reveal">
+      <div class="reading-label mono">// QUIZ</div>
+      <div class="reading-num" data-target="6">6</div>
+      <div class="reading-suffix mono">questions to your answer</div>
+    </div>
+  </section>
+
+  <!-- PLOT YOUR COURSE — 3 waypoints with dotted route connecting them -->
+  <section class="plot" id="plot">
+    <div class="section-eyebrow reveal">WHAT YOU CAN DO HERE</div>
+    <h2 class="section-title reveal">Plot a route that's <span class="italic">actually yours.</span></h2>
+
+    <div class="waypoints">
+      <!-- Dotted route SVG behind the cards -->
+      <svg class="route-svg" preserveAspectRatio="none" aria-hidden="true">
+        <path class="route-path" id="route1" d="M 16% 30% Q 33% 50%, 50% 70% T 84% 30%" />
+      </svg>
+
+      <div class="waypoint reveal">
+        <div class="waypoint-marker">
+          <div class="waypoint-step">01</div>
+          <div class="waypoint-coords mono">WP-01<br/>BEGIN</div>
+        </div>
+        <h3>Take the 6-question quiz</h3>
+        <p>Stream, marks, district, fees, interests. The recommendation engine matches you to courses with reasons attached — not opaque rankings.</p>
+      </div>
+
+      <div class="waypoint reveal">
+        <div class="waypoint-marker">
+          <div class="waypoint-step">02</div>
+          <div class="waypoint-coords mono">WP-02<br/>BROWSE</div>
+        </div>
+        <h3>Read the chart</h3>
+        <p>Every Kerala college and course they offer. Filter by district, type, fees, entrance exam. No "sponsored" tiles. No 2019 listicles.</p>
+      </div>
+
+      <div class="waypoint reveal">
+        <div class="waypoint-marker">
+          <div class="waypoint-step">03</div>
+          <div class="waypoint-coords mono">WP-03<br/>LAND</div>
+        </div>
+        <h3>Decide and shortlist</h3>
+        <p>Save what you like. Compare side-by-side. Walk away with a clear answer — and the entrance exams you'll need to clear it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPASS ROSE / HOW IT WORKS -->
+  <section class="rose-section" id="rose">
+    <div class="rose-layout">
+      <div class="rose-illust reveal" aria-hidden="true">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="200" cy="200" r="195" fill="none" stroke="#F4EBE0" stroke-width="1" opacity="0.5"/>
+          <circle cx="200" cy="200" r="160" fill="none" stroke="#F4EBE0" stroke-width="0.5" stroke-dasharray="2 4" opacity="0.4"/>
+          <circle cx="200" cy="200" r="100" fill="none" stroke="#F4EBE0" stroke-width="0.5" opacity="0.3"/>
+          <g class="rotating">
+            <polygon points="200,40 215,200 200,200" fill="#F4A93A"/>
+            <polygon points="200,40 185,200 200,200" fill="#F4EBE0"/>
+            <polygon points="360,200 200,215 200,200" fill="#F4EBE0"/>
+            <polygon points="360,200 200,185 200,200" fill="#F4EBE0"/>
+            <polygon points="200,360 215,200 200,200" fill="#F4EBE0"/>
+            <polygon points="200,360 185,200 200,200" fill="#F4EBE0"/>
+            <polygon points="40,200 200,215 200,200" fill="#F4EBE0"/>
+            <polygon points="40,200 200,185 200,200" fill="#F4EBE0"/>
+            <polygon points="312,88 210,200 200,200" fill="#F4EBE0" opacity="0.4"/>
+            <polygon points="312,88 200,210 200,200" fill="#F4EBE0" opacity="0.4"/>
+            <polygon points="312,312 210,200 200,200" fill="#F4EBE0" opacity="0.4"/>
+            <polygon points="312,312 200,190 200,200" fill="#F4EBE0" opacity="0.4"/>
+            <polygon points="88,312 190,200 200,200" fill="#F4EBE0" opacity="0.4"/>
+            <polygon points="88,312 200,210 200,200" fill="#F4EBE0" opacity="0.4"/>
+            <polygon points="88,88 190,200 200,200" fill="#F4EBE0" opacity="0.4"/>
+            <polygon points="88,88 200,190 200,200" fill="#F4EBE0" opacity="0.4"/>
+          </g>
+          <circle cx="200" cy="200" r="4" fill="#F4A93A"/>
+        </svg>
+        <span class="label label-n">N</span>
+        <span class="label label-e">E</span>
+        <span class="label label-s">S</span>
+        <span class="label label-w">W</span>
+      </div>
+
+      <div>
+        <div class="section-eyebrow reveal">HOW IT WORKS</div>
+        <h2 class="section-title reveal">From "<span class="italic">I have no idea</span>" to "I know what I want" — in five minutes.</h2>
+        <ol class="steps-list">
+          <li class="reveal">
+            <span class="step-letter mono">N /</span>
+            <div class="step-content">
+              <h3>Orient</h3>
+              <p>Tell the quiz where you stand — stream, marks, district, what excites you, what scares you.</p>
+            </div>
+          </li>
+          <li class="reveal">
+            <span class="step-letter mono">E /</span>
+            <div class="step-content">
+              <h3>Map matches</h3>
+              <p>Courses ranked by fit, with a reason for each. The exam each course needs is right there too.</p>
+            </div>
+          </li>
+          <li class="reveal">
+            <span class="step-letter mono">S /</span>
+            <div class="step-content">
+              <h3>Survey colleges</h3>
+              <p>Real Kerala colleges offering your matched courses, filterable by district, type, fees.</p>
+            </div>
+          </li>
+          <li class="reveal">
+            <span class="step-letter mono">W /</span>
+            <div class="step-content">
+              <h3>Land on a plan</h3>
+              <p>Save what you like to your account. Or buy the full personalised PDF report — coming 2027.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- COURSES AS PINS ON A CHART -->
+  <section class="pins" id="pins">
+    <div class="section-eyebrow reveal">SOME OF THE 176</div>
+    <h2 class="section-title reveal">There's more after 12th than "<span class="italic">engineering or medicine.</span>"</h2>
+
+    <div class="pin-grid">
+      <div class="pin-card pin-1 reveal">
+        <div class="pin-marker">
+          <span class="pin-dot"></span>
+          <span class="pin-label mono">ENGINEERING / 33 SUB-BRANCHES</span>
+        </div>
+        <h3>B.Tech Computer Science Engineering</h3>
+        <div class="pin-meta mono">
+          <span>KEAM · JEE Main</span>
+          <span>4 years</span>
+        </div>
+      </div>
+      <div class="pin-card pin-2 reveal">
+        <div class="pin-marker">
+          <span class="pin-dot"></span>
+          <span class="pin-label mono">DESIGN / 6 COURSES</span>
+        </div>
+        <h3>B.Des Communication Design</h3>
+        <div class="pin-meta mono">
+          <span>NID DAT · UCEED</span>
+          <span>4 years</span>
+        </div>
+      </div>
+      <div class="pin-card pin-3 reveal">
+        <div class="pin-marker">
+          <span class="pin-dot"></span>
+          <span class="pin-label mono">PURE SCIENCES</span>
+        </div>
+        <h3>BS-MS Integrated</h3>
+        <div class="pin-meta mono">
+          <span>IISER · NEST</span>
+          <span>5 years</span>
+        </div>
+      </div>
+      <div class="pin-card pin-4 reveal">
+        <div class="pin-marker">
+          <span class="pin-dot"></span>
+          <span class="pin-label mono">HOSPITALITY</span>
+        </div>
+        <h3>B.HMCT Hotel Management</h3>
+        <div class="pin-meta mono">
+          <span>NCHM JEE</span>
+          <span>4 years</span>
+        </div>
+      </div>
+      <div class="pin-card pin-5 reveal">
+        <div class="pin-marker">
+          <span class="pin-dot"></span>
+          <span class="pin-label mono">LAW / 4 COURSES</span>
+        </div>
+        <h3>BA LLB (Hons.)</h3>
+        <div class="pin-meta mono">
+          <span>CLAT · KLEE</span>
+          <span>5 years</span>
+        </div>
+      </div>
+      <div class="pin-card pin-6 reveal">
+        <div class="pin-marker">
+          <span class="pin-dot"></span>
+          <span class="pin-label mono">MEDICAL</span>
+        </div>
+        <h3>MBBS</h3>
+        <div class="pin-meta mono">
+          <span>NEET UG</span>
+          <span>5.5 years</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA — horizon -->
+  <section class="final" id="final">
+    <div class="final-inner">
+      <h2>Ready to <span class="italic">set a course?</span></h2>
+      <div class="final-side">
+        <p>Free to browse for ten minutes — no account needed. The quiz takes five.</p>
+        <a href="#" class="btn">Start the quiz <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>CourseCompass — Kerala, India · est. 2026.</span>
+  <span class="coords">N 10.8505° · E 76.2711°</span>
+</footer>
+
+<script>
+  // ───────── NAV FROST ON SCROLL ─────────
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 50);
+  }, { passive: true });
+
+  // ───────── REVEAL ON SCROLL ─────────
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('visible');
+      const num = e.target.querySelector?.('.reading-num');
+      if (num) animateNumber(num);
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -10% 0px' });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // ───────── STAT COUNT-UP ─────────
+  function animateNumber(el) {
+    if (el.dataset.animated) return;
+    el.dataset.animated = 'true';
+    const target = parseInt(el.dataset.target, 10);
+    const duration = 1400;
+    const startedAt = performance.now();
+    el.textContent = '0';
+    function tick(now) {
+      const t = Math.min(1, (now - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(eased * target).toLocaleString();
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // ───────── ROUTE LINE DRAWS ITSELF ─────────
+  const routeObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('drawn');
+        // Set stroke-dashoffset to actual path length so it draws cleanly
+        const len = e.target.getTotalLength?.() ?? 1000;
+        e.target.style.strokeDasharray = `6 8`;
+        e.target.style.strokeDashoffset = '0';
+      }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.route-path').forEach(p => routeObs.observe(p));
+
+  // ───────── HERO "YOU ARE HERE" — coords echo cursor for fun ─────────
+  const youHere = document.querySelector('.you-here');
+  const heroEl = document.querySelector('.hero');
+  let baseCoords = 'N 10.8505° · E 76.2711° · KERALA';
+  heroEl.addEventListener('mousemove', (e) => {
+    const r = heroEl.getBoundingClientRect();
+    const lat = (10.85 + ((e.clientY - r.top) / r.height - 0.5) * 0.1).toFixed(4);
+    const lon = (76.27 + ((e.clientX - r.left) / r.width - 0.5) * 0.1).toFixed(4);
+    youHere.textContent = `N ${lat}° · E ${lon}° · KERALA`;
+  });
+  heroEl.addEventListener('mouseleave', () => { youHere.textContent = baseCoords; });
+</script>
+
+</body>
+</html>

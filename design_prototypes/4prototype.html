@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CourseCompass — Look up. Way up.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ───────── DESIGN TOKENS ─────────
+     Bright clear blue sky — the "wide open" prototype. Where the
+     dawn (#1) and dusk (#3) versions use vertical gradients walking
+     through the day, this one lives in the *middle* of the day:
+     bright cyan-blue, big white clouds, a small yellow sun, lots of
+     air. The personality is more playful than cinematic — friendlier
+     typography (Sora — round modern sans), a paper-plane motif,
+     occasional handwritten accents in Caveat. */
+  :root {
+    --sky-pale:    #E8F4FD;
+    --sky-bright:  #87CEEB;
+    --sky-mid:     #4FA3E0;
+    --sky-deep:    #2D7DD2;
+    --sky-anchor:  #1F5FA0;
+
+    --cloud:       #FFFFFF;
+    --cloud-shadow: rgba(31, 95, 160, 0.08);
+
+    --sun:         #FFD93D;
+    --sun-glow:    #FFE680;
+    --coral:       #FF8C7A;
+
+    --ink:         #0D2840;
+    --ink-soft:    #4A5A6E;
+    --ink-muted:   #8895A6;
+
+    --paper:       #FBFCFE;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display { font-family: 'Sora', system-ui, sans-serif; }
+  .hand    { font-family: 'Caveat', cursive; }
+
+  /* ───────── NAV ─────────
+     Sits transparently on the bright sky, then gains a frosted white
+     background on scroll. */
+  .nav {
+    position: fixed; inset: 0 0 auto 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 40px;
+    transition: background 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease;
+    border-bottom: 1px solid transparent;
+  }
+  .nav.scrolled {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom-color: rgba(31, 95, 160, 0.1);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
+  }
+  .brand-mark svg { width: 18px; height: 18px; fill: white; }
+  .nav-links { display: flex; gap: 32px; }
+  .nav-links a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px; font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--sky-deep); }
+  .nav-cta {
+    padding: 10px 18px;
+    background: var(--ink);
+    color: white;
+    border-radius: 999px;
+    font-size: 14px; font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+  }
+  .nav-cta:hover { background: var(--sky-deep); transform: translateY(-1px); box-shadow: 0 10px 24px rgba(45, 125, 210, 0.35); }
+
+  /* ───────── HERO ─────────
+     Bright blue sky with big puffy clouds and a small yellow sun in
+     the corner. The paper plane is the brand's recurring motif — it
+     appears here in the hero and shows up again at the close. */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    background: linear-gradient(
+      180deg,
+      var(--sky-bright) 0%,
+      var(--sky-mid) 60%,
+      var(--sky-deep) 100%
+    );
+    overflow: hidden;
+    display: flex; align-items: center;
+  }
+  .hero::after {
+    /* Soft fade into the next section. */
+    content: '';
+    position: absolute; inset: auto 0 0 0;
+    height: 12vh;
+    background: linear-gradient(to bottom, transparent, var(--paper));
+    pointer-events: none;
+  }
+
+  /* Sun — small, bright, in the top-right corner */
+  .sun {
+    position: absolute;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--sun-glow) 0%, var(--sun) 50%, transparent 80%);
+    top: 12%; right: 10%;
+    filter: blur(0.5px);
+    box-shadow: 0 0 80px 20px rgba(255, 217, 61, 0.4);
+    animation: sun-fade 1.4s ease-out both;
+  }
+  @keyframes sun-fade {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* Big puffy clouds drifting at different speeds */
+  .cloud {
+    position: absolute;
+    fill: var(--cloud);
+    filter: drop-shadow(0 8px 24px var(--cloud-shadow));
+    pointer-events: none;
+  }
+  .cloud-1 { top: 22%; left: -8%;  width: 260px; animation: drift-right 70s linear infinite; }
+  .cloud-2 { top: 14%; right: 25%; width: 180px; animation: drift-left  90s linear infinite; opacity: 0.95; }
+  .cloud-3 { top: 50%; left: -12%; width: 320px; animation: drift-right 100s linear infinite; opacity: 0.7; }
+  .cloud-4 { top: 60%; right: -10%; width: 200px; animation: drift-left  60s linear infinite; opacity: 0.85; }
+  .cloud-5 { top: 75%; left: 30%;  width: 140px; animation: drift-right 80s linear infinite; opacity: 0.6; }
+  @keyframes drift-right { to { transform: translateX(120vw); } }
+  @keyframes drift-left  { to { transform: translateX(-120vw); } }
+
+  /* Paper plane — the hero motif */
+  .paper-plane {
+    position: absolute;
+    width: 80px; height: 80px;
+    top: 28%; right: 18%;
+    z-index: 3;
+    animation: plane-loop 8s ease-in-out infinite;
+    filter: drop-shadow(0 8px 24px rgba(31, 95, 160, 0.3));
+  }
+  @keyframes plane-loop {
+    0%, 100% { transform: translate(0, 0) rotate(-12deg); }
+    25%      { transform: translate(20px, -16px) rotate(-8deg); }
+    50%      { transform: translate(40px, -8px) rotate(-15deg); }
+    75%      { transform: translate(10px, -20px) rotate(-10deg); }
+  }
+  /* Dotted flight trail behind the plane */
+  .plane-trail {
+    position: absolute;
+    top: 32%; right: 28%;
+    width: 200px; height: 100px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    animation: fade-in 1.2s ease-out 1.5s forwards;
+  }
+  @keyframes fade-in { to { opacity: 1; } }
+
+  /* Hero content */
+  .hero-content {
+    position: relative; z-index: 4;
+    max-width: 1100px; margin: 0 auto; width: 100%;
+    padding: 0 40px;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 600;
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 10px 18px;
+    border-radius: 999px;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 0.3s forwards;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--coral);
+    box-shadow: 0 0 0 4px rgba(255, 140, 122, 0.25);
+    animation: ping 1.6s ease-in-out infinite;
+  }
+  @keyframes ping {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.3); opacity: 0.7; }
+  }
+  .h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(72px, 14vw, 220px);
+    font-weight: 800;
+    line-height: 0.88;
+    letter-spacing: -0.05em;
+    color: var(--ink);
+    margin-bottom: 40px;
+  }
+  .h1 .line {
+    display: block;
+    opacity: 0;
+    transform: translateY(40px);
+    animation: fade-up 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+  .h1 .line:nth-child(1) { animation-delay: 0.5s; }
+  .h1 .line:nth-child(2) { animation-delay: 0.75s; }
+  .h1 .way {
+    background: linear-gradient(110deg, var(--sky-deep), var(--coral));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  @keyframes fade-up { to { opacity: 1; transform: translateY(0); } }
+
+  .hero-sub {
+    font-size: clamp(17px, 1.7vw, 21px);
+    color: var(--ink);
+    max-width: 540px;
+    margin-bottom: 44px;
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 1.0s forwards;
+    line-height: 1.55;
+  }
+  .hand-accent {
+    display: inline-block;
+    color: var(--sky-deep);
+    font-size: 1.4em;
+    line-height: 0.8;
+    transform: translateY(4px);
+  }
+
+  .cta-row {
+    display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 1.2s forwards;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 18px 30px;
+    border-radius: 999px;
+    font-weight: 600; font-size: 15px;
+    text-decoration: none;
+    transition: transform 0.25s, box-shadow 0.25s, background 0.25s;
+    cursor: pointer; border: none;
+  }
+  .btn-primary {
+    background: var(--ink);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--sky-deep);
+    transform: translateY(-2px);
+    box-shadow: 0 18px 40px rgba(45, 125, 210, 0.4);
+  }
+  .btn-ghost {
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--ink);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-2px);
+  }
+  .cta-note {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    color: var(--ink);
+    margin-left: 8px;
+    transform: rotate(-3deg);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .cta-note::before {
+    content: '↖';
+    font-family: system-ui;
+    font-size: 18px;
+  }
+
+  /* ───────── STATS ─────────
+     Floating "cards" on a soft sky-pale background. */
+  .stats {
+    padding: 120px 40px;
+    background: var(--paper);
+    text-align: center;
+  }
+  .stats-row {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  .stat {
+    background: var(--sky-pale);
+    border-radius: 24px;
+    padding: 40px 24px;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s;
+  }
+  .stat:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px -10px rgba(31, 95, 160, 0.2);
+  }
+  .stat-num {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(56px, 7vw, 96px);
+    font-weight: 800;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--sky-deep), var(--sky-anchor));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.04em;
+  }
+  .stat-label {
+    font-size: 13px; font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 16px;
+  }
+
+  /* ───────── FEATURE CLOUDS ─────────
+     Three feature cards shaped softly like big puffy cloud forms. */
+  .features {
+    padding: 140px 40px;
+    background: linear-gradient(180deg, var(--paper) 0%, var(--sky-pale) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .features-bg-cloud {
+    position: absolute;
+    fill: var(--cloud);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .features-bg-cloud-1 { width: 220px; top: 8%; left: 4%; }
+  .features-bg-cloud-2 { width: 180px; bottom: 12%; right: 8%; opacity: 0.4; }
+  .features-inner { max-width: 1200px; margin: 0 auto; position: relative; }
+  .section-eyebrow {
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--sky-deep);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(42px, 5.5vw, 80px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+    max-width: 720px;
+    margin-bottom: 64px;
+    color: var(--ink);
+  }
+  .section-title .accent {
+    background: linear-gradient(110deg, var(--sky-deep), var(--coral));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .feature-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;
+  }
+  .feature {
+    position: relative;
+    padding: 40px;
+    border-radius: 32px;
+    background: var(--cloud);
+    box-shadow: 0 10px 40px -10px rgba(31, 95, 160, 0.15);
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s;
+    overflow: hidden;
+  }
+  .feature:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 30px 60px -10px rgba(31, 95, 160, 0.25);
+  }
+  .feature::before {
+    /* Tiny extra cloud puff in the corner */
+    content: '';
+    position: absolute;
+    width: 60px; height: 60px;
+    background: var(--sky-pale);
+    border-radius: 50%;
+    top: -20px; right: -20px;
+    opacity: 0.7;
+  }
+  .feature-icon {
+    width: 60px; height: 60px;
+    border-radius: 18px;
+    display: grid; place-items: center;
+    margin-bottom: 28px;
+    position: relative;
+  }
+  .feature-1 .feature-icon { background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep)); }
+  .feature-2 .feature-icon { background: linear-gradient(135deg, var(--sun), var(--coral)); }
+  .feature-3 .feature-icon { background: linear-gradient(135deg, var(--sky-deep), var(--sky-anchor)); }
+  .feature-icon svg { stroke: white; }
+  .feature-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 24px; font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .feature-text {
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.65;
+    position: relative;
+  }
+
+  /* ───────── HOW IT WORKS ─────────
+     Four steps with a dotted "flight path" connecting them, plus a
+     small paper plane at the start. */
+  .how {
+    padding: 140px 40px;
+    background: var(--sky-pale);
+    position: relative;
+  }
+  .how-inner { max-width: 1200px; margin: 0 auto; }
+  .how-steps {
+    margin-top: 80px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    position: relative;
+  }
+  .flight-path {
+    position: absolute;
+    top: 60px; left: 0; right: 0;
+    height: 40px;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .flight-path path {
+    fill: none;
+    stroke: var(--sky-deep);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 8;
+    stroke-dashoffset: 1200;
+    transition: stroke-dashoffset 2.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    opacity: 0.6;
+  }
+  .flight-path.drawn path { stroke-dashoffset: 0; }
+  .step {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 24px;
+  }
+  .step-num {
+    width: 60px; height: 60px;
+    margin: 0 auto 20px;
+    background: var(--cloud);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: 'Sora', sans-serif;
+    font-size: 22px; font-weight: 700;
+    color: var(--sky-deep);
+    box-shadow: 0 8px 24px rgba(31, 95, 160, 0.2);
+  }
+  .step h3 { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .step p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
+
+  /* ───────── COURSES PEEK ─────────
+     Bright sky-blue gradient tiles. */
+  .courses {
+    padding: 140px 40px;
+    background: var(--paper);
+  }
+  .courses-inner { max-width: 1200px; margin: 0 auto; }
+  .course-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+  }
+  .course-tile {
+    position: relative;
+    aspect-ratio: 3/4;
+    border-radius: 28px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex; align-items: flex-end;
+    padding: 28px;
+    color: white;
+  }
+  .course-tile:hover { transform: translateY(-10px) rotate(-1.5deg); }
+  .course-tile-1 { background: linear-gradient(160deg, #87CEEB, #4FA3E0); }
+  .course-tile-2 { background: linear-gradient(160deg, #4FA3E0, #2D7DD2); }
+  .course-tile-3 { background: linear-gradient(160deg, #FFD93D, #FF8C7A); color: var(--ink); }
+  .course-tile-4 { background: linear-gradient(160deg, #2D7DD2, #1F5FA0); }
+  .course-tile::before {
+    content: '';
+    position: absolute;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    top: -40px; right: -40px;
+  }
+  .course-tile::after {
+    content: '';
+    position: absolute;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    top: 30px; right: 20px;
+  }
+  .course-tile h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 22px; font-weight: 700;
+    letter-spacing: -0.01em; line-height: 1.15;
+    position: relative; z-index: 1;
+  }
+  .course-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    opacity: 0.85;
+    position: relative; z-index: 1;
+  }
+
+  /* ───────── FINAL CTA ─────────
+     Bright sky → sun gradient. The paper plane returns here, having
+     "arrived" at its destination. */
+  .final {
+    position: relative;
+    padding: 180px 40px 100px;
+    background: linear-gradient(160deg, var(--sky-bright) 0%, var(--sky-mid) 50%, var(--sun) 100%);
+    color: var(--ink);
+    text-align: center;
+    overflow: hidden;
+  }
+  .final .cloud {
+    position: absolute;
+  }
+  .final .cloud-a { top: 15%; left: -10%; width: 220px; opacity: 0.7; }
+  .final .cloud-b { top: 30%; right: -8%; width: 180px; opacity: 0.6; }
+  .final .cloud-c { bottom: 20%; left: 20%; width: 140px; opacity: 0.5; }
+
+  .final .paper-plane {
+    position: absolute;
+    width: 60px; height: 60px;
+    top: 60px; left: 20%;
+    transform: rotate(15deg);
+    animation: none;
+    filter: drop-shadow(0 8px 20px rgba(31, 95, 160, 0.25));
+  }
+
+  .final-content { position: relative; z-index: 2; max-width: 800px; margin: 0 auto; }
+  .final h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(48px, 8vw, 120px);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-bottom: 28px;
+  }
+  .final h2 .accent {
+    color: var(--coral);
+  }
+  .final p {
+    font-size: clamp(17px, 1.7vw, 22px);
+    color: var(--ink);
+    opacity: 0.8;
+    margin-bottom: 44px;
+    line-height: 1.55;
+  }
+  .final .btn-primary {
+    background: var(--ink);
+    color: white;
+    font-size: 16px;
+    padding: 22px 38px;
+  }
+  .final .btn-primary:hover {
+    background: var(--coral);
+    color: var(--ink);
+    transform: translateY(-2px);
+    box-shadow: 0 18px 50px rgba(255, 140, 122, 0.4);
+  }
+
+  /* ───────── FOOTER ───────── */
+  footer {
+    background: var(--ink);
+    color: rgba(255, 255, 255, 0.55);
+    padding: 50px 40px;
+    text-align: center;
+    font-size: 13px;
+  }
+
+  /* ───────── SCROLL REVEAL ───────── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+                transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ───────── RESPONSIVE ───────── */
+  @media (max-width: 960px) {
+    .nav { padding: 16px 20px; }
+    .nav-links { display: none; }
+    .stats-row { grid-template-columns: 1fr 1fr; gap: 16px; }
+    .feature-grid { grid-template-columns: 1fr; gap: 20px; }
+    .how-steps { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .flight-path { display: none; }
+    .course-grid { grid-template-columns: 1fr 1fr; }
+    .stats, .features, .how, .courses { padding: 100px 24px; }
+    .final { padding: 120px 24px 80px; }
+    .paper-plane { width: 56px; height: 56px; top: 35%; right: 8%; }
+    .plane-trail { display: none; }
+  }
+  @media (max-width: 520px) {
+    .stats-row, .how-steps, .course-grid { grid-template-columns: 1fr; }
+    .cta-note { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="brand">
+    <div class="brand-mark">
+      <!-- Paper plane brand mark -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span>CourseCompass</span>
+  </div>
+  <div class="nav-links">
+    <a href="#features">What you can do</a>
+    <a href="#how">How it works</a>
+    <a href="#courses">Courses</a>
+  </div>
+  <a href="#final" class="nav-cta">Take the quiz</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="sun"></div>
+
+  <!-- Big puffy clouds -->
+  <svg class="cloud cloud-1" viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60"  cy="65" rx="50" ry="32"/>
+    <ellipse cx="115" cy="50" rx="55" ry="38"/>
+    <ellipse cx="170" cy="60" rx="45" ry="32"/>
+    <ellipse cx="200" cy="70" rx="35" ry="24"/>
+  </svg>
+  <svg class="cloud cloud-2" viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60"  cy="65" rx="50" ry="32"/>
+    <ellipse cx="115" cy="50" rx="55" ry="38"/>
+    <ellipse cx="170" cy="60" rx="45" ry="32"/>
+  </svg>
+  <svg class="cloud cloud-3" viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60"  cy="65" rx="50" ry="32"/>
+    <ellipse cx="115" cy="50" rx="55" ry="38"/>
+    <ellipse cx="170" cy="60" rx="45" ry="32"/>
+    <ellipse cx="210" cy="68" rx="30" ry="22"/>
+  </svg>
+  <svg class="cloud cloud-4" viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60"  cy="65" rx="50" ry="32"/>
+    <ellipse cx="115" cy="50" rx="55" ry="38"/>
+    <ellipse cx="170" cy="60" rx="45" ry="32"/>
+  </svg>
+  <svg class="cloud cloud-5" viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60"  cy="65" rx="50" ry="32"/>
+    <ellipse cx="115" cy="50" rx="55" ry="38"/>
+    <ellipse cx="170" cy="60" rx="45" ry="32"/>
+  </svg>
+
+  <!-- Dotted flight trail (behind the plane) -->
+  <svg class="plane-trail" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M 10 80 Q 60 40, 120 50 T 190 20" fill="none" stroke="white" stroke-width="2" stroke-dasharray="3 6" opacity="0.8"/>
+  </svg>
+
+  <!-- Paper plane (the hero mascot) -->
+  <svg class="paper-plane" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="plane-grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%"  stop-color="#FFFFFF"/>
+        <stop offset="100%" stop-color="#E8F4FD"/>
+      </linearGradient>
+    </defs>
+    <polygon points="10,40 70,15 60,45" fill="url(#plane-grad)" stroke="#1F5FA0" stroke-width="1.5" stroke-linejoin="round"/>
+    <polygon points="60,45 40,55 70,15" fill="#B8DCEF" stroke="#1F5FA0" stroke-width="1.5" stroke-linejoin="round"/>
+    <line x1="10" y1="40" x2="40" y2="55" stroke="#1F5FA0" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+
+  <div class="hero-content">
+    <span class="eyebrow">FOR KERALA 12TH-PASS STUDENTS</span>
+    <h1 class="h1 display">
+      <span class="line">Look up.</span>
+      <span class="line"><em class="way">Way up.</em></span>
+    </h1>
+    <p class="hero-sub">
+      382 colleges. 176 courses. <span class="hand-accent">endless</span> directions. CourseCompass helps you pick the one that fits — built for Kerala 12th-pass students.
+    </p>
+    <div class="cta-row">
+      <a href="#final" class="btn btn-primary">Take the quiz <span aria-hidden="true">→</span></a>
+      <a href="#courses" class="btn btn-ghost">Browse 382 colleges</a>
+      <span class="cta-note hand">free for 10 min, no signup</span>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats">
+  <div class="stats-row">
+    <div class="stat reveal">
+      <div class="stat-num display" data-target="382">382</div>
+      <div class="stat-label">Colleges</div>
+    </div>
+    <div class="stat reveal">
+      <div class="stat-num display" data-target="176">176</div>
+      <div class="stat-label">Courses</div>
+    </div>
+    <div class="stat reveal">
+      <div class="stat-num display" data-target="37">37</div>
+      <div class="stat-label">Entrance exams</div>
+    </div>
+    <div class="stat reveal">
+      <div class="stat-num display" data-target="6">6</div>
+      <div class="stat-label">Quiz questions</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <!-- Subtle background clouds -->
+  <svg class="features-bg-cloud features-bg-cloud-1" viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60"  cy="65" rx="50" ry="32"/>
+    <ellipse cx="115" cy="50" rx="55" ry="38"/>
+    <ellipse cx="170" cy="60" rx="45" ry="32"/>
+  </svg>
+  <svg class="features-bg-cloud features-bg-cloud-2" viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60"  cy="65" rx="50" ry="32"/>
+    <ellipse cx="115" cy="50" rx="55" ry="38"/>
+    <ellipse cx="170" cy="60" rx="45" ry="32"/>
+  </svg>
+
+  <div class="features-inner">
+    <div class="section-eyebrow reveal">WHAT YOU CAN DO HERE</div>
+    <h2 class="section-title reveal display">Three ways to figure out <span class="accent">what fits.</span></h2>
+
+    <div class="feature-grid">
+      <div class="feature feature-1 reveal">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          </svg>
+        </div>
+        <h3 class="feature-title">Take the 6-question quiz</h3>
+        <p class="feature-text">
+          Stream, marks, district, fees, interests, fears. We match you to courses in seconds — with the reasons we picked them, not just rankings.
+        </p>
+      </div>
+
+      <div class="feature feature-2 reveal">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="6" width="18" height="14" rx="2"/>
+            <path d="M3 10h18M9 6V4h6v2"/>
+          </svg>
+        </div>
+        <h3 class="feature-title">Browse the catalogue</h3>
+        <p class="feature-text">
+          Every Kerala college, every course they offer. Filter by district, type, fees, entrance exam. No ads. No "sponsored" tiles. No 2019 listicles.
+        </p>
+      </div>
+
+      <div class="feature feature-3 reveal">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+        </div>
+        <h3 class="feature-title">Shortlist and decide</h3>
+        <p class="feature-text">
+          Save what you like. Compare side-by-side. Walk away with a clear answer — and the entrance exams you'll need to clear it.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="how-inner">
+    <div class="section-eyebrow reveal">HOW IT WORKS</div>
+    <h2 class="section-title reveal display">From "<span class="accent">I have no idea</span>" to "I know what I want" — in 5 minutes.</h2>
+
+    <div class="how-steps">
+      <!-- Dotted flight path connecting the steps -->
+      <svg class="flight-path" id="flight-path" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M 150 20 Q 300 0, 450 20 T 750 20 T 1050 20" />
+      </svg>
+
+      <div class="step reveal">
+        <div class="step-num display">01</div>
+        <h3>Tell us about you</h3>
+        <p>Stream, marks, district, fees you can afford, interests, fears.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num display">02</div>
+        <h3>See your matches</h3>
+        <p>Courses ranked by fit, with a reason for each pick, and the exam you'll need.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num display">03</div>
+        <h3>Explore the colleges</h3>
+        <p>Real Kerala colleges that offer your matched courses, filterable by everything.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num display">04</div>
+        <h3>Shortlist or save</h3>
+        <p>Save your top picks. Or buy the full PDF report — coming 2027.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COURSES PEEK -->
+<section class="courses" id="courses">
+  <div class="courses-inner">
+    <div class="section-eyebrow reveal">SOME OF THE 176 COURSES</div>
+    <h2 class="section-title reveal display">There's more after 12th than <span class="accent">"engineering or medicine."</span></h2>
+
+    <div class="course-grid">
+      <div class="course-tile course-tile-1 reveal">
+        <div>
+          <div class="course-label">Engineering</div>
+          <h3>B.Tech Computer Science</h3>
+        </div>
+      </div>
+      <div class="course-tile course-tile-2 reveal">
+        <div>
+          <div class="course-label">Pure Sciences</div>
+          <h3>BS-MS Integrated Sciences</h3>
+        </div>
+      </div>
+      <div class="course-tile course-tile-3 reveal">
+        <div>
+          <div class="course-label">Design</div>
+          <h3>B.Des Communication</h3>
+        </div>
+      </div>
+      <div class="course-tile course-tile-4 reveal">
+        <div>
+          <div class="course-label">Hospitality</div>
+          <h3>B.HMCT Hotel Management</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final" id="final">
+  <!-- Background clouds -->
+  <svg class="cloud cloud-a" viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60"  cy="65" rx="50" ry="32"/>
+    <ellipse cx="115" cy="50" rx="55" ry="38"/>
+    <ellipse cx="170" cy="60" rx="45" ry="32"/>
+  </svg>
+  <svg class="cloud cloud-b" viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60"  cy="65" rx="50" ry="32"/>
+    <ellipse cx="115" cy="50" rx="55" ry="38"/>
+    <ellipse cx="170" cy="60" rx="45" ry="32"/>
+  </svg>
+  <svg class="cloud cloud-c" viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60"  cy="65" rx="50" ry="32"/>
+    <ellipse cx="115" cy="50" rx="55" ry="38"/>
+    <ellipse cx="170" cy="60" rx="45" ry="32"/>
+  </svg>
+
+  <!-- Paper plane returns -->
+  <svg class="paper-plane" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="plane-grad-2" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%"  stop-color="#FFFFFF"/>
+        <stop offset="100%" stop-color="#E8F4FD"/>
+      </linearGradient>
+    </defs>
+    <polygon points="10,40 70,15 60,45" fill="url(#plane-grad-2)" stroke="#1F5FA0" stroke-width="1.5" stroke-linejoin="round"/>
+    <polygon points="60,45 40,55 70,15" fill="#B8DCEF" stroke="#1F5FA0" stroke-width="1.5" stroke-linejoin="round"/>
+    <line x1="10" y1="40" x2="40" y2="55" stroke="#1F5FA0" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+
+  <div class="final-content">
+    <h2 class="display">Where will <span class="accent">you</span> go?</h2>
+    <p>Free, no signup needed for the first 10 minutes. The quiz takes 5.</p>
+    <a href="#" class="btn btn-primary">Start the quiz <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+
+<footer>
+  CourseCompass — a discovery site for Kerala 12th-pass students. © 2026.
+</footer>
+
+<script>
+  // ───────── NAV FROST ON SCROLL ─────────
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 50);
+  }, { passive: true });
+
+  // ───────── REVEAL ON SCROLL ─────────
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('visible');
+      const num = e.target.querySelector?.('.stat-num');
+      if (num) animateNumber(num);
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -10% 0px' });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // ───────── STAT COUNT-UP ─────────
+  function animateNumber(el) {
+    if (el.dataset.animated) return;
+    el.dataset.animated = 'true';
+    const target = parseInt(el.dataset.target, 10);
+    const duration = 1500;
+    const startedAt = performance.now();
+    el.textContent = '0';
+    function tick(now) {
+      const t = Math.min(1, (now - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(eased * target).toLocaleString();
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // ───────── FLIGHT PATH DRAWS ITSELF ─────────
+  const flightPath = document.getElementById('flight-path');
+  if (flightPath) {
+    const flightObs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) flightPath.classList.add('drawn');
+      });
+    }, { threshold: 0.3 });
+    flightObs.observe(flightPath);
+  }
+</script>
+
+</body>
+</html>
