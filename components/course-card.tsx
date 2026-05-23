@@ -11,9 +11,12 @@ export function CourseCard({ course }: { course: Course }) {
   const category = CATEGORY_BY_ID[course.categoryId];
   const examCount = course.examIds.length;
 
+  // NOTE: `<Link asChild>` clones onto an <a> on web and drops function-
+  // and array-styles on the inner Pressable, leaving the card unstyled.
+  // Pass a single object. See ui/button.tsx for the same fix.
   return (
     <Link href={`/courses/${course.id}`} asChild>
-      <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+      <Pressable style={styles.card}>
         <Text variant="subheading" numberOfLines={2}>
           {course.name}
         </Text>

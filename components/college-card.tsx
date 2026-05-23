@@ -16,9 +16,13 @@ export function CollegeCard({ college }: { college: College }) {
   const shown = categoryNames.slice(0, MAX_CATEGORIES);
   const extra = categoryNames.length - shown.length;
 
+  // NOTE: `<Link asChild>` clones onto an <a> on web and drops function-
+  // and array-styles on the inner Pressable, leaving the card unstyled
+  // (no border, no padding, no radius). Pass a single object so the
+  // styles actually reach the DOM. See ui/button.tsx for the same fix.
   return (
     <Link href={`/colleges/${college.id}`} asChild>
-      <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+      <Pressable style={styles.card}>
         <Text variant="subheading" numberOfLines={2}>
           {college.name}
         </Text>
