@@ -4,9 +4,9 @@
  * Visual stack (back to front):
  *   1. cyan→azure LinearGradient filling the section
  *   2. soft glowing sun in the upper-right
- *   3. four SVG clouds at staggered positions (static for now — drift
- *      animation will be added in a follow-up polish step)
- *   4. paper-plane SVG with a dotted trail behind it
+ *   3. four SVG clouds at staggered positions, each drifting horizontally
+ *      via react-native-reanimated (matching the prototype's CSS keyframes)
+ *   4. paper-plane SVG
  *   5. centred content: eyebrow chip + big "Look up. / Way up." headline
  *      + sub copy with a Caveat handwritten accent + CTA row + a
  *      handwritten "free for 10 min, no signup" note next to the buttons
@@ -17,7 +17,15 @@
  */
 
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, {
   Defs,
   Ellipse,
@@ -53,6 +61,47 @@ function CloudShape({ size }: { size: number }) {
       <Ellipse cx={115} cy={50} rx={55} ry={38} fill="white" />
       <Ellipse cx={170} cy={60} rx={45} ry={32} fill="white" />
     </Svg>
+  );
+}
+
+/**
+ * Drifting cloud. Wraps a CloudShape in an Animated.View that translates
+ * horizontally on a long linear loop. Direction `right` starts at the
+ * cloud's base position and moves it well off-screen to the right
+ * (~120% of the viewport width), then snaps back. `left` does the
+ * mirror. Long durations (50-90s) keep the motion ambient — you only
+ * notice it on a second look.
+ */
+function DriftingCloud({
+  size,
+  duration,
+  direction,
+  style,
+}: {
+  size: number;
+  duration: number;
+  direction: 'right' | 'left';
+  style: object;
+}) {
+  const x = useSharedValue(0);
+  useEffect(() => {
+    const distance = SCREEN_W * 1.2 + size;
+    const target = direction === 'right' ? distance : -distance;
+    x.value = withRepeat(
+      withTiming(target, { duration, easing: Easing.linear }),
+      -1, // infinite repeat
+      false, // restart from 0 each iteration (no reverse)
+    );
+  }, [x, duration, direction, size]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: x.value }],
+  }));
+
+  return (
+    <Animated.View style={[styles.cloud, style, animStyle]} pointerEvents="none">
+      <CloudShape size={size} />
+    </Animated.View>
   );
 }
 
@@ -111,19 +160,11 @@ export function SkyHero() {
         </View>
       </View>
 
-      {/* Clouds — drifting motion will be added in a follow-up */}
-      <View style={[styles.cloud, styles.cloud1]} pointerEvents="none">
-        <CloudShape size={260} />
-      </View>
-      <View style={[styles.cloud, styles.cloud2]} pointerEvents="none">
-        <CloudShape size={180} />
-      </View>
-      <View style={[styles.cloud, styles.cloud3]} pointerEvents="none">
-        <CloudShape size={300} />
-      </View>
-      <View style={[styles.cloud, styles.cloud4]} pointerEvents="none">
-        <CloudShape size={200} />
-      </View>
+      {/* Clouds drifting at different speeds. Long durations keep it ambient. */}
+      <DriftingCloud size={260} duration={60_000} direction="right" style={styles.cloud1} />
+      <DriftingCloud size={180} duration={75_000} direction="left"  style={styles.cloud2} />
+      <DriftingCloud size={300} duration={90_000} direction="right" style={styles.cloud3} />
+      <DriftingCloud size={200} duration={50_000} direction="left"  style={styles.cloud4} />
 
       {/* Paper plane — the brand mascot */}
       <View style={styles.planeWrap} pointerEvents="none">
@@ -214,9 +255,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     opacity: 0.95,
   },
-  cloud1: { top: '20%', left: '-4%' },
-  cloud2: { top: '14%', right: '28%', opacity: 0.85 },
-  cloud3: { top: '58%', left: '-6%', opacity: 0.7 },
+  // Cloud base positions. Two start off-screen left (drifting right)
+  // and two off-screen right (drifting left), so the parallax reads
+  // as ambient sky-motion rather than a one-way march.
+  cloud1: { top: '20%', left: '-8%' },
+  cloud2: { top: '14%', right: '-4%', opacity: 0.85 },
+  cloud3: { top: '58%', left: '-10%', opacity: 0.7 },
   cloud4: { top: '68%', right: '-3%', opacity: 0.85 },
 
   // ─── Paper plane ───
