@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Card } from '@/components/ui/card';
 import { LinkButton } from '@/components/ui/button';
 import { SiteHeader } from '@/components/site-header';
+import { SkyFeatures } from '@/components/sky-features';
 import { SkyHero } from '@/components/sky-hero';
 import { SkyStats } from '@/components/sky-stats';
 import { Text } from '@/components/ui/text';
@@ -38,6 +39,7 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <SkyHero />
         <SkyStats />
+        <SkyFeatures />
 
         <View style={styles.belowHero}>
           <View style={styles.paths}>
