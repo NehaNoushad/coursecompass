@@ -15,9 +15,8 @@ import {
 import { colors, spacing } from '@/constants/theme';
 import { Button, LinkButton } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Chip } from '@/components/ui/chip';
-import { ChipRow, type ChipOption } from '@/components/ui/chip-row';
 import { CollegeCard } from '@/components/college-card';
+import { Dropdown, MultiSelectDropdown, type DropdownOption } from '@/components/ui/dropdown';
 import { Screen } from '@/components/ui/screen';
 import { TextInput } from '@/components/ui/text-input';
 import { Text } from '@/components/ui/text';
@@ -26,24 +25,29 @@ type CategoryFilter = 'all' | CourseCategoryId;
 type TypeFilter = 'all' | CollegeType;
 type FeeFilter = 'all' | FeeBand;
 
-const CATEGORY_OPTIONS: ChipOption<CategoryFilter>[] = [
+const CATEGORY_OPTIONS: DropdownOption<CategoryFilter>[] = [
   { value: 'all', label: 'All courses' },
   ...COURSE_CATEGORIES.map((c) => ({ value: c.id, label: c.name })),
 ];
 
-const TYPE_OPTIONS: ChipOption<TypeFilter>[] = [
+const TYPE_OPTIONS: DropdownOption<TypeFilter>[] = [
   { value: 'all', label: 'Any type' },
   { value: 'government', label: TYPE_LABELS.government },
   { value: 'aided', label: TYPE_LABELS.aided },
   { value: 'private', label: TYPE_LABELS.private },
 ];
 
-const FEE_OPTIONS: ChipOption<FeeFilter>[] = [
+const FEE_OPTIONS: DropdownOption<FeeFilter>[] = [
   { value: 'all', label: 'Any fees' },
   { value: 'low', label: FEE_BAND_LABELS.low },
   { value: 'medium', label: FEE_BAND_LABELS.medium },
   { value: 'high', label: FEE_BAND_LABELS.high },
 ];
+
+const DISTRICT_OPTIONS: DropdownOption<District>[] = DISTRICTS.map((d) => ({
+  value: d,
+  label: d,
+}));
 
 export default function CollegesScreen() {
   const params = useLocalSearchParams<{
@@ -130,29 +134,35 @@ export default function CollegesScreen() {
           onChangeText={setSearch}
           autoCapitalize="none"
         />
-        <ChipRow label="Course" options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
-        <View>
-          <Text variant="label" muted style={styles.filterLabel}>
-            District
-          </Text>
-          <View style={styles.districtRow}>
-            <Chip
-              label="All districts"
-              selected={districts.length === 0}
-              onPress={() => setDistricts([])}
-            />
-            {DISTRICTS.map((d) => (
-              <Chip
-                key={d}
-                label={d}
-                selected={districts.includes(d)}
-                onPress={() => toggleDistrict(d)}
-              />
-            ))}
-          </View>
+        <View style={styles.dropdownRow}>
+          <Dropdown
+            label="Course"
+            options={CATEGORY_OPTIONS}
+            value={category}
+            onChange={setCategory}
+          />
+          <MultiSelectDropdown
+            label="District"
+            options={DISTRICT_OPTIONS}
+            selected={districts}
+            onToggle={toggleDistrict}
+            onClear={() => setDistricts([])}
+            allLabel="All districts"
+            pluralNoun="districts"
+          />
+          <Dropdown
+            label="Type"
+            options={TYPE_OPTIONS}
+            value={type}
+            onChange={setType}
+          />
+          <Dropdown
+            label="Fees"
+            options={FEE_OPTIONS}
+            value={fee}
+            onChange={setFee}
+          />
         </View>
-        <ChipRow label="Type" options={TYPE_OPTIONS} value={type} onChange={setType} />
-        <ChipRow label="Fees" options={FEE_OPTIONS} value={fee} onChange={setFee} />
       </View>
 
       <Text variant="label" muted style={styles.count}>
@@ -193,13 +203,16 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     marginBottom: spacing.lg,
   },
-  filterLabel: {
-    marginBottom: spacing.sm,
-  },
-  districtRow: {
+  dropdownRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.lg,
+    // When a dropdown panel opens it needs to paint above the college
+    // grid below. `position: 'relative'` is required for zIndex to take
+    // effect — without it, zIndex on a non-positioned element is
+    // silently ignored and the cards below paint over the panel.
+    position: 'relative',
+    zIndex: 100,
   },
   count: {
     marginBottom: spacing.md,

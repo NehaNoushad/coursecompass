@@ -1,0 +1,419 @@
+/**
+ * Dropdown components — replace long chip rows with compact pill triggers
+ * that expand into a scrollable panel of options.
+ *
+ *   <Dropdown>             — single-select (Course / Stream / Type / Fees)
+ *   <MultiSelectDropdown>  — multi-select with an "All" clear-all row (District)
+ *
+ * Both share the same trigger styling (chip-pill + chevron) and panel
+ * styling (white card, soft shadow, scrollable). The panel closes when
+ * the user clicks the dimmed backdrop, taps a single-select option, or
+ * presses the trigger again.
+ *
+ * RN-web only for the backdrop: we use `position: fixed` so the
+ * full-viewport hit area works no matter how deeply nested the
+ * dropdown is. On native, the same pattern still works because
+ * position:fixed in RN-web is just absolute relative to the viewport.
+ */
+
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+
+import { Text } from '@/components/ui/text';
+import {
+  colors,
+  fontFamily,
+  fontWeight,
+  radius,
+  spacing,
+} from '@/constants/theme';
+
+export interface DropdownOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <Svg width={12} height={12} viewBox="0 0 12 12">
+      <Path
+        d={open ? 'M3 7.5 L6 4.5 L9 7.5' : 'M3 4.5 L6 7.5 L9 4.5'}
+        stroke={colors.textMuted}
+        strokeWidth={1.5}
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+function Checkmark() {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 14 14">
+      <Path
+        d="M2 7 L5.5 10.5 L12 3.5"
+        stroke={colors.primary}
+        strokeWidth={2}
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+function Checkbox({ checked }: { checked: boolean }) {
+  return (
+    <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+      {checked ? (
+        <Svg width={10} height={10} viewBox="0 0 14 14">
+          <Path
+            d="M2 7 L5.5 10.5 L12 3.5"
+            stroke={colors.textInverse}
+            strokeWidth={2.5}
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      ) : null}
+    </View>
+  );
+}
+
+// ───────── Single-select Dropdown ─────────
+
+interface DropdownProps<T extends string> {
+  label: string;
+  options: DropdownOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
+}
+
+export function Dropdown<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: DropdownProps<T>) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<View>(null);
+  useOutsideClick(containerRef, open, () => setOpen(false));
+
+  const selected = options.find((opt) => opt.value === value);
+  const displayLabel = selected?.label ?? '—';
+
+  return (
+    <View ref={containerRef} style={styles.container}>
+      <Text variant="label" muted style={styles.label}>
+        {label}
+      </Text>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        style={({ pressed }) => [
+          styles.trigger,
+          open && styles.triggerOpen,
+          pressed && styles.triggerPressed,
+        ]}
+      >
+        <Text style={styles.triggerLabel} numberOfLines={1}>
+          {displayLabel}
+        </Text>
+        <Chevron open={open} />
+      </Pressable>
+
+      {open ? (
+        <View style={styles.panel}>
+          <ScrollView
+            style={styles.panelScroll}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled
+          >
+            {options.map((opt) => {
+              const isSelected = opt.value === value;
+              return (
+                <Pressable
+                  key={String(opt.value)}
+                  style={({ pressed }) => [
+                    styles.option,
+                    pressed && styles.optionPressed,
+                    isSelected && styles.optionSelected,
+                  ]}
+                  onPress={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.optionLabel,
+                      isSelected && styles.optionLabelSelected,
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                  {isSelected ? <Checkmark /> : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+// ───────── Multi-select Dropdown ─────────
+
+interface MultiSelectDropdownProps<T extends string> {
+  label: string;
+  options: DropdownOption<T>[];
+  selected: T[];
+  onToggle: (value: T) => void;
+  onClear: () => void;
+  /** Label for the "All" row at the top, e.g. "All districts". */
+  allLabel: string;
+  /** How to summarise multiple selections, e.g. "districts". */
+  pluralNoun: string;
+}
+
+export function MultiSelectDropdown<T extends string>({
+  label,
+  options,
+  selected,
+  onToggle,
+  onClear,
+  allLabel,
+  pluralNoun,
+}: MultiSelectDropdownProps<T>) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<View>(null);
+  useOutsideClick(containerRef, open, () => setOpen(false));
+
+  // Display label on the trigger:
+  //   0 selected → "All districts"
+  //   1 selected → "Kollam"
+  //   2+ selected → "3 districts"
+  let displayLabel = allLabel;
+  if (selected.length === 1) {
+    displayLabel = options.find((o) => o.value === selected[0])?.label ?? allLabel;
+  } else if (selected.length > 1) {
+    displayLabel = `${selected.length} ${pluralNoun}`;
+  }
+
+  return (
+    <View ref={containerRef} style={styles.container}>
+      <Text variant="label" muted style={styles.label}>
+        {label}
+      </Text>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        style={({ pressed }) => [
+          styles.trigger,
+          open && styles.triggerOpen,
+          pressed && styles.triggerPressed,
+        ]}
+      >
+        <Text style={styles.triggerLabel} numberOfLines={1}>
+          {displayLabel}
+        </Text>
+        <Chevron open={open} />
+      </Pressable>
+
+      {open ? (
+        <View style={styles.panel}>
+          <ScrollView
+            style={styles.panelScroll}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled
+          >
+            {/* All / clear-all row at the top */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.option,
+                pressed && styles.optionPressed,
+                selected.length === 0 && styles.optionSelected,
+              ]}
+              onPress={onClear}
+            >
+              <Text
+                style={[
+                  styles.optionLabel,
+                  styles.optionLabelBold,
+                  selected.length === 0 && styles.optionLabelSelected,
+                ]}
+              >
+                {allLabel}
+              </Text>
+              {selected.length === 0 ? <Checkmark /> : null}
+            </Pressable>
+            <View style={styles.optionDivider} />
+            {options.map((opt) => {
+              const isSelected = selected.includes(opt.value);
+              return (
+                <Pressable
+                  key={String(opt.value)}
+                  style={({ pressed }) => [
+                    styles.option,
+                    styles.optionMulti,
+                    pressed && styles.optionPressed,
+                  ]}
+                  onPress={() => onToggle(opt.value)}
+                >
+                  <Checkbox checked={isSelected} />
+                  <Text style={styles.optionLabel}>{opt.label}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * Closes the dropdown when the user clicks anywhere outside the
+ * container ref. Uses a document mousedown listener — only active
+ * while `open` is true, and only on web (RN native doesn't have
+ * `document`).
+ */
+function useOutsideClick(
+  ref: React.RefObject<View | null>,
+  open: boolean,
+  onClose: () => void,
+) {
+  useEffect(() => {
+    if (!open) return;
+    if (typeof document === 'undefined') return;
+    function handler(e: MouseEvent) {
+      const node = ref.current as unknown as HTMLElement | null;
+      if (node && !node.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [ref, open, onClose]);
+}
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'relative',
+    gap: spacing.sm,
+    // Each dropdown should be wide enough to fit "All districts" without
+    // truncation but not stretch to fill an entire row.
+    minWidth: 200,
+    // High enough that the absolutely-positioned panel inside paints
+    // above any siblings (college / course cards in the grid below).
+    // 50 covers normal page content; the panel itself bumps to 100.
+    zIndex: 50,
+  },
+  label: {
+    marginBottom: 0,
+  },
+
+  // ─── Trigger ───
+  trigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+    minHeight: 44,
+  },
+  triggerOpen: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  triggerPressed: {
+    opacity: 0.85,
+  },
+  triggerLabel: {
+    fontSize: 14,
+    fontWeight: fontWeight.medium,
+    color: colors.text,
+    flex: 1,
+  },
+
+  // ─── Panel ───
+  panel: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    marginTop: spacing.xs,
+    minWidth: 240,
+    maxWidth: 320,
+    backgroundColor: colors.background,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 32,
+    elevation: 12,
+    zIndex: 100,
+    overflow: 'hidden',
+  },
+  panelScroll: {
+    maxHeight: 320,
+  },
+
+  // ─── Option rows ───
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  optionMulti: {
+    justifyContent: 'flex-start',
+  },
+  optionPressed: {
+    backgroundColor: colors.surfaceAlt,
+  },
+  optionSelected: {
+    backgroundColor: colors.primaryLight,
+  },
+  optionLabel: {
+    fontSize: 14,
+    color: colors.text,
+    flex: 1,
+  },
+  optionLabelBold: {
+    fontFamily: fontFamily.displaySemibold,
+  },
+  optionLabelSelected: {
+    color: colors.primaryDark,
+  },
+  optionDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: 0,
+  },
+
+  // ─── Checkbox glyph for multi-select rows ───
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+});

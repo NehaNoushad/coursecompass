@@ -5,8 +5,8 @@ import type { CourseCategoryId, Stream } from '@/types';
 import { COURSES, COURSE_CATEGORIES, STREAM_LABELS } from '@/data';
 import { colors, spacing } from '@/constants/theme';
 import { Button } from '@/components/ui/button';
-import { ChipRow, type ChipOption } from '@/components/ui/chip-row';
 import { CourseCard } from '@/components/course-card';
+import { Dropdown, type DropdownOption } from '@/components/ui/dropdown';
 import { Screen } from '@/components/ui/screen';
 import { TextInput } from '@/components/ui/text-input';
 import { Text } from '@/components/ui/text';
@@ -14,12 +14,12 @@ import { Text } from '@/components/ui/text';
 type CategoryFilter = 'all' | CourseCategoryId;
 type StreamFilter = 'all' | Stream;
 
-const CATEGORY_OPTIONS: ChipOption<CategoryFilter>[] = [
+const CATEGORY_OPTIONS: DropdownOption<CategoryFilter>[] = [
   { value: 'all', label: 'All categories' },
   ...COURSE_CATEGORIES.map((c) => ({ value: c.id, label: c.name })),
 ];
 
-const STREAM_OPTIONS: ChipOption<StreamFilter>[] = [
+const STREAM_OPTIONS: DropdownOption<StreamFilter>[] = [
   { value: 'all', label: 'Any stream' },
   { value: 'pcm', label: STREAM_LABELS.pcm },
   { value: 'pcb', label: STREAM_LABELS.pcb },
@@ -63,8 +63,20 @@ export default function CoursesScreen() {
           onChangeText={setSearch}
           autoCapitalize="none"
         />
-        <ChipRow label="Category" options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
-        <ChipRow label="Your stream" options={STREAM_OPTIONS} value={stream} onChange={setStream} />
+        <View style={styles.dropdownRow}>
+          <Dropdown
+            label="Category"
+            options={CATEGORY_OPTIONS}
+            value={category}
+            onChange={setCategory}
+          />
+          <Dropdown
+            label="Your stream"
+            options={STREAM_OPTIONS}
+            value={stream}
+            onChange={setStream}
+          />
+        </View>
       </View>
 
       <Text variant="label" muted style={styles.count}>
@@ -100,6 +112,13 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     marginTop: spacing.xl,
     marginBottom: spacing.lg,
+  },
+  dropdownRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.lg,
+    position: 'relative',
+    zIndex: 100,
   },
   count: {
     marginBottom: spacing.md,

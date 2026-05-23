@@ -26,9 +26,32 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   );
 }
 
+/**
+ * SSR-safe storage wrapper. Expo Router does a static-export pass during
+ * `expo export -p web` (and even at dev-server startup), and in that
+ * Node context there's no `window` — but @react-native-async-storage's
+ * web backend reaches into `window.localStorage` unconditionally. We
+ * short-circuit to no-ops on the server so the supabase client can be
+ * constructed in either environment without crashing.
+ */
+const ssrSafeStorage = {
+  getItem: async (key: string) => {
+    if (typeof window === 'undefined') return null;
+    return AsyncStorage.getItem(key);
+  },
+  setItem: async (key: string, value: string) => {
+    if (typeof window === 'undefined') return;
+    await AsyncStorage.setItem(key, value);
+  },
+  removeItem: async (key: string) => {
+    if (typeof window === 'undefined') return;
+    await AsyncStorage.removeItem(key);
+  },
+};
+
 export const supabase = createClient(SUPABASE_URL ?? '', SUPABASE_ANON_KEY ?? '', {
   auth: {
-    storage: AsyncStorage,
+    storage: ssrSafeStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: Platform.OS === 'web',
