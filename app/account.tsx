@@ -145,6 +145,16 @@ export default function AccountScreen() {
 
   const email = user.email ?? 'No email';
   const initial = (email[0] ?? '?').toUpperCase();
+  // Prefer an uploaded avatar from our profiles table, then fall back
+  // to the OAuth picture (Google fills user_metadata.avatar_url on
+  // signup), then to the initial-letter circle below.
+  const oauthAvatar =
+    typeof user.user_metadata?.avatar_url === 'string'
+      ? user.user_metadata.avatar_url
+      : typeof user.user_metadata?.picture === 'string'
+        ? user.user_metadata.picture
+        : null;
+  const avatarUrl = profile?.avatar_url ?? oauthAvatar;
 
   return (
     <Screen>
@@ -174,12 +184,12 @@ export default function AccountScreen() {
         <Card style={styles.card}>
           <View style={styles.row}>
             <View style={styles.avatarWrap}>
-              {profile?.avatar_url ? (
+              {avatarUrl ? (
                 <View
                   style={StyleSheet.flatten([
                     styles.avatar,
                     {
-                      backgroundImage: `url(${profile.avatar_url})`,
+                      backgroundImage: `url(${avatarUrl})`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                     } as ViewStyle,
@@ -190,9 +200,11 @@ export default function AccountScreen() {
                   <Text style={styles.avatarInitial}>{initial}</Text>
                 </View>
               )}
-              <Text variant="caption" muted style={styles.avatarHint}>
-                Photo upload coming
-              </Text>
+              {!avatarUrl ? (
+                <Text variant="caption" muted style={styles.avatarHint}>
+                  Photo upload coming
+                </Text>
+              ) : null}
             </View>
             <View style={styles.identity}>
               <Text variant="label" muted>

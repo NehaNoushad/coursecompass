@@ -31,7 +31,7 @@ const NAV_LINKS = [
  *                   via the title attribute on web)
  */
 export function SiteHeader() {
-  const { session } = useAuth();
+  const { session, hasTakenQuiz } = useAuth();
 
   return (
     <View style={styles.bar}>
@@ -88,7 +88,9 @@ export function SiteHeader() {
             />
           )}
 
-          <LinkButton href="/quiz" label="Take the quiz" />
+          {/* Hide the quiz CTA once the signed-in user has taken it —
+              the dashboard's "Retake" action takes over from here. */}
+          {!hasTakenQuiz ? <LinkButton href="/quiz" label="Take the quiz" /> : null}
         </View>
       </View>
     </View>

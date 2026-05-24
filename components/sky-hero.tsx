@@ -37,6 +37,7 @@ import Svg, {
 import { LinkButton } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { APP_NAME } from '@/constants/app';
+import { useAuth } from '@/lib/auth';
 import {
   colors,
   fontFamily,
@@ -143,6 +144,7 @@ function PaperPlane({ size = 80 }: { size?: number }) {
 // ───────── Main component ─────────
 
 export function SkyHero() {
+  const { hasTakenQuiz } = useAuth();
   return (
     <View style={styles.hero}>
       {/* Sky gradient — fills the whole hero */}
@@ -199,7 +201,11 @@ export function SkyHero() {
         </Text>
 
         <View style={styles.ctaRow}>
-          <LinkButton href="/quiz" label="Take the quiz →" size="lg" />
+          <LinkButton
+            href="/quiz"
+            label={hasTakenQuiz ? 'Take it again →' : 'Take the quiz →'}
+            size="lg"
+          />
           <LinkButton
             href="/colleges"
             label="Browse 382 colleges"

@@ -120,7 +120,7 @@ export default function QuizScreen() {
     return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
   }
 
-  const { session } = useAuth();
+  const { session, refreshQuizHistory } = useAuth();
 
   function finish() {
     if (streams.length === 0 || marks === null || !districtTouched || !collegeTypeTouched) return;
@@ -155,7 +155,11 @@ export default function QuizScreen() {
         .then(({ error }) => {
           if (error) {
             console.warn('quiz_results insert failed:', error.message);
+            return;
           }
+          // Flip the global hasTakenQuiz flag so the header drops the
+          // "Take the quiz" CTA and hero CTAs relabel immediately.
+          refreshQuizHistory();
         });
     }
   }

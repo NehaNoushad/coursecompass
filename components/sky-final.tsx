@@ -22,6 +22,7 @@ import Svg, {
 import { LinkButton } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { colors, fontFamily, spacing } from '@/constants/theme';
+import { useAuth } from '@/lib/auth';
 
 function Cloud({ size }: { size: number }) {
   return (
@@ -61,6 +62,7 @@ function PaperPlane({ size }: { size: number }) {
 }
 
 export function SkyFinal() {
+  const { hasTakenQuiz } = useAuth();
   return (
     <View style={styles.section}>
       <LinearGradient
@@ -99,7 +101,7 @@ export function SkyFinal() {
             middle of the section instead of clinging to the left edge. */}
         <LinkButton
           href="/quiz"
-          label="Start the quiz →"
+          label={hasTakenQuiz ? 'Take the quiz again →' : 'Start the quiz →'}
           size="lg"
           style={{ alignSelf: 'center' }}
         />
