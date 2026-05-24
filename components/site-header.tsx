@@ -3,7 +3,7 @@ import { Link } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { Button, LinkButton } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { APP_NAME } from '@/constants/app';
 import {
@@ -19,7 +19,6 @@ import { useAuth } from '@/lib/auth';
 const NAV_LINKS = [
   { label: 'Colleges', href: '/colleges' as const },
   { label: 'Courses', href: '/courses' as const },
-  { label: 'Quiz', href: '/quiz' as const },
 ];
 
 /**
@@ -32,7 +31,7 @@ const NAV_LINKS = [
  *                   via the title attribute on web)
  */
 export function SiteHeader() {
-  const { session, signOut } = useAuth();
+  const { session } = useAuth();
 
   return (
     <View style={styles.bar}>
@@ -74,10 +73,10 @@ export function SiteHeader() {
           </View>
 
           {session ? (
-            <Button
-              label="Sign out"
+            <LinkButton
+              href="/account"
+              label="Account"
               variant="ghost"
-              onPress={signOut}
               style={styles.authBtn}
             />
           ) : (
