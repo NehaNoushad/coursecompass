@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { LinkButton } from '@/components/ui/button';
@@ -20,6 +20,48 @@ const NAV_LINKS = [
   { label: 'Colleges', href: '/colleges' as const },
   { label: 'Courses', href: '/courses' as const },
 ];
+
+/**
+ * Small clickable avatar — replaces the "Account" text link when the
+ * user is signed in. Renders the Google profile picture when available
+ * (Supabase stores it as user_metadata.avatar_url after Google OAuth),
+ * falling back to an initial-letter circle that matches the home-page
+ * brand mark's geometry.
+ */
+function HeaderAvatar() {
+  const { user } = useAuth();
+  if (!user) return null;
+  const email = user.email ?? '';
+  const initial = (email[0] ?? '?').toUpperCase();
+  const photo =
+    typeof user.user_metadata?.avatar_url === 'string'
+      ? user.user_metadata.avatar_url
+      : typeof user.user_metadata?.picture === 'string'
+        ? user.user_metadata.picture
+        : null;
+  return (
+    <Link href="/account" asChild>
+      <Pressable style={styles.avatarWrap} accessibilityLabel="Account">
+        {photo ? (
+          <View
+            style={StyleSheet.flatten([
+              styles.avatar,
+              {
+                backgroundImage: `url(${photo})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              } as ViewStyle,
+            ])}
+          />
+        ) : (
+          <View style={[styles.avatar, styles.avatarFallback]}>
+            <Text style={styles.avatarInitial}>{initial}</Text>
+          </View>
+        )}
+      </Pressable>
+    </Link>
+  );
+}
 
 /**
  * Top navigation bar — paper-plane circle mark + Sora wordmark + nav
@@ -73,12 +115,7 @@ export function SiteHeader() {
           </View>
 
           {session ? (
-            <LinkButton
-              href="/account"
-              label="Account"
-              variant="ghost"
-              style={styles.authBtn}
-            />
+            <HeaderAvatar />
           ) : (
             <LinkButton
               href="/signin"
@@ -172,5 +209,31 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderWidth: 0,
+  },
+  // Header avatar — sits where the "Account" text link used to.
+  avatarWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: 'hidden',
+    // Soft border so the photo doesn't blend into a white header.
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarFallback: {
+    backgroundColor: colors.primary,
+  },
+  avatarInitial: {
+    fontFamily: fontFamily.displayHeavy,
+    fontSize: 16,
+    color: colors.textInverse,
+    lineHeight: 16,
   },
 });
