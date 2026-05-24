@@ -118,7 +118,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <Screen>
+    <Screen noFooter>
       <View style={styles.frame}>
         <Card style={styles.card}>
           <Text variant="title">

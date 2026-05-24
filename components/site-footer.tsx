@@ -25,7 +25,6 @@ import { Text } from '@/components/ui/text';
 const LINKS = [
   { label: 'Colleges', href: '/colleges' as const },
   { label: 'Courses', href: '/courses' as const },
-  { label: 'Quiz', href: '/quiz' as const },
 ] as const;
 
 export function SiteFooter() {

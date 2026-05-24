@@ -182,7 +182,7 @@ export default function QuizScreen() {
   }
 
   return (
-    <Screen>
+    <Screen noFooter>
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${((step + 1) / TOTAL_STEPS) * 100}%` }]} />
       </View>
@@ -377,7 +377,7 @@ function QuizResult({
   onRestart: () => void;
 }) {
   return (
-    <Screen>
+    <Screen noFooter>
       <Badge label="Your results" tone="success" />
       <Text variant="title" style={{ marginTop: spacing.sm }}>
         Here&apos;s what fits you
