@@ -84,6 +84,40 @@ export default function CollegeDetailScreen() {
         </Text>
       </Card>
 
+      {/* Contact + accreditation block. Renders nothing if the college
+          has none of these fields filled — appears progressively as
+          phone-survey data lands. */}
+      {(college.phone ||
+        college.admissionsEmail ||
+        college.website ||
+        college.naacGrade ||
+        college.nirfRank ||
+        college.totalSeats) ? (
+        <Card style={styles.contact}>
+          <Text variant="heading" style={styles.sectionTitle}>
+            Contact + accreditation
+          </Text>
+          {college.phone ? (
+            <ContactRow label="Phone" value={college.phone} />
+          ) : null}
+          {college.admissionsEmail ? (
+            <ContactRow label="Admissions email" value={college.admissionsEmail} />
+          ) : null}
+          {college.website ? (
+            <ContactRow label="Website" value={college.website} />
+          ) : null}
+          {college.totalSeats ? (
+            <ContactRow label="Total seats" value={String(college.totalSeats)} />
+          ) : null}
+          {college.naacGrade ? (
+            <ContactRow label="NAAC grade" value={college.naacGrade} />
+          ) : null}
+          {college.nirfRank ? (
+            <ContactRow label="NIRF rank" value={`#${college.nirfRank}`} />
+          ) : null}
+        </Card>
+      ) : null}
+
       <Text variant="heading" style={styles.sectionTitle}>
         {confirmed ? 'Courses offered here' : 'Course fields offered'}
       </Text>
@@ -123,6 +157,18 @@ export default function CollegeDetailScreen() {
   );
 }
 
+/** A label / value row used inside the Contact + accreditation card. */
+function ContactRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.contactRow}>
+      <Text variant="label" muted style={styles.contactLabel}>
+        {label.toUpperCase()}
+      </Text>
+      <Text style={styles.contactValue}>{value}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   badges: {
     flexDirection: 'row',
@@ -132,6 +178,21 @@ const styles = StyleSheet.create({
   },
   note: {
     marginTop: spacing.lg,
+  },
+  contact: {
+    marginTop: spacing.lg,
+    gap: spacing.md,
+  },
+  contactRow: {
+    gap: 2,
+  },
+  contactLabel: {
+    fontSize: 11,
+    letterSpacing: 1.5,
+  },
+  contactValue: {
+    fontSize: 15,
+    color: colors.text,
   },
   sectionTitle: {
     marginTop: spacing.x2l,

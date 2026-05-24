@@ -97,7 +97,17 @@ export interface College {
    *  it is authoritative; when absent the college falls back to showing all
    *  courses in `categories`. Populated progressively via research/admin. */
   courses?: string[];
-  /** Optional — filled in later via the admin panel. */
+  /** Optional — filled in later via the admin panel or phone-survey. */
   website?: string;
   established?: number;
+  /** Direct phone number for general enquiries. */
+  phone?: string;
+  /** Email for the admissions office (not the registrar). */
+  admissionsEmail?: string;
+  /** Approximate seat count across all programmes — useful as a size proxy. */
+  totalSeats?: number;
+  /** NIRF rank (overall) if listed. Optional. */
+  nirfRank?: number;
+  /** NAAC grade ('A++', 'A+', 'A', 'B++', etc.) if listed. Optional. */
+  naacGrade?: string;
 }
