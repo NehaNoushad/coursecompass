@@ -18,6 +18,7 @@ import {
   radius,
   spacing,
 } from '@/constants/theme';
+import { COURSES } from '@/data';
 
 type GradientStops = [ColorValue, ColorValue];
 
@@ -56,7 +57,7 @@ export function SkyCourses() {
   return (
     <View style={styles.section}>
       <View style={styles.inner}>
-        <Text style={styles.eyebrow}>SOME OF THE 176 COURSES</Text>
+        <Text style={styles.eyebrow}>SOME OF THE {COURSES.length} COURSES</Text>
         <Text style={styles.title}>
           {'There\'s more after 12th than "engineering or medicine."'}
         </Text>

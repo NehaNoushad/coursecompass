@@ -20,11 +20,14 @@ import {
   radius,
   spacing,
 } from '@/constants/theme';
+import { COLLEGES, COURSES, EXAMS } from '@/data';
 
+// Counts come from the live seed data so the home page stats stay in
+// sync as colleges / courses are added. Quiz length is fixed.
 const STATS = [
-  { num: 382, label: 'Colleges' },
-  { num: 176, label: 'Courses' },
-  { num: 37, label: 'Entrance exams' },
+  { num: COLLEGES.length, label: 'Colleges' },
+  { num: COURSES.length, label: 'Courses' },
+  { num: EXAMS.length, label: 'Entrance exams' },
   { num: 6, label: 'Quiz questions' },
 ];
 

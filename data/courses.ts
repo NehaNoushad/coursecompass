@@ -91,6 +91,11 @@ export const COURSES: Course[] = [
   { id: 'bba', name: 'BBA (Business Administration)', categoryId: 'commerce', streams: ['commerce', 'pcm', 'pcb', 'arts'], examIds: ['cuet-ug', 'kmat', 'kerala-univ-entrance', 'mg-univ-entrance'], durationYears: 3 },
   { id: 'bms', name: 'BMS (Management Studies)', categoryId: 'commerce', streams: ['commerce', 'arts'], examIds: ['cuet-ug', 'kmat'], durationYears: 3 },
   { id: 'bca', name: 'BCA (Computer Applications)', categoryId: 'commerce', streams: ['commerce', 'pcm'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance'], durationYears: 3 },
+  { id: 'bca-honours', name: 'BCA (Honours)', categoryId: 'commerce', streams: ['commerce', 'pcm'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance', 'kannur-univ-entrance'], durationYears: 4 },
+  { id: 'bca-data-science', name: 'BCA Data Science', categoryId: 'commerce', streams: ['commerce', 'pcm'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance'], durationYears: 3 },
+  { id: 'bca-ai-ml', name: 'BCA Artificial Intelligence & Machine Learning', categoryId: 'commerce', streams: ['commerce', 'pcm'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance'], durationYears: 3 },
+  { id: 'bca-cyber-security', name: 'BCA Cyber Security', categoryId: 'commerce', streams: ['commerce', 'pcm'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance'], durationYears: 3 },
+  { id: 'bca-cloud-computing', name: 'BCA Cloud Computing', categoryId: 'commerce', streams: ['commerce', 'pcm'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance'], durationYears: 3 },
 
   // ----- Arts & Humanities -----
   { id: 'ba-english', name: 'BA English Literature', categoryId: 'arts', streams: ['arts', 'commerce', 'pcm', 'pcb'], examIds: ['cuet-ug', 'kerala-univ-entrance', 'mg-univ-entrance', 'calicut-univ-entrance', 'kannur-univ-entrance'], durationYears: 3 },

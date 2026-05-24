@@ -37,6 +37,7 @@ import Svg, {
 import { LinkButton } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { APP_NAME } from '@/constants/app';
+import { COLLEGES, COURSES } from '@/data';
 import { useAuth } from '@/lib/auth';
 import {
   colors,
@@ -197,7 +198,7 @@ export function SkyHero() {
         </Text>
 
         <Text style={styles.heroSub}>
-          382 colleges. 176 courses. <Text style={styles.handAccent}>endless</Text> directions. {APP_NAME} helps you pick the one that fits — built for Kerala 12th-pass students.
+          {COLLEGES.length} colleges. {COURSES.length} courses. <Text style={styles.handAccent}>endless</Text> directions. {APP_NAME} helps you pick the one that fits — built for Kerala 12th-pass students.
         </Text>
 
         <View style={styles.ctaRow}>
@@ -208,7 +209,7 @@ export function SkyHero() {
           />
           <LinkButton
             href="/colleges"
-            label="Browse 382 colleges"
+            label={`Browse ${COLLEGES.length} colleges`}
             size="lg"
             variant="ghost"
             style={styles.ghostBtn}
