@@ -2,18 +2,21 @@
  * Sign in / sign up screen. One screen handles both — Supabase email
  * OTP doesn't distinguish between "new user" and "returning user" at
  * the API level; if the email exists we sign them in, if it doesn't
- * we create the account. From the user's perspective: type email,
- * receive a 6-digit code, type it in, you're in.
+ * we create the account.
  *
- * Two steps managed by local state:
- *   - 'email' → field for the email + "Send code" button
- *   - 'otp'   → field for the 6-digit code + "Verify" button
+ * The flow uses the magic-link side of signInWithOtp:
+ *   1. User enters email → "Send sign-in link"
+ *   2. Page shows "Check your email" confirmation
+ *   3. User clicks the link in their inbox
+ *   4. The link redirects to redirectTo with #access_token=... in the URL
+ *   5. supabase-js detectSessionInUrl parses the hash → creates session
+ *   6. AuthProvider's onAuthStateChange picks it up; user is logged in
  *
- * After successful verify, the AuthProvider's onAuthStateChange fires
- * and `router.replace('/')` sends them home with a session live.
+ * Why magic link instead of typed OTP code: simpler UX (one click vs
+ * copy-paste), one fewer state machine step, and we avoid the OTP
+ * verifyOtp() type-mismatch dance.
  */
 
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -51,18 +54,17 @@ function GoogleMark({ size = 18 }: { size?: number }) {
   );
 }
 
-type Step = 'email' | 'otp';
+type Step = 'email' | 'sent';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignInScreen() {
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function sendCode() {
+  async function sendLink() {
     setError(null);
     if (!EMAIL_RE.test(email.trim())) {
       setError("That doesn't look like a valid email.");
@@ -72,10 +74,15 @@ export default function SignInScreen() {
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        // We want the OTP code flow, not the magic-link flow. Setting
-        // shouldCreateUser:true means the same call works for both
-        // new and returning users — no separate signup endpoint.
+        // shouldCreateUser:true means the same call works for both new
+        // and returning users — no separate signup endpoint. The link
+        // in the email redirects here on click; supabase-js
+        // detectSessionInUrl picks up the tokens from the URL hash.
         shouldCreateUser: true,
+        emailRedirectTo:
+          Platform.OS === 'web' && typeof window !== 'undefined'
+            ? window.location.origin
+            : undefined,
       },
     });
     setBusy(false);
@@ -83,7 +90,7 @@ export default function SignInScreen() {
       setError(error.message);
       return;
     }
-    setStep('otp');
+    setStep('sent');
   }
 
   async function signInWithGoogle() {
@@ -110,28 +117,6 @@ export default function SignInScreen() {
     }
   }
 
-  async function verifyCode() {
-    setError(null);
-    const cleaned = code.replace(/\s/g, '');
-    if (!/^\d{6}$/.test(cleaned)) {
-      setError('The code should be 6 digits.');
-      return;
-    }
-    setBusy(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email: email.trim(),
-      token: cleaned,
-      type: 'email',
-    });
-    setBusy(false);
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    // AuthProvider's onAuthStateChange will fire — send them home.
-    router.replace('/');
-  }
-
   return (
     <Screen>
       <View style={styles.frame}>
@@ -141,8 +126,8 @@ export default function SignInScreen() {
           </Text>
           <Text muted style={styles.sub}>
             {step === 'email'
-              ? "We'll send a 6-digit code. No password to remember."
-              : `We sent a 6-digit code to ${email}. It might take a minute.`}
+              ? "We'll send a one-click sign-in link. No password to remember."
+              : `We sent a sign-in link to ${email}. Click the link in the email — you'll be signed in instantly.`}
           </Text>
 
           {step === 'email' ? (
@@ -176,13 +161,13 @@ export default function SignInScreen() {
                 autoComplete="email"
                 keyboardType="email-address"
                 editable={!busy}
-                onSubmitEditing={sendCode}
+                onSubmitEditing={sendLink}
                 returnKeyType="send"
                 style={styles.input}
               />
               <Button
-                label={busy ? 'Sending…' : 'Send code →'}
-                onPress={sendCode}
+                label={busy ? 'Sending…' : 'Send sign-in link →'}
+                onPress={sendLink}
                 disabled={busy}
                 fullWidth
                 size="lg"
@@ -191,36 +176,18 @@ export default function SignInScreen() {
             </>
           ) : (
             <>
-              <TextInput
-                label="6-digit code"
-                placeholder="123456"
-                value={code}
-                onChangeText={setCode}
-                keyboardType="number-pad"
-                maxLength={6}
-                editable={!busy}
-                onSubmitEditing={verifyCode}
-                returnKeyType="done"
-                style={styles.input}
-              />
-              <Button
-                label={busy ? 'Verifying…' : 'Verify and continue →'}
-                onPress={verifyCode}
-                disabled={busy}
-                fullWidth
-                size="lg"
-                style={busy ? styles.disabled : undefined}
-              />
+              <Text variant="bodySmall" muted style={styles.tip}>
+                Don&apos;t see it? Check your spam folder. The link expires in
+                an hour — if it does, come back and request a fresh one.
+              </Text>
               <Button
                 label="← Use a different email"
                 variant="ghost"
                 onPress={() => {
                   setStep('email');
-                  setCode('');
                   setError(null);
                 }}
                 style={styles.secondary}
-                disabled={busy}
               />
             </>
           )}
@@ -262,6 +229,9 @@ const styles = StyleSheet.create({
   },
   input: {
     marginTop: spacing.xs,
+  },
+  tip: {
+    paddingVertical: spacing.sm,
   },
   disabled: {
     opacity: 0.6,
