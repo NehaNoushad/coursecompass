@@ -2,12 +2,14 @@
  * Sky stats — the home page's proof-strip below the hero. Four big
  * numbers in sky-pale cards on a paper background, matching prototype 4.
  *
- * The numbers themselves use a solid `skyDeep` colour because RN doesn't
- * have native gradient text the way CSS does. A gradient version via
- * react-native-svg `<Text>` is on the polish list but not blocking.
+ * Each number eases up from 0 to its target value the first time the
+ * section scrolls into view. Uses IntersectionObserver on web to fire
+ * exactly once when the section enters the viewport; on native the
+ * observer doesn't exist, so the animation runs on mount as a fallback.
  */
 
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui/text';
 import {
@@ -20,25 +22,101 @@ import {
 } from '@/constants/theme';
 
 const STATS = [
-  { num: '382', label: 'Colleges' },
-  { num: '176', label: 'Courses' },
-  { num: '37',  label: 'Entrance exams' },
-  { num: '6',   label: 'Quiz questions' },
+  { num: 382, label: 'Colleges' },
+  { num: 176, label: 'Courses' },
+  { num: 37, label: 'Entrance exams' },
+  { num: 6, label: 'Quiz questions' },
 ];
 
+const ANIM_DURATION_MS = 1600;
+
 export function SkyStats() {
+  const sectionRef = useRef<View>(null);
+  const inView = useInViewport(sectionRef);
+
   return (
-    <View style={styles.section}>
+    <View ref={sectionRef} style={styles.section}>
       <View style={styles.row}>
         {STATS.map((stat) => (
           <View key={stat.label} style={styles.card}>
-            <Text style={styles.num}>{stat.num}</Text>
+            <CountUp target={stat.num} active={inView} />
             <Text style={styles.label}>{stat.label}</Text>
           </View>
         ))}
       </View>
     </View>
   );
+}
+
+/**
+ * Renders a number that animates from 0 to `target` over ANIM_DURATION_MS
+ * once `active` flips true. ease-out cubic so the count visibly slows as
+ * it approaches the target rather than ticking linearly. Only runs once
+ * per mount — repeat scrolls past the section don't retrigger.
+ */
+function CountUp({ target, active }: { target: number; active: boolean }) {
+  const [value, setValue] = useState(0);
+  const ranRef = useRef(false);
+
+  useEffect(() => {
+    if (!active || ranRef.current) return;
+    ranRef.current = true;
+
+    const startedAt =
+      typeof performance !== 'undefined' ? performance.now() : Date.now();
+    let frameId: number;
+
+    function tick(now: number) {
+      const elapsed = now - startedAt;
+      const t = Math.min(elapsed / ANIM_DURATION_MS, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(Math.round(target * eased));
+      if (t < 1) {
+        frameId = requestAnimationFrame(tick);
+      }
+    }
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, [active, target]);
+
+  return <Text style={styles.num}>{value.toLocaleString()}</Text>;
+}
+
+/**
+ * Returns true once the element first enters the viewport. Uses
+ * IntersectionObserver on web; on native falls back to "always true"
+ * since we don't have a cross-platform native observer here and the
+ * page layout means the stats section is visible after a short scroll
+ * anyway.
+ */
+function useInViewport(ref: React.RefObject<View | null>): boolean {
+  const [visible, setVisible] = useState(Platform.OS !== 'web');
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+    const node = ref.current as unknown as Element | null;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setVisible(true);
+            observer.disconnect(); // one-shot
+            break;
+          }
+        }
+      },
+      { threshold: 0.15 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return visible;
 }
 
 const styles = StyleSheet.create({
