@@ -5,16 +5,18 @@
  *   <Dropdown>             — single-select (Course / Stream / Type / Fees)
  *   <MultiSelectDropdown>  — multi-select with an "All" clear-all row (District)
  *
- * The panel is rendered via `position: 'fixed'` and positioned from the
- * trigger's measured bounding rect. This sidesteps any z-index / stacking
- * context / overflow:hidden issues from parent scroll containers — the
- * panel always paints above the viewport, not inside its container.
+ * The panel is rendered through `ReactDOM.createPortal` directly into
+ * document.body and positioned via `position: 'fixed'` using the trigger's
+ * measured bounding rect. Portal escapes EVERY parent stacking context,
+ * overflow:hidden ancestor, and CSS containing-block created by transforms
+ * or filters — none of which can interfere from the document.body level.
  *
  * Click-outside closes the panel via a document mousedown listener.
  * Web only — RN native would need a Modal-based variant, deferred.
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -139,43 +141,46 @@ export function Dropdown<T extends string>({
         <Chevron open={open} />
       </Pressable>
 
-      {open && pos ? (
-        <View ref={panelRef} style={[styles.panel, panelStyle(pos)]}>
-          <ScrollView
-            style={styles.panelScroll}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled
-          >
-            {options.map((opt) => {
-              const isSelected = opt.value === value;
-              return (
-                <Pressable
-                  key={String(opt.value)}
-                  style={({ pressed }) => [
-                    styles.option,
-                    pressed && styles.optionPressed,
-                    isSelected && styles.optionSelected,
-                  ]}
-                  onPress={() => {
-                    onChange(opt.value);
-                    setOpen(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.optionLabel,
-                      isSelected && styles.optionLabelSelected,
-                    ]}
-                  >
-                    {opt.label}
-                  </Text>
-                  {isSelected ? <Checkmark /> : null}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      ) : null}
+      {open && pos
+        ? createPortal(
+            <View ref={panelRef} style={[styles.panel, panelStyle(pos)]}>
+              <ScrollView
+                style={styles.panelScroll}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled
+              >
+                {options.map((opt) => {
+                  const isSelected = opt.value === value;
+                  return (
+                    <Pressable
+                      key={String(opt.value)}
+                      style={({ pressed }) => [
+                        styles.option,
+                        pressed && styles.optionPressed,
+                        isSelected && styles.optionSelected,
+                      ]}
+                      onPress={() => {
+                        onChange(opt.value);
+                        setOpen(false);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.optionLabel,
+                          isSelected && styles.optionLabelSelected,
+                        ]}
+                      >
+                        {opt.label}
+                      </Text>
+                      {isSelected ? <Checkmark /> : null}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>,
+            document.body,
+          )
+        : null}
     </View>
   );
 }
@@ -248,54 +253,57 @@ export function MultiSelectDropdown<T extends string>({
         <Chevron open={open} />
       </Pressable>
 
-      {open && pos ? (
-        <View ref={panelRef} style={[styles.panel, panelStyle(pos)]}>
-          <ScrollView
-            style={styles.panelScroll}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled
-          >
-            {/* All / clear-all row at the top */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.option,
-                pressed && styles.optionPressed,
-                selected.length === 0 && styles.optionSelected,
-              ]}
-              onPress={onClear}
-            >
-              <Text
-                style={[
-                  styles.optionLabel,
-                  styles.optionLabelBold,
-                  selected.length === 0 && styles.optionLabelSelected,
-                ]}
+      {open && pos
+        ? createPortal(
+            <View ref={panelRef} style={[styles.panel, panelStyle(pos)]}>
+              <ScrollView
+                style={styles.panelScroll}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled
               >
-                {allLabel}
-              </Text>
-              {selected.length === 0 ? <Checkmark /> : null}
-            </Pressable>
-            <View style={styles.optionDivider} />
-            {options.map((opt) => {
-              const isSelected = selected.includes(opt.value);
-              return (
+                {/* All / clear-all row at the top */}
                 <Pressable
-                  key={String(opt.value)}
                   style={({ pressed }) => [
                     styles.option,
-                    styles.optionMulti,
                     pressed && styles.optionPressed,
+                    selected.length === 0 && styles.optionSelected,
                   ]}
-                  onPress={() => onToggle(opt.value)}
+                  onPress={onClear}
                 >
-                  <Checkbox checked={isSelected} />
-                  <Text style={styles.optionLabel}>{opt.label}</Text>
+                  <Text
+                    style={[
+                      styles.optionLabel,
+                      styles.optionLabelBold,
+                      selected.length === 0 && styles.optionLabelSelected,
+                    ]}
+                  >
+                    {allLabel}
+                  </Text>
+                  {selected.length === 0 ? <Checkmark /> : null}
                 </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      ) : null}
+                <View style={styles.optionDivider} />
+                {options.map((opt) => {
+                  const isSelected = selected.includes(opt.value);
+                  return (
+                    <Pressable
+                      key={String(opt.value)}
+                      style={({ pressed }) => [
+                        styles.option,
+                        styles.optionMulti,
+                        pressed && styles.optionPressed,
+                      ]}
+                      onPress={() => onToggle(opt.value)}
+                    >
+                      <Checkbox checked={isSelected} />
+                      <Text style={styles.optionLabel}>{opt.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>,
+            document.body,
+          )
+        : null}
     </View>
   );
 }
