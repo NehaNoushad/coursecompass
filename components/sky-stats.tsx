@@ -21,34 +21,83 @@ import {
   spacing,
 } from '@/constants/theme';
 import { COLLEGES, COURSES, EXAMS } from '@/data';
+import { supabase } from '@/lib/supabase';
 
-// Counts come from the live seed data so the home page stats stay in
-// sync as colleges / courses are added. Quiz length is fixed.
-const STATS = [
-  { num: COLLEGES.length, label: 'Colleges' },
-  { num: COURSES.length, label: 'Courses' },
-  { num: EXAMS.length, label: 'Entrance exams' },
-  { num: 6, label: 'Quiz questions' },
-];
+const SESSION_KEY = 'cc.visitorCounted.v1';
 
 const ANIM_DURATION_MS = 1600;
 
 export function SkyStats() {
   const sectionRef = useRef<View>(null);
   const inView = useInViewport(sectionRef);
+  const visitors = useVisitorCount();
+
+  // Stats are recomputed each render so visitor count flows in once
+  // the RPC resolves. Catalogue counts come from the live seed.
+  const stats = [
+    { num: COLLEGES.length, label: 'Colleges' },
+    { num: COURSES.length, label: 'Courses' },
+    { num: EXAMS.length, label: 'Entrance exams' },
+    { num: visitors ?? 0, label: 'Visitors' },
+  ];
 
   return (
     <View ref={sectionRef} style={styles.section}>
       <View style={styles.row}>
-        {STATS.map((stat) => (
+        {stats.map((stat) => (
           <View key={stat.label} style={styles.card}>
-            <CountUp target={stat.num} active={inView} />
+            <CountUp target={stat.num} active={inView && stat.num > 0} />
             <Text style={styles.label}>{stat.label}</Text>
           </View>
         ))}
       </View>
     </View>
   );
+}
+
+/**
+ * Reads + increments the site-wide visitor counter via two Supabase RPCs.
+ * Increments once per browser session (sessionStorage gate prevents
+ * inflating the number on every refresh / route change). Returns null
+ * while the network call is in flight; the visitor card just stays at
+ * 0 / unanimated until the real value arrives.
+ *
+ * Pre-DB-setup fallback: if the RPCs don't exist yet, we just keep
+ * returning null silently. Visitor card shows 0 — better than a crash.
+ */
+function useVisitorCount(): number | null {
+  const [count, setCount] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      // sessionStorage is web-only; on native we just always read.
+      const alreadyCounted =
+        typeof window !== 'undefined' &&
+        window.sessionStorage?.getItem(SESSION_KEY) === '1';
+      const rpc = alreadyCounted ? 'get_visitor_count' : 'increment_visitors';
+      const { data, error } = await supabase.rpc(rpc);
+      if (cancelled) return;
+      if (error) {
+        // Function missing (pre-setup) or network blip — silent fallback.
+        if (!/Could not find the function/i.test(error.message)) {
+          console.warn(`${rpc} failed:`, error.message);
+        }
+        return;
+      }
+      if (!alreadyCounted && typeof window !== 'undefined') {
+        try {
+          window.sessionStorage?.setItem(SESSION_KEY, '1');
+        } catch {
+          // private mode — ignore
+        }
+      }
+      if (typeof data === 'number') setCount(data);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return count;
 }
 
 /**

@@ -99,3 +99,55 @@ $$;
 
 revoke all on function public.delete_user() from public;
 grant execute on function public.delete_user() to authenticated;
+
+-- ─── site_stats: single-row visitor counter ──────────────────────
+-- Backs the "Visitors" tile on the home page. A single row holds the
+-- running total; clients call `increment_visitors()` once per browser
+-- session (gated by sessionStorage on the client) and read with
+-- `get_visitor_count()` thereafter. No personally identifying data
+-- is stored — just a tally.
+create table if not exists public.site_stats (
+  id        smallint primary key default 1,
+  visitors  bigint   not null default 0,
+  -- Constrains the table to exactly one row.
+  constraint site_stats_singleton check (id = 1)
+);
+
+insert into public.site_stats (id, visitors)
+  values (1, 0)
+  on conflict do nothing;
+
+-- RLS: nobody touches this table directly. All reads/writes go through
+-- the two RPCs below, which run as SECURITY DEFINER.
+alter table public.site_stats enable row level security;
+
+create or replace function public.increment_visitors()
+returns bigint
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  new_count bigint;
+begin
+  update public.site_stats
+    set visitors = visitors + 1
+    where id = 1
+    returning visitors into new_count;
+  return new_count;
+end;
+$$;
+
+create or replace function public.get_visitor_count()
+returns bigint
+language sql
+security definer
+set search_path = ''
+as $$
+  select visitors from public.site_stats where id = 1;
+$$;
+
+revoke all on function public.increment_visitors() from public;
+revoke all on function public.get_visitor_count() from public;
+grant execute on function public.increment_visitors() to anon, authenticated;
+grant execute on function public.get_visitor_count()  to anon, authenticated;
