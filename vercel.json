@@ -3,5 +3,10 @@
   "outputDirectory": "dist",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/colleges/:id", "destination": "/colleges/[id]" },
+    { "source": "/courses/:id", "destination": "/courses/[id]" }
+  ]
 }
