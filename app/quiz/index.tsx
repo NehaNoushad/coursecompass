@@ -8,6 +8,7 @@ import {
   EXAMS,
   STREAM_LABELS,
 } from '@/data';
+import { useAuth } from '@/lib/auth';
 import {
   marksNote,
   recommend,
@@ -15,6 +16,7 @@ import {
   type QuizAnswers,
   type Recommendation,
 } from '@/lib/recommend';
+import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing } from '@/constants/theme';
 import { Badge } from '@/components/ui/badge';
 import { Button, LinkButton } from '@/components/ui/button';
@@ -118,6 +120,8 @@ export default function QuizScreen() {
     return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
   }
 
+  const { session } = useAuth();
+
   function finish() {
     if (streams.length === 0 || marks === null || !districtTouched || !collegeTypeTouched) return;
     const answers: QuizAnswers = {
@@ -128,7 +132,32 @@ export default function QuizScreen() {
       interests,
       examsAttempted: exams,
     };
-    setResult(recommend(answers));
+    const recommendation = recommend(answers);
+    setResult(recommendation);
+
+    // Persist the attempt for signed-in users so it shows up on /account.
+    // Fire-and-forget: a failed insert (table missing, network blip,
+    // policy edge case) shouldn't block the user from seeing their
+    // results — we just log it.
+    if (session) {
+      const topCourse = recommendation.courses[0]?.course;
+      const topCollege = recommendation.colleges[0]?.college;
+      supabase
+        .from('quiz_results')
+        .insert({
+          user_id: session.user.id,
+          answers,
+          top_course_id: topCourse?.id ?? null,
+          top_course_name: topCourse?.name ?? null,
+          top_college_id: topCollege?.id ?? null,
+          top_college_name: topCollege?.name ?? null,
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.warn('quiz_results insert failed:', error.message);
+          }
+        });
+    }
   }
 
   function restart() {
@@ -389,17 +418,6 @@ function QuizResult({
         </View>
       )}
 
-      <Card style={styles.teaser}>
-        <Badge label="Coming soon" tone="accent" />
-        <Text variant="subheading" style={{ marginTop: spacing.sm }}>
-          A full personalised report
-        </Text>
-        <Text muted style={{ marginTop: spacing.xs }}>
-          A detailed PDF — every matched college, exam timeline and backup options —
-          will be available later. For now, everything here is free.
-        </Text>
-      </Card>
-
       <View style={styles.resultNav}>
         <Button label="Retake the quiz" variant="secondary" onPress={onRestart} />
         <LinkButton href="/colleges" label="Browse all colleges" variant="ghost" />
@@ -479,10 +497,6 @@ const styles = StyleSheet.create({
   reasons: {
     gap: 2,
     paddingHorizontal: spacing.xs,
-  },
-  teaser: {
-    marginTop: spacing.x2l,
-    borderColor: colors.accent,
   },
   resultNav: {
     flexDirection: 'row',
