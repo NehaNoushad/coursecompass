@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import type { CourseCategoryId, Stream } from '@/types';
-import { COURSES, COURSE_CATEGORIES, STREAM_LABELS } from '@/data';
+import { COURSES, COURSE_CATEGORIES, EXAMS, STREAM_LABELS } from '@/data';
 import { colors, spacing } from '@/constants/theme';
 import { Button } from '@/components/ui/button';
 import { CourseCard } from '@/components/course-card';
@@ -13,6 +13,7 @@ import { Text } from '@/components/ui/text';
 
 type CategoryFilter = 'all' | CourseCategoryId;
 type StreamFilter = 'all' | Stream;
+type ExamFilter = 'all' | string;
 
 const CATEGORY_OPTIONS: DropdownOption<CategoryFilter>[] = [
   { value: 'all', label: 'All categories' },
@@ -27,10 +28,16 @@ const STREAM_OPTIONS: DropdownOption<StreamFilter>[] = [
   { value: 'arts', label: STREAM_LABELS.arts },
 ];
 
+const EXAM_OPTIONS: DropdownOption<ExamFilter>[] = [
+  { value: 'all', label: 'Any exam' },
+  ...EXAMS.map((e) => ({ value: e.id, label: e.name })),
+];
+
 export default function CoursesScreen() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [stream, setStream] = useState<StreamFilter>('all');
+  const [exam, setExam] = useState<ExamFilter>('all');
 
   const results = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -38,14 +45,16 @@ export default function CoursesScreen() {
       if (q && !c.name.toLowerCase().includes(q)) return false;
       if (category !== 'all' && c.categoryId !== category) return false;
       if (stream !== 'all' && !c.streams.includes(stream)) return false;
+      if (exam !== 'all' && !c.examIds.includes(exam)) return false;
       return true;
     });
-  }, [search, category, stream]);
+  }, [search, category, stream, exam]);
 
   function resetFilters() {
     setSearch('');
     setCategory('all');
     setStream('all');
+    setExam('all');
   }
 
   return (
@@ -75,6 +84,12 @@ export default function CoursesScreen() {
             options={STREAM_OPTIONS}
             value={stream}
             onChange={setStream}
+          />
+          <Dropdown
+            label="Entrance exam"
+            options={EXAM_OPTIONS}
+            value={exam}
+            onChange={setExam}
           />
         </View>
       </View>
