@@ -117,12 +117,15 @@ export function SiteHeader() {
           {session ? (
             <HeaderAvatar />
           ) : (
-            <LinkButton
-              href="/signin"
-              label="Sign in"
-              variant="ghost"
-              style={styles.authBtn}
-            />
+            // Plain Pressable + Text so the baseline matches the nav-item
+            // pressables next to it. A LinkButton wraps padding + font-size
+            // math differently and ends up shifted ~2px upward against the
+            // grey nav links.
+            <Link href="/signin" asChild>
+              <Pressable style={styles.navItem}>
+                <Text style={[styles.navLink, styles.signinLink]}>Sign in</Text>
+              </Pressable>
+            </Link>
           )}
 
           {/* Hide the quiz CTA once the signed-in user has taken it —
@@ -204,11 +207,9 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
     color: colors.textMuted,
   },
-  authBtn: {
-    // Tighter padding than the default ghost button so the bar stays compact.
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderWidth: 0,
+  signinLink: {
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
   },
   // Header avatar — sits where the "Account" text link used to.
   avatarWrap: {
