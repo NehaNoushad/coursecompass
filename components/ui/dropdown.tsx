@@ -316,12 +316,22 @@ function measureTrigger(ref: React.RefObject<View | null>): PanelPosition | null
   const node = ref.current as unknown as HTMLElement | null;
   if (!node) return null;
   const r = node.getBoundingClientRect();
+  // Panel can be wider than the trigger so labels don't truncate, but
+  // never narrower.
+  const width = Math.max(r.width, 240);
+  // Clamp `left` so the panel never spills past the viewport's right
+  // edge. Without this a trigger placed near the right edge on mobile
+  // (or any narrow column) renders the panel half off-screen.
+  const vw = window.innerWidth;
+  const SAFE_INSET = 8;
+  let left = r.left;
+  if (left + width + SAFE_INSET > vw) {
+    left = Math.max(SAFE_INSET, vw - width - SAFE_INSET);
+  }
   return {
     top: r.bottom + 4, // small gap below the trigger
-    left: r.left,
-    // Panel can be wider than the trigger so labels don't truncate, but
-    // never narrower.
-    width: Math.max(r.width, 240),
+    left,
+    width,
   };
 }
 
