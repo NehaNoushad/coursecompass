@@ -59,8 +59,15 @@ export interface Recommendation {
   colleges: CollegeMatch[];
 }
 
-const MAX_COURSES = 8;
-const MAX_COLLEGES = 12;
+// User feedback: the previous caps of 8 / 12 hid most of the matches
+// from view ("where is the rest of the compatible courses?"). Bumped
+// so the results page lists everything that genuinely fits the
+// student's stream + interests, sorted by score — top picks still
+// surface at the top, but the long tail isn't truncated. The hard
+// cap stays just to bound the page if every catalogue item somehow
+// matches.
+const MAX_COURSES = 30;
+const MAX_COLLEGES = 30;
 
 /** Rank courses against the student's stream(s), interests and exams attempted. */
 function rankCourses(answers: QuizAnswers): CourseMatch[] {

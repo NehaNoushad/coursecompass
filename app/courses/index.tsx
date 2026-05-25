@@ -171,9 +171,10 @@ export default function CoursesScreen() {
       : 'pcm';
 
   const [activeStream, setActiveStream] = useState<StreamTab>(initialStream);
+  const [search, setSearch] = useState('');
 
-  // Courses visible for the active stream
-  const visibleCourses = useMemo(
+  // Courses visible for the active stream (before the search filter).
+  const streamFilteredCourses = useMemo(
     () =>
       COURSES.filter(
         (c) =>
@@ -182,6 +183,29 @@ export default function CoursesScreen() {
       ),
     [activeStream],
   );
+
+  // Apply the live search filter on top of the stream filter. Empty
+  // query passes everything through. Matches against:
+  //   1. Direct substring of the course name (case-insensitive).
+  //   2. Acronym derived from the course name's words — so typing
+  //      "CSE" finds "B.Tech Computer Science Engineering" (whose
+  //      word-initials spell "bcse" and contain "cse"). Without this,
+  //      students searching by the common abbreviations they actually
+  //      know would get zero results.
+  const visibleCourses = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return streamFilteredCourses;
+    return streamFilteredCourses.filter((c) => {
+      const name = c.name.toLowerCase();
+      if (name.includes(q)) return true;
+      const initials = name
+        .split(/[\s&.,()/-]+/)
+        .filter((w) => w.length >= 2)
+        .map((w) => w[0])
+        .join('');
+      return initials.includes(q);
+    });
+  }, [streamFilteredCourses, search]);
 
   // Build grouped lists — a course can appear in more than one group
   const groups = useMemo(() => {
@@ -202,6 +226,8 @@ export default function CoursesScreen() {
   }, [visibleCourses, activeStream]);
 
   const activeTab = TABS.find((t) => t.id === activeStream)!;
+  const isSearching = search.trim().length > 0;
+  const noResults = isSearching && visibleCourses.length === 0;
 
   return (
     <View style={styles.root}>
@@ -259,15 +285,62 @@ export default function CoursesScreen() {
           {/* Summary bar */}
           <View style={styles.contentBar}>
             <Text style={styles.summaryText}>
-              {activeStream === 'any'
-                ? <>Showing all <Text style={styles.summaryEm}>{visibleCourses.length} courses</Text> across every stream.</>
-                : <>You studied <Text style={styles.summaryEm}>{activeTab.summaryLabel}</Text>. Here are <Text style={styles.summaryEm}>{visibleCourses.length} courses</Text> you can apply for.</>
-              }
+              {isSearching ? (
+                <>
+                  <Text style={styles.summaryEm}>{visibleCourses.length}</Text> course
+                  {visibleCourses.length === 1 ? '' : 's'} matching &ldquo;{search.trim()}&rdquo;
+                  {activeStream !== 'any' ? (
+                    <> within <Text style={styles.summaryEm}>{activeTab.summaryLabel}</Text></>
+                  ) : null}
+                  .
+                </>
+              ) : activeStream === 'any' ? (
+                <>Showing all <Text style={styles.summaryEm}>{visibleCourses.length} courses</Text> across every stream.</>
+              ) : (
+                <>You studied <Text style={styles.summaryEm}>{activeTab.summaryLabel}</Text>. Here are <Text style={styles.summaryEm}>{visibleCourses.length} courses</Text> you can apply for.</>
+              )}
             </Text>
             <Pressable onPress={() => setActiveStream('any')} style={styles.resetBtn}>
               <Text style={styles.resetText}>← Reset to all courses</Text>
             </Pressable>
           </View>
+
+          {/* Search input — live filters across all visible exam-path groups. */}
+          <View style={styles.searchWrap}>
+            {/* Raw <input> on web (this app is web-only for now). RN's
+                TextInput's focus ring conflicts with the soft pill we
+                want here. Inline CSS scoped by `cc-search` class is
+                rendered after the body via a <style> sibling — matches
+                the pattern used on /colleges. */}
+            <input
+              className="cc-search"
+              placeholder="Search by course name… (e.g. CSE, Nursing, B.Com)"
+              value={search}
+              onChange={(e) => setSearch(e.currentTarget.value)}
+            />
+            {isSearching ? (
+              <Pressable onPress={() => setSearch('')} style={styles.clearBtn}>
+                <Text style={styles.clearBtnText}>Clear</Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {/* Empty state when search returns nothing */}
+          {noResults ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>
+                No courses match &ldquo;{search.trim()}&rdquo;
+                {activeStream !== 'any' ? <> in {activeTab.summaryLabel}</> : null}
+              </Text>
+              <Text style={styles.emptyBody}>
+                Try a shorter query, a different spelling, or
+                {activeStream !== 'any' ? <> switching to <Text style={styles.summaryEm}>Any stream</Text></> : <> a different course name</>}.
+              </Text>
+              <Pressable onPress={() => setSearch('')} style={styles.emptyBtn}>
+                <Text style={styles.emptyBtnText}>Clear search</Text>
+              </Pressable>
+            </View>
+          ) : null}
 
           {/* Course groups */}
           {groups.map((group) => {
@@ -382,6 +455,35 @@ export default function CoursesScreen() {
         </View>{/* /body */}
 
         <SiteFooter />
+
+        {/* Web-only styling for the raw <input>. Scoped by .cc-search
+            class so it doesn't bleed into the rest of the app. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              .cc-search {
+                flex: 1;
+                width: 100%;
+                height: 48px;
+                padding: 0 18px;
+                border: 1.5px solid ${colors.border};
+                border-radius: 999px;
+                background: ${colors.background};
+                font-family: inherit;
+                font-size: 15px;
+                color: ${colors.text};
+                outline: none;
+                box-sizing: border-box;
+                transition: border-color 0.15s, box-shadow 0.15s;
+              }
+              .cc-search::placeholder { color: ${colors.textSubtle}; }
+              .cc-search:focus {
+                border-color: ${colors.primary};
+                box-shadow: 0 0 0 4px rgba(45, 125, 210, 0.12);
+              }
+            `,
+          }}
+        />
       </ScrollView>
     </View>
   );
@@ -527,6 +629,60 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
     color: colors.textSubtle,
+  },
+
+  // ── Search input row ─────────────────────────────────────────────────────────
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  clearBtn: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  clearBtnText: {
+    fontSize: 13,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+  },
+
+  // ── Empty state when search returns nothing ──────────────────────────────────
+  emptyCard: {
+    padding: spacing.x3l,
+    alignItems: 'flex-start',
+    backgroundColor: colors.skyPale,
+    borderRadius: radius.xl,
+    gap: spacing.sm,
+    marginBottom: spacing.x2l,
+  },
+  emptyTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 20,
+    color: colors.text,
+    letterSpacing: -0.3,
+  },
+  emptyBody: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  emptyBtn: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: colors.primary,
+    borderRadius: 999,
+  },
+  emptyBtnText: {
+    fontSize: 14,
+    fontWeight: fontWeight.semibold,
+    color: colors.textInverse,
   },
 
   // ── Path groups ──────────────────────────────────────────────────────────────
