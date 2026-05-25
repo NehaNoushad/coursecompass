@@ -131,9 +131,3 @@ export function getCollegesForCourse(courseId: string): College[] {
   );
 }
 
-export const COUNTS = {
-  colleges: COLLEGES.length,
-  courses: COURSES.length,
-  exams: EXAMS.length,
-  categories: COURSE_CATEGORIES.length,
-};

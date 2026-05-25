@@ -4,7 +4,6 @@
  * overlay, and any other component that references it.
  */
 export const APP_NAME = 'Paper Plane';
-export const APP_TAGLINE = 'Find the right course and college after 12th — in Kerala.';
 
 /**
  * Browse-gate thresholds.
@@ -32,8 +31,3 @@ export const BROWSE_GATE_FIRM_MINUTES = 12;
  */
 export const BROWSE_GATE_FIRM_GRACE_MINUTES = 2;
 
-/**
- * Monetization master switch. CLAUDE.md mandates 2026 stays entirely free;
- * the paywall structure is built but inactive until 2027.
- */
-export const MONETIZATION_ENABLED = false;
