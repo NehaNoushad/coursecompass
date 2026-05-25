@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper Plane — Quiz (Compass)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ───────── DESIGN COMMENT ─────────
+     Both quiz prototypes A (postcard journey, paper plane drifts across
+     a sky band) and B (handwritten notepad with a tilted page) leaned
+     hard into atmosphere. They turned a 6-question form into a *themed
+     experience*. This prototype goes the other way:
+
+     The quiz is reframed as **a profile getting built in real time**.
+     The screen is split into two panes — on the left, a sticky card
+     showing the student's profile so far, with slots ticking off as
+     they answer. On the right, the current question, clean and
+     unadorned. The visual reward isn't a drifting plane or a tilted
+     notebook — it's *watching your match-picture form*.
+
+     The only sky-brand element is a thin sky-gradient strip at the
+     very top of the page carrying the segmented progress bar. The
+     rest is paper and ink, with the primary blue reserved for the
+     active state on the profile slot you're filling.
+
+     Step shown: 3 of 6 (district). The student has already answered
+     stream + marks, so those slots are filled with checkmarks. The
+     district slot is "in progress" with a pulsing dot. The remaining
+     three slots are empty placeholders.
+  */
+  :root {
+    --sky-pale:    #E8F4FD;
+    --sky-bright:  #87CEEB;
+    --sky-mid:     #4FA3E0;
+    --sky-deep:    #2D7DD2;
+    --sky-anchor:  #1F5FA0;
+
+    --sun:          #FFD93D;
+    --sun-glow:     #FFE680;
+    --coral:        #FF8C7A;
+    --coral-deep:   #E66E5A;
+
+    --ink:        #0D2840;
+    --ink-soft:   #4A5A6E;
+    --ink-muted:  #8895A6;
+    --paper:      #FBFCFE;
+    --line:       rgba(31, 95, 160, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100%;
+  }
+  .display { font-family: 'Sora', system-ui, sans-serif; }
+  .hand    { font-family: 'Caveat', cursive; }
+
+  /* ───────── NAV ─────────
+     Same nav as the rest of the product, on a paper background. No
+     "Sign in" highlighted (the quiz is a focused task — pull less
+     attention to other links). */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 32px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: none; }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav-right { display: flex; align-items: center; gap: 24px; }
+  .nav-right a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px; font-weight: 500;
+  }
+  .nav-right a:hover { color: var(--sky-anchor); }
+  .nav-exit {
+    color: var(--ink-muted) !important;
+    font-size: 13px !important;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+
+  /* ───────── PROGRESS STRIP ─────────
+     Thin sky-pale strip beneath the nav with a segmented progress bar.
+     Six nodes — three are filled (steps 1, 2, 3), three are empty
+     (steps 4, 5, 6). The third node is currently active and pulses
+     softly. The strip is the ONLY decorative sky-band on the page —
+     everything else lives on paper. */
+  .progressStrip {
+    background: linear-gradient(180deg, var(--sky-pale) 0%, var(--paper) 100%);
+    padding: 28px 32px 28px;
+    border-bottom: 1px solid var(--line);
+  }
+  .progressInner {
+    max-width: 1120px; margin: 0 auto;
+    display: flex; align-items: center; gap: 24px;
+  }
+  .stepCaption {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    color: var(--ink);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .stepCaption em {
+    color: var(--sky-deep);
+    font-style: normal;
+  }
+  .progressBar {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+  .segment {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .segment.done {
+    background: var(--sky-deep);
+  }
+  .segment.active {
+    background: var(--line);
+  }
+  .segment.active::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 55%;
+    background: var(--sky-deep);
+    border-radius: 3px;
+    /* Subtle pulse — barely-there breath, not a distracting bounce. */
+    animation: segmentPulse 2.2s ease-in-out infinite;
+  }
+  @keyframes segmentPulse {
+    0%, 100% { opacity: 0.65; width: 50%; }
+    50%      { opacity: 1;    width: 60%; }
+  }
+
+  /* ───────── LAYOUT ─────────
+     Two-pane working area. Left = profile-being-built (sticky).
+     Right = current question. */
+  .layout {
+    max-width: 1120px; margin: 0 auto;
+    padding: 48px 32px 80px;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  /* ─── LEFT: profile card ─── */
+  .profile {
+    position: sticky; top: 92px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 12px 32px -16px rgba(31, 95, 160, 0.18);
+  }
+  .profileHead {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 4px;
+  }
+  .profileMark {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .profileMark svg { width: 14px; height: 14px; }
+  .profileLabel {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+  }
+  .profileTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.3px;
+    color: var(--ink);
+    margin-top: 2px;
+    margin-bottom: 4px;
+  }
+  .profileSub {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-bottom: 20px;
+  }
+  /* Slots — one per quiz step. Three states: done (with answer +
+     checkmark), active (pulsing dot + "currently answering"), empty
+     (greyed-out, no value yet). */
+  .slot {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .slot:last-of-type { border-bottom: 0; }
+  .slotDot {
+    margin-top: 4px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--ink-muted);
+    background: white;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .slot.done .slotDot {
+    background: var(--sky-deep);
+    border-color: var(--sky-deep);
+  }
+  .slot.done .slotDot::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" fill="none"><path d="M2 7 L5.5 10.5 L12 3.5" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    background-size: contain;
+  }
+  .slot.active .slotDot {
+    border-color: var(--coral);
+    background: var(--coral);
+    box-shadow: 0 0 0 0 rgba(255, 140, 122, 0.6);
+    animation: slotPulse 1.6s ease-out infinite;
+  }
+  @keyframes slotPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255, 140, 122, 0.55); }
+    70%  { box-shadow: 0 0 0 8px rgba(255, 140, 122, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 140, 122, 0); }
+  }
+  .slotName {
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+  .slot.done .slotName { color: var(--ink-soft); }
+  .slot.active .slotName { color: var(--ink); font-weight: 600; }
+  .slotValue {
+    margin-top: 2px;
+    font-size: 14px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .slotValue.placeholder {
+    color: var(--ink-muted);
+    font-weight: 400;
+    font-style: italic;
+  }
+  .slotValue.activeValue {
+    color: var(--coral-deep);
+    font-style: italic;
+    font-weight: 500;
+  }
+  .slotBody { flex: 1; min-width: 0; }
+
+  .profileFoot {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+  }
+  .profileResult {
+    background: var(--sky-pale);
+    border-radius: 12px;
+    padding: 14px 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink-soft);
+    letter-spacing: 0.2px;
+    position: relative;
+    overflow: hidden;
+  }
+  .profileResult::before {
+    /* Soft shimmer — a faint left-to-right wash so the placeholder
+       feels alive without being noisy. */
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.65) 50%, transparent 100%);
+    transform: translateX(-100%);
+    animation: shimmer 3.5s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0%   { transform: translateX(-100%); }
+    60%, 100% { transform: translateX(100%); }
+  }
+  .profileResult span {
+    position: relative; z-index: 1;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .profileResultPlane {
+    width: 14px; height: 14px;
+    opacity: 0.65;
+  }
+
+  /* ─── RIGHT: question pane ─── */
+  .question {
+    min-width: 0;
+  }
+  .questionHead {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .questionTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 44px;
+    line-height: 1.05;
+    letter-spacing: -1.5px;
+    color: var(--ink);
+    max-width: 700px;
+  }
+  .questionHint {
+    margin-top: 12px;
+    color: var(--ink-soft);
+    font-size: 16px;
+    max-width: 580px;
+  }
+  .questionHint .hand {
+    color: var(--coral-deep);
+    font-size: 22px;
+    line-height: 1;
+    display: inline-block;
+    transform: rotate(-2deg);
+    margin: 0 2px;
+  }
+
+  /* ─── Answer chips ─── */
+  .chips {
+    margin-top: 36px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+  }
+  .chip {
+    background: white;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.15s;
+    text-align: left;
+    font-family: inherit;
+    color: var(--ink);
+  }
+  .chip:hover {
+    border-color: var(--sky-mid);
+    background: var(--paper);
+    transform: translateY(-1px);
+  }
+  .chip.selected {
+    border-color: var(--sky-deep);
+    background: var(--sky-pale);
+    color: var(--sky-anchor);
+  }
+  .chipBox {
+    width: 18px; height: 18px;
+    border-radius: 5px;
+    border: 1.5px solid var(--line);
+    background: white;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .chip.selected .chipBox {
+    border-color: var(--sky-deep);
+    background: var(--sky-deep);
+  }
+  .chip.selected .chipBox::after {
+    content: '';
+    width: 10px; height: 10px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" fill="none"><path d="M2 7 L5.5 10.5 L12 3.5" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    background-size: contain;
+  }
+  .chipLabel {
+    font-size: 15px;
+    font-weight: 500;
+    flex: 1;
+  }
+  .chip.selected .chipLabel { font-weight: 600; }
+  .chip.anyChip {
+    grid-column: 1 / -1;
+    background: var(--paper);
+    border-style: dashed;
+  }
+  .chip.anyChip.selected {
+    background: var(--sky-pale);
+    border-style: solid;
+  }
+
+  /* ─── Actions row ─── */
+  .actions {
+    margin-top: 40px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+  .actionsLeft {
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+  .actionsLeft strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .actionsRight {
+    display: flex; gap: 10px;
+  }
+  .btn {
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+  .btn.ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border-color: var(--line);
+  }
+  .btn.ghost:hover {
+    color: var(--ink);
+    border-color: var(--ink-muted);
+  }
+  .btn.primary {
+    background: var(--sky-deep);
+    color: white;
+  }
+  .btn.primary:hover {
+    background: var(--sky-anchor);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -6px rgba(45, 125, 210, 0.45);
+  }
+  .btn.primary:disabled {
+    background: var(--line);
+    color: var(--ink-muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* ───────── RESPONSIVE ─────────
+     Mobile is the harder pane to design for this layout. The desktop
+     "side-by-side profile + question" doesn't translate one-to-one —
+     stacking the full profile card above the question (the trivial
+     fix) buries the question under ~800px of scroll, which defeats
+     the point.
+
+     Instead, on narrow:
+     1. The question pane is REORDERED to come first (CSS `order`).
+     2. The profile card is restyled into a slim horizontal summary
+        strip above the question — only the completed slots and the
+        active slot are visible; the not-yet-answered slots are
+        hidden. Each slot becomes a tiny inline tick + label rather
+        than a full row.
+     3. The "Building your match" header, the long sub-line, and the
+        "Your match · revealed at step 6" footer are hidden — they're
+        nice-to-have desktop ornaments, not essential at phone size.
+     4. The brand wordmark gets `white-space: nowrap` so it doesn't
+        break into two lines next to the compact nav.
+
+     Net effect: phone user sees question first, with a one-line strip
+     above it showing their answers so far. The question still feels
+     primary; the profile is now a glance-back summary.
+  */
+  @media (max-width: 980px) {
+    .nav { padding: 12px 20px; }
+    .nav-right { gap: 14px; }
+    .brand { font-size: 16px; white-space: nowrap; }
+    .nav-right a:nth-child(1),
+    .nav-right a:nth-child(2) { display: none; }
+
+    .progressStrip { padding: 18px 20px 16px; }
+    .progressInner { gap: 14px; }
+    .stepCaption { font-size: 12px; letter-spacing: 1px; }
+
+    .layout {
+      grid-template-columns: 1fr;
+      gap: 16px;
+      padding: 16px 20px 60px;
+    }
+
+    /* Reorder: question first, profile-as-strip second. */
+    .question { order: 1; }
+    .profile {
+      order: 0;
+      position: static;
+      padding: 12px 14px;
+      border-radius: 14px;
+      box-shadow: none;
+      background: var(--paper);
+      border-color: var(--line);
+
+      /* Become a horizontal strip. */
+      display: flex; flex-direction: row; flex-wrap: wrap;
+      align-items: center; gap: 8px 14px;
+    }
+    /* Hide the desktop chrome on narrow. */
+    .profileHead, .profileTitle, .profileSub, .profileFoot { display: none; }
+    /* Hide unanswered future slots — they're noise on a small screen. */
+    .slot:not(.done):not(.active) { display: none; }
+
+    .slot {
+      padding: 0;
+      border-bottom: 0;
+      gap: 6px;
+    }
+    .slotDot { margin-top: 0; width: 12px; height: 12px; border-width: 1.5px; }
+    .slot.done .slotDot::after { inset: 1px; }
+    .slotBody { display: flex; align-items: baseline; gap: 4px; }
+    .slotName {
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .slotValue {
+      margin-top: 0;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .slot.active .slotName::after { content: ':'; }
+
+    .questionTitle { font-size: 28px; letter-spacing: -0.8px; }
+    .questionHint { font-size: 14px; }
+    .questionHint .hand { font-size: 18px; }
+    .chips {
+      margin-top: 24px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .chip {
+      padding: 12px 12px;
+      gap: 8px;
+      border-radius: 12px;
+    }
+    .chipLabel {
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .actions {
+      margin-top: 28px;
+      padding-top: 20px;
+      flex-direction: column;
+      gap: 14px;
+      align-items: stretch;
+    }
+    .actionsLeft { text-align: center; }
+    .actionsRight { width: 100%; gap: 8px; }
+    .actionsRight .btn { flex: 1; padding: 14px 18px; }
+  }
+
+  /* Very narrow phones (iPhone SE-ish): chips become 1 per row so
+     long district names like "Thiruvananthapuram" don't get clipped. */
+  @media (max-width: 360px) {
+    .chips { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── Nav ─── -->
+<nav class="nav">
+  <a href="#" class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span>Paper Plane</span>
+  </a>
+  <div class="nav-right">
+    <a href="#">Colleges</a>
+    <a href="#">Courses</a>
+    <a href="#" class="nav-exit">← Save &amp; exit</a>
+  </div>
+</nav>
+
+<!-- ─── Progress strip ─── -->
+<div class="progressStrip">
+  <div class="progressInner">
+    <div class="stepCaption">Step <em>3</em> of 6</div>
+    <div class="progressBar">
+      <div class="segment done"></div>
+      <div class="segment done"></div>
+      <div class="segment active"></div>
+      <div class="segment"></div>
+      <div class="segment"></div>
+      <div class="segment"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Two-pane working area ─── -->
+<div class="layout">
+
+  <!-- ─── LEFT: profile being built ─── -->
+  <aside class="profile">
+    <div class="profileHead">
+      <div class="profileMark">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="profileLabel">Building your match</div>
+    </div>
+    <h2 class="profileTitle">Your profile</h2>
+    <p class="profileSub">Each answer narrows down the colleges + courses we'll show you.</p>
+
+    <div class="slot done">
+      <div class="slotDot"></div>
+      <div class="slotBody">
+        <div class="slotName">Stream</div>
+        <div class="slotValue">Science (PCM)</div>
+      </div>
+    </div>
+
+    <div class="slot done">
+      <div class="slotDot"></div>
+      <div class="slotBody">
+        <div class="slotName">12th marks</div>
+        <div class="slotValue">85 – 95%</div>
+      </div>
+    </div>
+
+    <div class="slot active">
+      <div class="slotDot"></div>
+      <div class="slotBody">
+        <div class="slotName">District</div>
+        <div class="slotValue activeValue">picking now…</div>
+      </div>
+    </div>
+
+    <div class="slot">
+      <div class="slotDot"></div>
+      <div class="slotBody">
+        <div class="slotName">Budget</div>
+        <div class="slotValue placeholder">step 4</div>
+      </div>
+    </div>
+
+    <div class="slot">
+      <div class="slotDot"></div>
+      <div class="slotBody">
+        <div class="slotName">Interests</div>
+        <div class="slotValue placeholder">step 5</div>
+      </div>
+    </div>
+
+    <div class="slot">
+      <div class="slotDot"></div>
+      <div class="slotBody">
+        <div class="slotName">Entrance exams</div>
+        <div class="slotValue placeholder">step 6</div>
+      </div>
+    </div>
+
+    <div class="profileFoot">
+      <div class="profileResult">
+        <span>
+          <svg class="profileResultPlane" viewBox="0 0 24 24" fill="none">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Your match · revealed at step 6
+        </span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── RIGHT: current question ─── -->
+  <main class="question">
+    <div class="questionHead">Question 3 of 6</div>
+    <h1 class="questionTitle display">Where do you want to study?</h1>
+    <p class="questionHint">
+      Pick any district in Kerala. You can choose more than one — we'll prioritise them.
+      <span class="hand">no preference? hit "any"</span>
+    </p>
+
+    <div class="chips" id="chips">
+      <button class="chip anyChip" data-value="any">
+        <div class="chipBox"></div>
+        <span class="chipLabel">Any district</span>
+      </button>
+
+      <button class="chip" data-value="Kasaragod"><div class="chipBox"></div><span class="chipLabel">Kasaragod</span></button>
+      <button class="chip" data-value="Kannur"><div class="chipBox"></div><span class="chipLabel">Kannur</span></button>
+      <button class="chip" data-value="Wayanad"><div class="chipBox"></div><span class="chipLabel">Wayanad</span></button>
+      <button class="chip" data-value="Kozhikode"><div class="chipBox"></div><span class="chipLabel">Kozhikode</span></button>
+      <button class="chip" data-value="Malappuram"><div class="chipBox"></div><span class="chipLabel">Malappuram</span></button>
+      <button class="chip" data-value="Palakkad"><div class="chipBox"></div><span class="chipLabel">Palakkad</span></button>
+      <button class="chip" data-value="Thrissur"><div class="chipBox"></div><span class="chipLabel">Thrissur</span></button>
+      <button class="chip selected" data-value="Ernakulam"><div class="chipBox"></div><span class="chipLabel">Ernakulam</span></button>
+      <button class="chip" data-value="Idukki"><div class="chipBox"></div><span class="chipLabel">Idukki</span></button>
+      <button class="chip selected" data-value="Kottayam"><div class="chipBox"></div><span class="chipLabel">Kottayam</span></button>
+      <button class="chip" data-value="Alappuzha"><div class="chipBox"></div><span class="chipLabel">Alappuzha</span></button>
+      <button class="chip" data-value="Pathanamthitta"><div class="chipBox"></div><span class="chipLabel">Pathanamthitta</span></button>
+      <button class="chip" data-value="Kollam"><div class="chipBox"></div><span class="chipLabel">Kollam</span></button>
+      <button class="chip" data-value="Thiruvananthapuram"><div class="chipBox"></div><span class="chipLabel">Thiruvananthapuram</span></button>
+    </div>
+
+    <div class="actions">
+      <div class="actionsLeft"><strong id="selCount">2</strong> selected</div>
+      <div class="actionsRight">
+        <button class="btn ghost">← Previous</button>
+        <button class="btn primary" id="continueBtn">Continue →</button>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script>
+  // Chips behave as multi-select. "Any district" is exclusive — picking
+  // it clears everything else; picking any district clears "Any". The
+  // selected count and Continue's disabled state both reflect the
+  // current selection. The profile's "District" slot value updates live
+  // as a faint preview of what the answer is shaping up to be (the
+  // student sees their pick show up on the left before they commit).
+  const chips = document.querySelectorAll('#chips .chip');
+  const anyChip = document.querySelector('.chip.anyChip');
+  const selCount = document.getElementById('selCount');
+  const continueBtn = document.getElementById('continueBtn');
+  const slotValue = document.querySelector('.slot.active .slotValue');
+
+  function refresh() {
+    const selected = [...chips].filter(c => c.classList.contains('selected') && !c.classList.contains('anyChip'));
+    const anyOn = anyChip.classList.contains('selected');
+    const total = anyOn ? 1 : selected.length;
+    selCount.textContent = total;
+    continueBtn.disabled = total === 0;
+
+    if (anyOn) {
+      slotValue.textContent = 'any district';
+    } else if (selected.length === 0) {
+      slotValue.textContent = 'picking now…';
+    } else if (selected.length === 1) {
+      slotValue.textContent = selected[0].dataset.value;
+    } else {
+      slotValue.textContent = selected.length + ' districts';
+    }
+  }
+
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      if (chip === anyChip) {
+        // Toggle Any — exclusive.
+        chips.forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+      } else {
+        anyChip.classList.remove('selected');
+        chip.classList.toggle('selected');
+      }
+      refresh();
+    });
+  });
+
+  refresh();
+</script>
+
+</body>
+</html>

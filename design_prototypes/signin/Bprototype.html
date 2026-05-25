@@ -72,8 +72,27 @@
     color: var(--ink);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    /* watercolour wash background */
-    background: linear-gradient(170deg, var(--sky-pale) 0%, #f0f8ff 40%, white 100%);
+    /* Real sky gradient — the previous "wash" faded to white too
+       quickly and the page just read as a card on white. This one
+       commits to the sky: sky-pale at the very top, sky-bright across
+       the middle band where the card sits, then a soft fade back to
+       sky-pale at the bottom so the page edges don't band hard. */
+    background:
+      radial-gradient(
+        ellipse 900px 600px at 80% 18%,
+        rgba(255, 217, 100, 0.32) 0%,
+        rgba(255, 217, 100, 0.08) 40%,
+        transparent 70%
+      ),
+      linear-gradient(
+        180deg,
+        var(--sky-pale) 0%,
+        #b8dcef 22%,
+        var(--sky-bright) 50%,
+        #b8dcef 78%,
+        var(--sky-pale) 100%
+      );
+    background-attachment: fixed;
     min-height: 100vh;
   }
   .display { font-family: 'Sora', system-ui, sans-serif; }
@@ -111,17 +130,38 @@
   }
   .nav-right a:hover { color: var(--sky-anchor); }
 
-  /* ───────── CORNER CLOUD DECORATIONS ───────── */
+  /* ───────── CLOUD + PLANE DECORATIONS ─────────
+     White (not coloured) cloud puffs scattered across the sky so the
+     card reads as a sticker floating in atmosphere rather than glued
+     to a coloured wallpaper. A small paper-plane silhouette drifts in
+     the upper-left as a third decoration. All are `position: fixed`
+     so they stay in place when the (short) page scrolls. */
   .bg-cloud {
     position: fixed;
     pointer-events: none;
-    opacity: 0.38;
     z-index: 0;
   }
   .bg-cloud svg { width: 100%; height: 100%; }
-  .bg-cloud-tl { width: 320px; height: 130px; top: 80px; left: -30px; }
-  .bg-cloud-br { width: 260px; height: 100px; bottom: 40px; right: -20px; }
-  .bg-cloud-tr { width: 180px; height: 70px; top: 130px; right: 40px; opacity: 0.25; }
+  /* Five clouds at staggered positions + sizes. Opacity tweaked per
+     cloud so they don't form a uniform pattern. */
+  .bg-cloud-tl   { width: 360px; height: 150px; top: 90px;  left: -40px; opacity: 0.85; }
+  .bg-cloud-tr   { width: 200px; height: 80px;  top: 110px; right: 8%;   opacity: 0.55; }
+  .bg-cloud-mid  { width: 280px; height: 115px; top: 42%;   left: 4%;    opacity: 0.6;  }
+  .bg-cloud-mid2 { width: 240px; height: 95px;  top: 56%;   right: 6%;   opacity: 0.7;  }
+  .bg-cloud-br   { width: 320px; height: 130px; bottom: 40px; right: -30px; opacity: 0.8; }
+  .bg-cloud-bl   { width: 200px; height: 80px;  bottom: 12%;  left: 18%; opacity: 0.45; }
+
+  .bg-plane {
+    position: fixed;
+    top: 22%;
+    left: 52%;
+    width: 64px; height: 64px;
+    transform: rotate(-18deg);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .bg-plane svg { width: 100%; height: 100%; }
 
   /* ───────── PAGE WRAPPER ───────── */
   .page {
@@ -386,19 +426,37 @@
   }
   .resend-btn:hover { border-color: var(--coral); color: var(--coral-deep); }
 
-  /* ───────── RESPONSIVE ───────── */
+  /* ───────── RESPONSIVE ─────────
+     The previous mobile rule made the card edge-to-edge full-screen,
+     which buried the new sky background. Mobile now keeps the card
+     floating with breathing room on either side so the sky shows
+     around it (top, sides, bottom). Two clouds + the plane are kept
+     visible — the rest hide so the small canvas doesn't get busy. */
   @media (max-width: 980px) {
-    .page { padding: 90px 0 0; align-items: stretch; justify-content: flex-start; }
+    .page {
+      padding: 92px 18px 32px;
+      align-items: flex-start;
+      justify-content: center;
+    }
     .card {
       max-width: 100%;
-      border-radius: 0;
-      box-shadow: none;
-      min-height: calc(100vh - 73px);
-      padding: 32px 24px 48px;
+      width: 100%;
+      /* Keep the floating card look on mobile — soft radius, soft shadow.
+         No min-height claim on the viewport. */
+      border-radius: 20px;
+      box-shadow: 0 24px 56px -28px rgba(31, 95, 160, 0.35);
+      padding: 28px 22px 22px;
     }
-    .bg-cloud-br { display: none; }
-    .nav { padding: 14px 20px; }
-    .nav-right { gap: 20px; }
+    .bg-cloud-tr,
+    .bg-cloud-mid,
+    .bg-cloud-mid2,
+    .bg-cloud-bl { display: none; }
+    .bg-cloud-tl { width: 220px; height: 90px; top: 70px;  left: -20px; opacity: 0.85; }
+    .bg-cloud-br { width: 240px; height: 100px; bottom: 24px; right: -30px; opacity: 0.75; }
+    .bg-plane { width: 40px; height: 40px; top: 14%; left: auto; right: 8%; opacity: 0.45; }
+    .nav { padding: 14px 20px; background: rgba(255, 255, 255, 0.88); }
+    .nav-right { gap: 18px; }
+    .nav-right a { font-size: 13px; }
   }
 </style>
 </head>
@@ -420,26 +478,55 @@
   </div>
 </nav>
 
-<!-- ─── Background cloud decorations (faint, fixed) ─── -->
+<!-- ─── Background cloud decorations — fixed, white-on-sky ─── -->
 <div class="bg-cloud bg-cloud-tl">
   <svg viewBox="0 0 320 130">
-    <ellipse cx="70" cy="90" rx="65" ry="38" fill="var(--sky-bright)"/>
-    <ellipse cx="155" cy="68" rx="78" ry="50" fill="var(--sky-bright)"/>
-    <ellipse cx="238" cy="82" rx="60" ry="38" fill="var(--sky-bright)"/>
-  </svg>
-</div>
-<div class="bg-cloud bg-cloud-br">
-  <svg viewBox="0 0 260 100">
-    <ellipse cx="55" cy="68" rx="50" ry="30" fill="var(--sky-mid)"/>
-    <ellipse cx="130" cy="52" rx="62" ry="40" fill="var(--sky-mid)"/>
-    <ellipse cx="205" cy="65" rx="48" ry="30" fill="var(--sky-mid)"/>
+    <ellipse cx="70" cy="90" rx="65" ry="38" fill="white"/>
+    <ellipse cx="155" cy="68" rx="78" ry="50" fill="white"/>
+    <ellipse cx="238" cy="82" rx="60" ry="38" fill="white"/>
   </svg>
 </div>
 <div class="bg-cloud bg-cloud-tr">
-  <svg viewBox="0 0 180 70">
-    <ellipse cx="40" cy="48" rx="38" ry="22" fill="var(--sky-bright)"/>
-    <ellipse cx="95" cy="36" rx="50" ry="30" fill="var(--sky-bright)"/>
-    <ellipse cx="148" cy="46" rx="36" ry="22" fill="var(--sky-bright)"/>
+  <svg viewBox="0 0 200 80">
+    <ellipse cx="44" cy="54" rx="42" ry="24" fill="white"/>
+    <ellipse cx="106" cy="40" rx="56" ry="32" fill="white"/>
+    <ellipse cx="166" cy="52" rx="40" ry="24" fill="white"/>
+  </svg>
+</div>
+<div class="bg-cloud bg-cloud-mid">
+  <svg viewBox="0 0 280 115">
+    <ellipse cx="62" cy="80" rx="58" ry="32" fill="white"/>
+    <ellipse cx="138" cy="60" rx="68" ry="42" fill="white"/>
+    <ellipse cx="212" cy="72" rx="52" ry="32" fill="white"/>
+  </svg>
+</div>
+<div class="bg-cloud bg-cloud-mid2">
+  <svg viewBox="0 0 240 95">
+    <ellipse cx="52" cy="66" rx="48" ry="28" fill="white"/>
+    <ellipse cx="120" cy="48" rx="58" ry="36" fill="white"/>
+    <ellipse cx="186" cy="60" rx="46" ry="28" fill="white"/>
+  </svg>
+</div>
+<div class="bg-cloud bg-cloud-br">
+  <svg viewBox="0 0 320 130">
+    <ellipse cx="68" cy="86" rx="62" ry="36" fill="white"/>
+    <ellipse cx="155" cy="64" rx="78" ry="50" fill="white"/>
+    <ellipse cx="240" cy="80" rx="58" ry="36" fill="white"/>
+  </svg>
+</div>
+<div class="bg-cloud bg-cloud-bl">
+  <svg viewBox="0 0 200 80">
+    <ellipse cx="44" cy="54" rx="42" ry="24" fill="white"/>
+    <ellipse cx="106" cy="40" rx="56" ry="32" fill="white"/>
+    <ellipse cx="166" cy="52" rx="40" ry="24" fill="white"/>
+  </svg>
+</div>
+
+<!-- ─── Distant paper-plane mascot ─── -->
+<div class="bg-plane">
+  <svg viewBox="0 0 80 80">
+    <polygon points="10,40 70,15 60,45" fill="white" stroke="rgba(13,40,64,0.25)" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="60,45 40,55 70,15" fill="#B8DCEF" stroke="rgba(13,40,64,0.25)" stroke-width="1.2" stroke-linejoin="round"/>
   </svg>
 </div>
 

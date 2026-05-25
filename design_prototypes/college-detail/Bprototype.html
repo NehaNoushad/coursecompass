@@ -86,155 +86,127 @@
   .display { font-family: 'Sora', system-ui, sans-serif; }
   .hand    { font-family: 'Caveat', cursive; }
 
-  /* ───────── NAV ───────── */
+  /* ───────── NAV ─────────
+     Light-hero variant (lifted from Aprototype.html) — sits on the
+     soft sky-bright → sky-mid gradient, so the brand wordmark and nav
+     links use ink colours rather than white. */
   .nav {
     position: absolute; top: 0; left: 0; right: 0; z-index: 5;
     display: flex; align-items: center; justify-content: space-between;
     padding: 18px 32px;
   }
-  .brand { display: flex; align-items: center; gap: 12px; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; color: white; text-decoration: none; }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: none; }
   .brand-mark {
     width: 36px; height: 36px;
-    background: rgba(255,255,255,0.25);
-    border: 1px solid rgba(255,255,255,0.4);
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
     border-radius: 50%;
     display: grid; place-items: center;
-    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
   }
   .brand-mark svg { width: 18px; height: 18px; }
   .nav-right { display: flex; align-items: center; gap: 28px; }
   .nav-right a {
-    color: rgba(255,255,255,0.8);
+    color: var(--ink-soft);
     text-decoration: none;
     font-size: 14px; font-weight: 500;
   }
-  .nav-right a:hover { color: white; }
+  .nav-right a:hover { color: var(--sky-anchor); }
   .nav-cta {
     padding: 10px 18px;
-    background: white; color: var(--ink);
+    background: var(--ink); color: white;
     border-radius: 999px; font-weight: 600; font-size: 14px;
   }
 
-  /* ───────── HERO ───────── */
+  /* ───────── HERO ─────────
+     Lifted wholesale from Aprototype.html. Same short sky-gradient
+     strip used by every other top-of-page treatment in the product
+     (catalogue, courses, account) so the detail page sits in the
+     same family rather than presenting as a magazine cover. */
   .hero {
     position: relative;
-    min-height: 500px;
-    display: flex; align-items: flex-end;
-    padding: 0 0 0 0;
-    background: linear-gradient(160deg,
-      var(--sky-anchor) 0%,
-      var(--sky-mid) 35%,
-      var(--sky-bright) 70%,
-      #b8dff5 100%);
+    min-height: 320px;
+    padding: 100px 32px 72px;
+    background: linear-gradient(180deg, var(--sky-bright) 0%, var(--sky-mid) 100%);
     overflow: hidden;
   }
-  /* Sun glow orb — positioned upper-right for a dawn-over-water feel */
-  .hero::before {
-    content: '';
-    position: absolute;
-    width: 480px; height: 480px;
-    border-radius: 50%;
-    background: radial-gradient(circle, var(--sun-glow) 0%, rgba(255,228,128,0.4) 40%, transparent 70%);
-    top: -140px; right: -80px;
-    pointer-events: none;
-  }
-  .heroInner {
-    max-width: 1320px; margin: 0 auto; width: 100%;
-    padding: 120px 32px 60px;
-    position: relative; z-index: 2;
-  }
-  /* Cloud shapes */
-  .hCloud { position: absolute; pointer-events: none; }
-  .hCloud svg { width: 100%; height: 100%; }
-  .hCloud-1 { width: 280px; height: 110px; top: 50px; right: 18%; opacity: 0.45; }
-  .hCloud-2 { width: 200px; height: 80px; top: 160px; left: 55%; opacity: 0.3; }
-  .hCloud-3 { width: 160px; height: 65px; bottom: 100px; right: 8%; opacity: 0.35; }
-
-  /* Paper plane SVG — large, rotated, decorative */
-  .heroPlaneDeco {
-    position: absolute;
-    bottom: 60px; right: 80px;
-    transform: rotate(-12deg);
-    opacity: 0.22;
-    z-index: 1;
-  }
-  .heroPlaneDeco svg { width: 110px; height: 110px; }
-
-  /* Breadcrumb */
-  .heroCrumb {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 13px; color: rgba(255,255,255,0.7);
-    margin-bottom: 24px;
-  }
-  .heroCrumb a { color: rgba(255,255,255,0.7); text-decoration: none; }
-  .heroCrumb a:hover { color: white; }
-  .heroCrumb span { color: rgba(255,255,255,0.4); }
-
-  /* District chip */
-  .heroChip {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(255,255,255,0.18);
-    border: 1px solid rgba(255,255,255,0.3);
-    backdrop-filter: blur(8px);
-    border-radius: 999px;
-    padding: 6px 16px;
-    font-size: 11px; font-weight: 700;
-    letter-spacing: 2px;
-    color: white;
-    margin-bottom: 20px;
-  }
-  .heroChip::before {
-    content: '';
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--sun);
-  }
-
-  /* Main headline */
-  .heroH1 {
-    font-family: 'Sora', sans-serif;
-    font-weight: 800;
-    font-size: 68px;
-    line-height: 1;
-    letter-spacing: -2.5px;
-    color: white;
-    max-width: 860px;
-    margin-bottom: 36px;
-    text-shadow: 0 2px 32px rgba(13, 40, 64, 0.2);
-  }
-
-  /* Floating stat pills — positioned absolutely for magazine-cover feel */
-  .heroStats {
-    display: flex; flex-wrap: wrap; gap: 10px;
-  }
-  .heroStat {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 9px 18px;
-    background: rgba(255,255,255,0.18);
-    border: 1px solid rgba(255,255,255,0.35);
-    backdrop-filter: blur(10px);
-    border-radius: 999px;
-    font-size: 14px; font-weight: 600;
-    color: white;
-  }
-  .heroStat.highlight {
-    background: white;
-    color: var(--ink);
-    border-color: white;
-  }
-  .heroStat .statDot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--sun);
-  }
-
-  /* Fade at the bottom of hero into page body */
   .hero::after {
     content: '';
     position: absolute; inset: auto 0 0 0;
-    height: 80px;
+    height: 60px;
     background: linear-gradient(to bottom, transparent, var(--paper));
-    pointer-events: none; z-index: 3;
+    pointer-events: none;
   }
+  .heroInner {
+    max-width: 1320px; margin: 0 auto;
+    position: relative; z-index: 1;
+  }
+  .heroBreadcrumb {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--ink-soft);
+    margin-bottom: 20px;
+  }
+  .heroBreadcrumb a { color: var(--ink-soft); text-decoration: none; }
+  .heroBreadcrumb a:hover { color: var(--sky-anchor); }
+  .heroBreadcrumb span { color: var(--ink-muted); }
+  .heroEyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .heroEyebrow::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--coral);
+  }
+  .heroName {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 58px;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    color: var(--ink);
+    max-width: 800px;
+    margin-bottom: 20px;
+  }
+  /* Accreditation pill row */
+  .heroPills {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 18px;
+  }
+  .heroPill {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px; font-weight: 600;
+    color: var(--ink);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .heroPill.accent { background: var(--ink); color: white; }
+  .heroPill .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--coral);
+  }
+  .heroNudge {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    color: var(--sky-anchor);
+    display: inline-flex; align-items: center; gap: 6px;
+    transform: rotate(-1deg);
+    margin-top: 4px;
+  }
+
+  /* Cloud decorations */
+  .cloud { position: absolute; pointer-events: none; opacity: 0.9; }
+  .cloud svg { width: 100%; height: 100%; }
+  .cloud-1 { width: 240px; height: 90px; top: 40px; right: 5%; opacity: 0.75; }
+  .cloud-2 { width: 160px; height: 65px; bottom: 25%; right: 30%; opacity: 0.6; }
 
   /* ───────── PAGE BODY ───────── */
   .body {
@@ -685,9 +657,9 @@
 
   /* ───────── RESPONSIVE ───────── */
   @media (max-width: 980px) {
-    .heroH1 { font-size: 38px; letter-spacing: -1.2px; }
-    .hero { min-height: 380px; }
-    .heroInner { padding: 100px 20px 50px; }
+    .heroName { font-size: 36px; letter-spacing: -1px; }
+    .hero { padding: 90px 20px 60px; min-height: 280px; }
+    .heroPill { font-size: 12px; padding: 5px 12px; }
     .body {
       grid-template-columns: 1fr;
       padding: 0 20px 60px;
@@ -725,46 +697,33 @@
   </div>
 </nav>
 
-<!-- ─── Hero ─── -->
+<!-- ─── Hero (sky-strip variant — same treatment as the rest of the product) ─── -->
 <section class="hero">
   <!-- Cloud puffs -->
-  <div class="hCloud hCloud-1">
+  <div class="cloud cloud-1">
     <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
   </div>
-  <div class="hCloud hCloud-2">
+  <div class="cloud cloud-2">
     <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
-  </div>
-  <div class="hCloud hCloud-3">
-    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
-  </div>
-
-  <!-- Decorative paper plane -->
-  <div class="heroPlaneDeco">
-    <svg viewBox="0 0 24 24" fill="none">
-      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
   </div>
 
   <div class="heroInner">
-    <!-- Breadcrumb -->
-    <div class="heroCrumb">
+    <div class="heroBreadcrumb">
       <a href="#">Colleges</a>
       <span>/</span>
       <span>Sacred Heart College Thevara</span>
     </div>
-
-    <!-- District chip -->
-    <div class="heroChip">ERNAKULAM · AIDED</div>
-
-    <!-- College name — magazine cover headline -->
-    <h1 class="heroH1 display">Sacred Heart College Thevara</h1>
-
-    <!-- Floating stat pills — magazine coverline treatment -->
-    <div class="heroStats">
-      <div class="heroStat highlight"><span class="statDot"></span>NAAC A++</div>
-      <div class="heroStat">NIRF Rank #57</div>
-      <div class="heroStat">Est. 1944</div>
-      <div class="heroStat">~2,100 seats</div>
+    <div class="heroEyebrow">ERNAKULAM · AIDED COLLEGE</div>
+    <h1 class="heroName display">Sacred Heart College Thevara</h1>
+    <div class="heroPills">
+      <div class="heroPill"><span class="dot"></span>NAAC A++</div>
+      <div class="heroPill">NIRF #57</div>
+      <div class="heroPill">Est. 1944</div>
+      <div class="heroPill">~2,100 seats</div>
+      <div class="heroPill accent">Medium fees</div>
+    </div>
+    <div class="heroNudge hand">
+      ✈ Take the quiz to see if this matches you
     </div>
   </div>
 </section>
