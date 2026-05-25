@@ -1,159 +1,699 @@
+/**
+ * /courses — Stream-funnel catalogue port of Bprototype.html.
+ *
+ * Structure:
+ *   1. Full-bleed SkyBandHero with an eyebrow chip, the big Sora
+ *      display question, and a 5-tab stream switcher as the hero CTA.
+ *   2. Summary line + "Reset to all courses" link below the hero.
+ *   3. Course groups keyed by entrance-exam path:
+ *        – JEE / KEAM      (PCM or Any)
+ *        – NEET-UG         (PCB or Any)
+ *        – Design exams    (UCEED / NID DAT / NIFT)
+ *        – Other exams     (CLAT, KLEE, NCHMCT JEE, etc.)
+ *        – Direct / CUET   (courses with cuet-ug or university entrances)
+ *        – No entrance     (courses with empty examIds)
+ *   4. A quiz-nudge banner at the bottom.
+ *   5. SiteFooter.
+ *
+ * Because the hero must span the full viewport width this page draws its
+ * own SiteHeader / ScrollView / SiteFooter trio instead of using <Screen>.
+ */
+
+import { Link, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import {
+  Dimensions,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 import type { CourseCategoryId, Stream } from '@/types';
-import { COURSES, COURSE_CATEGORIES, EXAMS, STREAM_LABELS } from '@/data';
-import { colors, spacing } from '@/constants/theme';
-import { Button } from '@/components/ui/button';
-import { CourseCard } from '@/components/course-card';
-import { Dropdown, type DropdownOption } from '@/components/ui/dropdown';
-import { Screen } from '@/components/ui/screen';
-import { TextInput } from '@/components/ui/text-input';
+import { COURSES } from '@/data';
+import { SkyBandHero } from '@/components/sky-band-hero';
+import { SiteFooter } from '@/components/site-footer';
+import { SiteHeader } from '@/components/site-header';
 import { Text } from '@/components/ui/text';
+import {
+  colors,
+  fontFamily,
+  fontWeight,
+  fontSize,
+  layout,
+  radius,
+  spacing,
+} from '@/constants/theme';
 
-type CategoryFilter = 'all' | CourseCategoryId;
-type StreamFilter = 'all' | Stream;
-type ExamFilter = 'all' | string;
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-const CATEGORY_OPTIONS: DropdownOption<CategoryFilter>[] = [
-  { value: 'all', label: 'All categories' },
-  ...COURSE_CATEGORIES.map((c) => ({ value: c.id, label: c.name })),
+type StreamTab = Stream | 'any';
+
+// ─── Stream tab config ────────────────────────────────────────────────────────
+
+interface TabDef {
+  id: StreamTab;
+  label: string;
+  emoji: string;
+  summaryLabel: string;
+}
+
+const TABS: TabDef[] = [
+  { id: 'pcm',      label: 'After PCM',            emoji: '🔬', summaryLabel: 'PCM' },
+  { id: 'pcb',      label: 'After PCB',             emoji: '🧬', summaryLabel: 'PCB' },
+  { id: 'commerce', label: 'After Commerce',        emoji: '📊', summaryLabel: 'Commerce' },
+  { id: 'arts',     label: 'After Arts/Humanities', emoji: '🎨', summaryLabel: 'Arts / Humanities' },
+  { id: 'any',      label: 'Any stream',            emoji: '✦',  summaryLabel: 'any stream' },
 ];
 
-const STREAM_OPTIONS: DropdownOption<StreamFilter>[] = [
-  { value: 'all', label: 'Any stream' },
-  { value: 'pcm', label: STREAM_LABELS.pcm },
-  { value: 'pcb', label: STREAM_LABELS.pcb },
-  { value: 'commerce', label: STREAM_LABELS.commerce },
-  { value: 'arts', label: STREAM_LABELS.arts },
+// ─── Exam-path group definitions ─────────────────────────────────────────────
+
+interface ExamGroup {
+  key: string;
+  label: string;
+  /** Which stream tabs show this group. Empty = shown for all tabs. */
+  streams: StreamTab[];
+  /** A course belongs to this group if it has at least one of these exam ids. */
+  examIds: string[];
+  /** If true, a course belongs to this group when its examIds is empty. */
+  noExam?: boolean;
+  accentColor: string;
+}
+
+const EXAM_GROUPS: ExamGroup[] = [
+  {
+    key: 'jee-keam',
+    label: 'Need JEE / KEAM',
+    streams: ['pcm', 'any'],
+    examIds: ['jee-main', 'jee-advanced', 'keam', 'cusat-cat'],
+    accentColor: colors.skyDeep,
+  },
+  {
+    key: 'neet',
+    label: 'Need NEET-UG',
+    streams: ['pcb', 'any'],
+    examIds: ['neet-ug'],
+    accentColor: '#C0392B',
+  },
+  {
+    key: 'agri-vet',
+    label: 'Need ICAR / KAU / KVASU / KUFOS',
+    streams: ['pcb', 'pcm', 'any'],
+    examIds: ['icar-aieea', 'kau-entrance', 'kvasu-entrance', 'kufos-entrance'],
+    accentColor: '#16A34A',
+  },
+  {
+    key: 'design',
+    label: 'Need a design exam (UCEED / NID DAT / NIFT)',
+    streams: [],
+    examIds: ['uceed', 'nid-dat', 'nift-entrance'],
+    accentColor: '#059669',
+  },
+  {
+    key: 'other',
+    label: 'Other entrance exams (CLAT / NCHMCT JEE / NDA / IMU CET…)',
+    streams: [],
+    examIds: [
+      'clat', 'klee',
+      'nchmct-jee',
+      'nda', 'inet', 'afcat', 'tes', 'coast-guard', 'imu-cet',
+      'iiser-iat', 'nest',
+      'nata', 'jee-main-paper2',
+      'kuhs-paramedical', 'lbs-allied-health',
+      'kerala-deled', 'ncet',
+      'kerala-polytechnic',
+      'kmat',
+    ],
+    accentColor: '#7C3AED',
+  },
+  {
+    key: 'cuet-direct',
+    label: 'Direct / CUET-UG / University entrance',
+    streams: [],
+    examIds: [
+      'cuet-ug',
+      'kerala-univ-entrance', 'mg-univ-entrance',
+      'calicut-univ-entrance', 'kannur-univ-entrance',
+      'kerala-sanskrit-univ-entrance', 'malayalam-univ-entrance',
+    ],
+    accentColor: '#D97706',
+  },
+  {
+    key: 'no-exam',
+    label: 'Direct admission — no entrance exam',
+    streams: [],
+    examIds: [],
+    noExam: true,
+    accentColor: colors.textMuted,
+  },
 ];
 
-const EXAM_OPTIONS: DropdownOption<ExamFilter>[] = [
-  { value: 'all', label: 'Any exam' },
-  ...EXAMS.map((e) => ({ value: e.id, label: e.name })),
-];
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const IS_NARROW = Dimensions.get('window').width < 980;
+
+function categoryLabel(id: CourseCategoryId): string {
+  // Capitalise the category id for a quick readable pill.
+  return id.replace(/-/g, ' ').toUpperCase();
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function CoursesScreen() {
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<CategoryFilter>('all');
-  const [stream, setStream] = useState<StreamFilter>('all');
-  const [exam, setExam] = useState<ExamFilter>('all');
+  const params = useLocalSearchParams<{ stream?: string; category?: string; exam?: string }>();
 
-  const results = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return COURSES.filter((c) => {
-      if (q && !c.name.toLowerCase().includes(q)) return false;
-      if (category !== 'all' && c.categoryId !== category) return false;
-      if (stream !== 'all' && !c.streams.includes(stream)) return false;
-      if (exam !== 'all' && !c.examIds.includes(exam)) return false;
-      return true;
+  // Read ?stream= from URL and validate it
+  const validStreams: StreamTab[] = ['pcm', 'pcb', 'commerce', 'arts', 'any'];
+  const initialStream: StreamTab =
+    params.stream && validStreams.includes(params.stream as StreamTab)
+      ? (params.stream as StreamTab)
+      : 'pcm';
+
+  const [activeStream, setActiveStream] = useState<StreamTab>(initialStream);
+
+  // Courses visible for the active stream
+  const visibleCourses = useMemo(
+    () =>
+      COURSES.filter(
+        (c) =>
+          activeStream === 'any' ||
+          c.streams.includes(activeStream as Stream),
+      ),
+    [activeStream],
+  );
+
+  // Build grouped lists — a course can appear in more than one group
+  const groups = useMemo(() => {
+    return EXAM_GROUPS.map((group) => {
+      // Check stream visibility: groups with empty `streams` array show for all tabs.
+      const streamVisible =
+        group.streams.length === 0 || group.streams.includes(activeStream);
+
+      if (!streamVisible) return { ...group, courses: [] };
+
+      const courses = visibleCourses.filter((c) => {
+        if (group.noExam) return c.examIds.length === 0;
+        return c.examIds.some((eid) => group.examIds.includes(eid));
+      });
+
+      return { ...group, courses };
     });
-  }, [search, category, stream, exam]);
+  }, [visibleCourses, activeStream]);
 
-  function resetFilters() {
-    setSearch('');
-    setCategory('all');
-    setStream('all');
-    setExam('all');
-  }
+  const activeTab = TABS.find((t) => t.id === activeStream)!;
 
   return (
-    <Screen>
-      <Text variant="title">Browse courses</Text>
-      <Text muted style={styles.intro}>
-        {COURSES.length} courses you can take after 12th. Filter by category and your stream.
-      </Text>
+    <View style={styles.root}>
+      <SiteHeader />
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-      <View style={styles.filters}>
-        <TextInput
-          label="Search by name"
-          placeholder="e.g. B.Tech Computer Science"
-          value={search}
-          onChangeText={setSearch}
-          autoCapitalize="none"
-        />
-        <View style={styles.dropdownRow}>
-          <Dropdown
-            label="Category"
-            options={CATEGORY_OPTIONS}
-            value={category}
-            onChange={setCategory}
-          />
-          <Dropdown
-            label="Your stream"
-            options={STREAM_OPTIONS}
-            value={stream}
-            onChange={setStream}
-          />
-          <Dropdown
-            label="Entrance exam"
-            options={EXAM_OPTIONS}
-            value={exam}
-            onChange={setExam}
-          />
-        </View>
-      </View>
+        {/* ── Hero ── */}
+        <SkyBandHero minHeight={IS_NARROW ? 280 : 380}>
+          {/* Eyebrow chip */}
+          <View style={styles.eyebrow}>
+            <View style={styles.eyebrowDot} />
+            <Text style={styles.eyebrowText}>BROWSE BY STREAM</Text>
+          </View>
 
-      <Text variant="label" muted style={styles.count}>
-        {results.length} {results.length === 1 ? 'result' : 'results'}
-      </Text>
-
-      {results.length === 0 ? (
-        <View style={styles.empty}>
-          <Text variant="subheading">No courses match these filters</Text>
-          <Text muted style={{ marginVertical: spacing.md }}>
-            Try removing a filter or searching a different name.
+          {/* Headline */}
+          <Text style={styles.heroTitle}>
+            What did you study{'\n'}after{' '}
+            <Text style={styles.heroTitleEm}>10th</Text>?
           </Text>
-          <Button label="Clear all filters" variant="secondary" onPress={resetFilters} />
-        </View>
-      ) : (
-        <View style={styles.grid}>
-          {results.map((course) => (
-            <View key={course.id} style={styles.cell}>
-              <CourseCard course={course} />
+
+          {/* Sub-line */}
+          <Text style={styles.heroSub}>
+            We&apos;ll show you the courses you qualify for, grouped by the entrance exam you&apos;d need.
+          </Text>
+
+          {/* Stream tabs */}
+          <View style={styles.tabRow}>
+            {TABS.map((tab) => {
+              const isActive = activeStream === tab.id;
+              const count =
+                tab.id === 'any'
+                  ? COURSES.filter((c) => c.streams.length < 4).length
+                  : COURSES.filter((c) => c.streams.includes(tab.id as Stream)).length;
+              return (
+                <Pressable
+                  key={tab.id}
+                  style={[styles.tab, isActive && styles.tabActive]}
+                  onPress={() => setActiveStream(tab.id)}>
+                  <Text style={styles.tabEmoji}>{tab.emoji}</Text>
+                  <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                    {tab.label}
+                  </Text>
+                  <Text style={[styles.tabCount, isActive && styles.tabCountActive]}>
+                    {count}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </SkyBandHero>
+
+        {/* ── Content area ── */}
+        <View style={styles.body}>
+
+          {/* Summary bar */}
+          <View style={styles.contentBar}>
+            <Text style={styles.summaryText}>
+              {activeStream === 'any'
+                ? <>Showing all <Text style={styles.summaryEm}>{visibleCourses.length} courses</Text> across every stream.</>
+                : <>You studied <Text style={styles.summaryEm}>{activeTab.summaryLabel}</Text>. Here are <Text style={styles.summaryEm}>{visibleCourses.length} courses</Text> you can apply for.</>
+              }
+            </Text>
+            <Pressable onPress={() => setActiveStream('any')} style={styles.resetBtn}>
+              <Text style={styles.resetText}>← Reset to all courses</Text>
+            </Pressable>
+          </View>
+
+          {/* Course groups */}
+          {groups.map((group) => {
+            if (group.courses.length === 0) return null;
+            return (
+              <View key={group.key} style={styles.pathGroup}>
+                {/* Group header */}
+                <View style={styles.pathHeader}>
+                  <View style={[styles.pathBadge, { backgroundColor: group.accentColor }]}>
+                    <Text style={styles.pathBadgeText}>{group.label}</Text>
+                  </View>
+                  <Text style={styles.pathCount}>{group.courses.length} courses</Text>
+                  <View style={styles.pathRule} />
+                </View>
+
+                {/* Tile grid */}
+                <View style={styles.tileRow}>
+                  {group.courses.map((course) => (
+                    <Link
+                      key={`${group.key}-${course.id}`}
+                      href={`/courses/${course.id}`}
+                      asChild>
+                      {/* StyleSheet.flatten merges the array into a single
+                          object — necessary because <Link asChild> clones
+                          onto an <a> on web and drops array-typed styles
+                          on the inner Pressable. Same fix as in
+                          components/college-card.tsx. */}
+                      <Pressable
+                        style={StyleSheet.flatten([styles.tile, { borderTopColor: group.accentColor }])}>
+                        {/* Category pill */}
+                        <View style={styles.catPill}>
+                          <Text style={styles.catPillText}>{categoryLabel(course.categoryId)}</Text>
+                        </View>
+
+                        {/* Course name */}
+                        <Text style={styles.tileName}>{course.name}</Text>
+
+                        {/* Duration + stream strip */}
+                        <View style={styles.tileMeta}>
+                          <Text style={styles.tileDuration}>
+                            {course.durationYears} yr{course.durationYears !== 1 ? 's' : ''}
+                          </Text>
+                          <View style={styles.tileDot} />
+                          <Text style={styles.tileStreams}>
+                            {course.streams.map((s) => s.toUpperCase()).join(' · ')}
+                          </Text>
+                        </View>
+
+                        {/* CTA */}
+                        <View style={styles.tileCta}>
+                          <Text style={styles.tileCtaText}>View course </Text>
+                          <Svg width={11} height={11} viewBox="0 0 24 24" fill="none">
+                            <Path
+                              d="M5 12h14M13 6l6 6-6 6"
+                              stroke={colors.skyDeep}
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </Svg>
+                        </View>
+                      </Pressable>
+                    </Link>
+                  ))}
+                </View>
+
+                {/* Note for direct-admission group */}
+                {group.key === 'cuet-direct' && (
+                  <View style={styles.directNote}>
+                    <Text style={styles.directNoteText}>
+                      ℹ  These courses admit students directly based on 12th marks at government and aided colleges. Private colleges may require CUET-UG or a university entrance test.
+                    </Text>
+                  </View>
+                )}
+                {group.key === 'no-exam' && (
+                  <View style={styles.directNote}>
+                    <Text style={styles.directNoteText}>
+                      ℹ  These programmes rely on portfolio review, audition, or merit — no written entrance exam required.
+                    </Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+
+          {/* Quiz nudge */}
+          <View style={styles.quizNudge}>
+            <View style={styles.quizNudgeText}>
+              <Text style={styles.quizNudgeTitle}>
+                Not sure which exam to aim for?
+              </Text>
+              <Text style={styles.quizNudgeSub}>
+                Answer 6 quick questions — we&apos;ll match courses and colleges to your marks, district, and budget.
+              </Text>
             </View>
-          ))}
-        </View>
-      )}
-    </Screen>
+            <Link href="/quiz" asChild>
+              <Pressable style={styles.quizNudgeBtn}>
+                <Text style={styles.quizNudgeBtnText}>Take the quiz</Text>
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M5 12h14M13 6l6 6-6 6"
+                    stroke="white"
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </Svg>
+              </Pressable>
+            </Link>
+          </View>
+
+        </View>{/* /body */}
+
+        <SiteFooter />
+      </ScrollView>
+    </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  intro: {
-    marginTop: spacing.sm,
+  root: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
-  filters: {
-    gap: spacing.lg,
-    marginTop: spacing.xl,
+  scroll: {
+    flexGrow: 1,
+    // Don't `alignItems: 'center'` — that shrinks the full-bleed
+    // SkyBandHero down to the body's max-width. The body block sets
+    // its own alignSelf:center; the hero (and footer) get the full
+    // ScrollView width.
+  },
+
+  // ── Hero internals ──────────────────────────────────────────────────────────
+  eyebrow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: radius.pill,
+    paddingVertical: 6,
+    paddingHorizontal: spacing.lg,
+    alignSelf: 'flex-start',
     marginBottom: spacing.lg,
   },
-  dropdownRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.lg,
-    position: 'relative',
-    zIndex: 100,
+  eyebrowDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.accent,
   },
-  count: {
+  eyebrowText: {
+    fontFamily: fontFamily.displaySemibold,
+    fontSize: fontSize.xs,
+    letterSpacing: 2,
+    color: colors.text,
+  },
+  heroTitle: {
+    fontFamily: fontFamily.displayHeavy,
+    fontSize: IS_NARROW ? 38 : 52,
+    lineHeight: IS_NARROW ? 44 : 56,
+    letterSpacing: -1.5,
+    color: colors.text,
     marginBottom: spacing.md,
   },
-  grid: {
+  heroTitleEm: {
+    fontFamily: fontFamily.displayHeavy,
+    fontSize: IS_NARROW ? 38 : 52,
+    lineHeight: IS_NARROW ? 44 : 56,
+    letterSpacing: -1.5,
+    color: colors.accent,
+  },
+  heroSub: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.regular,
+    color: colors.textMuted,
+    marginBottom: spacing.x2l,
+    maxWidth: 560,
+  },
+  tabRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.md,
+    gap: 10,
   },
-  cell: {
-    flexGrow: 1,
-    flexBasis: 320,
-    maxWidth: 540,
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: IS_NARROW ? 10 : 14,
+    paddingHorizontal: IS_NARROW ? 14 : 20,
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderRadius: radius.lg,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
-  empty: {
+  tabActive: {
+    backgroundColor: colors.text,
+    borderColor: colors.text,
+  },
+  tabEmoji: {
+    fontSize: IS_NARROW ? 15 : 18,
+  },
+  tabLabel: {
+    fontFamily: fontFamily.display,
+    fontSize: IS_NARROW ? 13 : 15,
+    color: colors.textMuted,
+  },
+  tabLabelActive: {
+    color: colors.textInverse,
+  },
+  tabCount: {
+    fontSize: 13,
+    fontWeight: fontWeight.regular,
+    color: colors.textSubtle,
+  },
+  tabCountActive: {
+    color: 'rgba(255,255,255,0.7)',
+  },
+
+  // ── Content body ────────────────────────────────────────────────────────────
+  body: {
+    width: '100%',
+    maxWidth: layout.maxContentWidth,
+    alignSelf: 'center',
+    paddingHorizontal: IS_NARROW ? spacing.lg : spacing.xl,
+    paddingBottom: spacing.x3l,
+    marginTop: -20,
+  },
+  contentBar: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.lg,
+    paddingVertical: spacing.xl,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(31,95,160,0.12)',
+    marginBottom: spacing.x2l,
+    flexWrap: 'wrap',
+  },
+  summaryText: {
+    fontFamily: fontFamily.display,
+    fontSize: IS_NARROW ? 16 : 20,
+    letterSpacing: -0.4,
+    color: colors.text,
+    flex: 1,
+  },
+  summaryEm: {
+    fontFamily: fontFamily.display,
+    fontSize: IS_NARROW ? 16 : 20,
+    letterSpacing: -0.4,
+    color: colors.skyDeep,
+  },
+  resetBtn: {
+    paddingVertical: spacing.xs,
+  },
+  resetText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+    color: colors.textSubtle,
+  },
+
+  // ── Path groups ──────────────────────────────────────────────────────────────
+  pathGroup: {
+    marginBottom: spacing.x2l + spacing.md,
+  },
+  pathHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: spacing.lg,
+    flexWrap: 'wrap',
+  },
+  pathBadge: {
+    paddingVertical: 6,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.pill,
+  },
+  pathBadgeText: {
+    fontFamily: fontFamily.displaySemibold,
+    fontSize: 13,
+    letterSpacing: 0.3,
+    color: colors.textInverse,
+  },
+  pathCount: {
+    fontFamily: fontFamily.displaySemibold,
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  pathRule: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(31,95,160,0.12)',
+    minWidth: 20,
+  },
+
+  // ── Tile row + individual tile ────────────────────────────────────────────
+  tileRow: {
+    flexDirection: 'row',
+    flexWrap: IS_NARROW ? 'nowrap' : 'wrap',
+    gap: 12,
+    ...(IS_NARROW
+      ? {
+          overflowX: 'scroll' as 'scroll',
+          paddingBottom: spacing.sm,
+        }
+      : {}),
+  },
+  tile: {
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: spacing.x2l,
-    alignItems: 'flex-start',
-    backgroundColor: colors.surface,
+    borderColor: 'rgba(31,95,160,0.12)',
+    borderTopWidth: 3,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    ...(IS_NARROW
+      ? { minWidth: 200, maxWidth: 240, flexShrink: 0 }
+      : { minWidth: 200, maxWidth: 260, flex: 1 }),
+  },
+  catPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.skyPale,
+    borderRadius: radius.sm,
+    paddingVertical: 2,
+    paddingHorizontal: spacing.sm,
+  },
+  catPillText: {
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 0.8,
+    color: colors.skyAnchor,
+  },
+  tileName: {
+    fontFamily: fontFamily.display,
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: -0.2,
+    color: colors.text,
+  },
+  tileMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  tileDuration: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+    color: colors.textSubtle,
+  },
+  tileDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: colors.textSubtle,
+  },
+  tileStreams: {
+    fontSize: 10,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSubtle,
+    letterSpacing: 0.5,
+  },
+  tileCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: spacing.xs,
+  },
+  tileCtaText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.skyDeep,
+  },
+  directNote: {
+    backgroundColor: colors.skyPale,
+    borderWidth: 1,
+    borderColor: 'rgba(31,95,160,0.15)',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+  },
+  directNoteText: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    lineHeight: 18,
+  },
+
+  // ── Quiz nudge ───────────────────────────────────────────────────────────────
+  quizNudge: {
+    marginTop: spacing.x3l,
+    backgroundColor: colors.skyPale,
+    borderWidth: 1,
+    borderColor: 'rgba(31,95,160,0.15)',
+    borderRadius: radius.xl,
+    padding: IS_NARROW ? spacing.xl : spacing.x2l + spacing.sm,
+    flexDirection: IS_NARROW ? 'column' : 'row',
+    alignItems: IS_NARROW ? 'flex-start' : 'center',
+    gap: IS_NARROW ? spacing.lg : spacing.x2l,
+  },
+  quizNudgeText: {
+    flex: 1,
+  },
+  quizNudgeTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: IS_NARROW ? 18 : 22,
+    letterSpacing: -0.5,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  quizNudgeSub: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    lineHeight: 22,
+  },
+  quizNudgeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.x2l,
+    backgroundColor: colors.text,
+    borderRadius: radius.pill,
+  },
+  quizNudgeBtnText: {
+    fontFamily: fontFamily.display,
+    fontSize: fontSize.sm,
+    color: colors.textInverse,
   },
 });

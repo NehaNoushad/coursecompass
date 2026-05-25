@@ -1,83 +1,202 @@
 /**
- * Sign in / sign up screen. One screen handles both — Supabase email
- * OTP doesn't distinguish between "new user" and "returning user" at
- * the API level; if the email exists we sign them in, if it doesn't
- * we create the account.
+ * Sign in / sign up screen — "Hatch" visual (Bprototype.html).
  *
- * The flow uses the magic-link side of signInWithOtp:
- *   1. User enters email → "Send sign-in link"
- *   2. Page shows "Check your email" confirmation
- *   3. User clicks the link in their inbox
- *   4. The link redirects to redirectTo with #access_token=... in the URL
- *   5. supabase-js detectSessionInUrl parses the hash → creates session
- *   6. AuthProvider's onAuthStateChange picks it up; user is logged in
+ * Full-screen sky background with a real gradient (sky-pale → mid-blue →
+ * sky-bright → mid-blue → sky-pale), a warm sun-glow radial in the
+ * upper-right, 6 white cloud puffs, a distant paper-plane silhouette,
+ * and a single floating white card centred on screen.
  *
- * Why magic link instead of typed OTP code: simpler UX (one click vs
- * copy-paste), one fewer state machine step, and we avoid the OTP
- * verifyOtp() type-mismatch dance.
+ * Auth logic preserved from the original signin.tsx:
+ *   - Magic-link flow via supabase.auth.signInWithOtp
+ *   - Google OAuth via supabase.auth.signInWithOAuth
+ *   - State machine: 'email' → 'sent' (with Resend + cooldown)
  */
 
-import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Link } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Dimensions,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  type ViewStyle,
+} from 'react-native';
+import Svg, { Path, Polygon } from 'react-native-svg';
 
-import { Button, LinkButton } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Screen } from '@/components/ui/screen';
-import { TextInput } from '@/components/ui/text-input';
-import { Text } from '@/components/ui/text';
 import { APP_NAME } from '@/constants/app';
-import { colors, fontFamily, fontWeight, radius, spacing } from '@/constants/theme';
+
+import { Cloud } from '@/components/cloud';
+import { Text } from '@/components/ui/text';
+import { TextInput } from '@/components/ui/text-input';
+import {
+  colors,
+  fontFamily,
+  fontWeight,
+  radius,
+  spacing,
+} from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 
-/** Standard 4-colour Google "G" mark, rendered inline so we don't need a font. */
-function GoogleMark({ size = 18 }: { size?: number }) {
+// ─── Layout breakpoint ────────────────────────────────────────────────────────
+const IS_NARROW = Dimensions.get('window').width < 640;
+
+// ─── Resend cooldown (seconds) ────────────────────────────────────────────────
+const RESEND_COOLDOWN = 30;
+
+// ─── Small inline helpers ─────────────────────────────────────────────────────
+
+/** Standard 4-colour Google "G" mark. */
+function GoogleMark({ size = 20 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 48 48">
       <Path
-        fill="#FFC107"
-        d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
       />
       <Path
-        fill="#FF3D00"
-        d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
       />
       <Path
-        fill="#4CAF50"
-        d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
       />
       <Path
-        fill="#1976D2"
-        d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
       />
     </Svg>
   );
 }
 
+/** Paper-plane brand mark (circle with plane icon). */
+function CardMark() {
+  return (
+    <View style={styles.cardMark}>
+      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"
+          stroke="white"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    </View>
+  );
+}
+
+/** Small paper plane for the "Send the link" button interior. */
+function ButtonPlane() {
+  return (
+    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"
+        stroke="white"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Distant paper-plane silhouette drifting in the sky background. */
+function BackgroundPlane({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 80 80">
+      <Polygon
+        points="10,40 70,15 60,45"
+        fill="white"
+        stroke="rgba(13,40,64,0.25)"
+        strokeWidth={1.2}
+        strokeLinejoin="round"
+      />
+      <Polygon
+        points="60,45 40,55 70,15"
+        fill="#B8DCEF"
+        stroke="rgba(13,40,64,0.25)"
+        strokeWidth={1.2}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Animated envelope icon for the "sent" confirmation state. */
+function EnvelopeIcon() {
+  return (
+    <Svg width={30} height={30} viewBox="0 0 30 30" fill="none">
+      <Path
+        d="M2 7h26a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3H2a3 3 0 0 1-3-3V10a3 3 0 0 1 3-3z"
+        fill="rgba(255,255,255,0.2)"
+        stroke="white"
+        strokeWidth={1.8}
+      />
+      <Path
+        d="M2 7l13 10 13-10"
+        stroke="white"
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 type Step = 'email' | 'sent';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// ─── Main screen ─────────────────────────────────────────────────────────────
 
 export default function SignInScreen() {
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState(false);
+
+  // Resend cooldown
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  function startResendCooldown() {
+    setResendCooldown(RESEND_COOLDOWN);
+    timerRef.current = setInterval(() => {
+      setResendCooldown((s) => {
+        if (s <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  }
 
   async function sendLink() {
     setError(null);
+    setEmailError(false);
     if (!EMAIL_RE.test(email.trim())) {
+      setEmailError(true);
       setError("That doesn't look like a valid email.");
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error: supaErr } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        // shouldCreateUser:true means the same call works for both new
-        // and returning users — no separate signup endpoint. The link
-        // in the email redirects here on click; supabase-js
-        // detectSessionInUrl picks up the tokens from the URL hash.
         shouldCreateUser: true,
         emailRedirectTo:
           Platform.OS === 'web' && typeof window !== 'undefined'
@@ -86,210 +205,651 @@ export default function SignInScreen() {
       },
     });
     setBusy(false);
-    if (error) {
-      setError(error.message);
+    if (supaErr) {
+      setError(supaErr.message);
       return;
     }
     setStep('sent');
+    startResendCooldown();
   }
 
   async function signInWithGoogle() {
     setError(null);
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error: supaErr } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // After Google redirects back to Supabase, Supabase redirects
-        // here. On web we want to land on the home page with the
-        // session live; AuthProvider's onAuthStateChange will fire.
         redirectTo:
           Platform.OS === 'web' && typeof window !== 'undefined'
             ? window.location.origin
             : undefined,
       },
     });
-    // On web, signInWithOAuth navigates the browser to Google — control
-    // doesn't return until the user is redirected back. Only set busy
-    // back to false if it actually errored before redirecting.
-    if (error) {
+    if (supaErr) {
       setBusy(false);
-      setError(error.message);
+      setError(supaErr.message);
     }
   }
 
+  async function resend() {
+    if (resendCooldown > 0 || busy) return;
+    setBusy(true);
+    const { error: supaErr } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo:
+          Platform.OS === 'web' && typeof window !== 'undefined'
+            ? window.location.origin
+            : undefined,
+      },
+    });
+    setBusy(false);
+    if (supaErr) {
+      setError(supaErr.message);
+    } else {
+      startResendCooldown();
+    }
+  }
+
+  // ─── Cloud positions ───────────────────────────────────────────────────────
+  // On narrow screens we hide mid-left, mid-right, top-right, bottom-left
+  // (same rule as prototype's @media max-width: 980px).
+
   return (
-    <Screen noFooter>
-      <View style={styles.frame}>
-        <Card style={styles.card}>
-          <Text variant="title">
-            {step === 'email' ? `Sign in to ${APP_NAME}` : 'Check your email'}
-          </Text>
-          <Text muted style={styles.sub}>
-            {step === 'email'
-              ? "We'll send a one-click sign-in link. No password to remember."
-              : `We sent a sign-in link to ${email}. Click the link in the email — you'll be signed in instantly.`}
-          </Text>
+    // Full-screen sky — no Screen wrapper here; we draw everything ourselves.
+    <View style={styles.root}>
+      {/* ── Sky gradient background ── */}
+      <LinearGradient
+        colors={[
+          colors.skyPale,
+          '#b8dcef',
+          colors.skyBright,
+          '#b8dcef',
+          colors.skyPale,
+        ]}
+        locations={[0, 0.22, 0.5, 0.78, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* ── Sun glow — upper right (simulate radial with a diagonal gradient) ── */}
+      <LinearGradient
+        colors={[
+          'rgba(255,217,100,0.32)',
+          'rgba(255,217,100,0.10)',
+          'rgba(255,217,100,0)',
+        ]}
+        locations={[0, 0.4, 0.85]}
+        start={{ x: 1, y: 0 }}
+        end={{ x: 0.2, y: 0.6 }}
+        style={styles.sunGlow}
+        pointerEvents="none"
+      />
+
+      {/* ── Cloud TL — always visible ── */}
+      <View
+        style={[
+          styles.bgCloud,
+          styles.cloudTL,
+          IS_NARROW && styles.cloudTLNarrow,
+        ]}
+        pointerEvents="none">
+        <Cloud size={IS_NARROW ? 220 : 360} />
+      </View>
+
+      {/* ── Cloud TR — hidden on narrow ── */}
+      {!IS_NARROW && (
+        <View style={[styles.bgCloud, styles.cloudTR]} pointerEvents="none">
+          <Cloud size={200} />
+        </View>
+      )}
+
+      {/* ── Cloud mid-left — hidden on narrow ── */}
+      {!IS_NARROW && (
+        <View style={[styles.bgCloud, styles.cloudMidL]} pointerEvents="none">
+          <Cloud size={280} />
+        </View>
+      )}
+
+      {/* ── Cloud mid-right — hidden on narrow ── */}
+      {!IS_NARROW && (
+        <View style={[styles.bgCloud, styles.cloudMidR]} pointerEvents="none">
+          <Cloud size={240} />
+        </View>
+      )}
+
+      {/* ── Cloud BR — always visible ── */}
+      <View
+        style={[
+          styles.bgCloud,
+          styles.cloudBR,
+          IS_NARROW && styles.cloudBRNarrow,
+        ]}
+        pointerEvents="none">
+        <Cloud size={IS_NARROW ? 240 : 320} />
+      </View>
+
+      {/* ── Cloud BL — hidden on narrow ── */}
+      {!IS_NARROW && (
+        <View style={[styles.bgCloud, styles.cloudBL]} pointerEvents="none">
+          <Cloud size={200} />
+        </View>
+      )}
+
+      {/* ── Distant paper plane ── */}
+      <View
+        style={[styles.bgPlane, IS_NARROW && styles.bgPlaneNarrow]}
+        pointerEvents="none">
+        <BackgroundPlane size={IS_NARROW ? 40 : 64} />
+      </View>
+
+      {/* ── Scrollable page (centres the card vertically) ── */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          {/* ── Card header: brand mark + headline ── */}
+          <View style={styles.cardHead}>
+            <CardMark />
+            <Text style={styles.cardTitle}>{APP_NAME === 'Paper Plane' ? 'Sign in' : `Sign in to ${APP_NAME}`}</Text>
+          </View>
+
+          {/* ── Handwritten tagline ── */}
+          <Text style={styles.tagline}>drop your email below ↓</Text>
 
           {step === 'email' ? (
             <>
-              {/* Google goes first — one-click, no inbox check. */}
+              {/* ── Google button ── */}
               <Pressable
                 onPress={signInWithGoogle}
                 disabled={busy}
                 style={({ pressed }) => [
                   styles.googleBtn,
                   pressed && styles.googlePressed,
-                  busy && styles.disabled,
-                ]}
-              >
+                  busy && styles.dimmed,
+                ]}>
                 <GoogleMark size={20} />
                 <Text style={styles.googleLabel}>Continue with Google</Text>
               </Pressable>
 
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or with email</Text>
-                <View style={styles.dividerLine} />
+              {/* ── OR divider ── */}
+              <View style={styles.orRow}>
+                <View style={styles.orLine} />
+                <Text style={styles.orText}>OR</Text>
+                <View style={styles.orLine} />
               </View>
 
-              <TextInput
-                label="Email"
-                placeholder="you@example.com"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
-                editable={!busy}
-                onSubmitEditing={sendLink}
-                returnKeyType="send"
-                style={styles.input}
-              />
-              <Button
-                label={busy ? 'Sending…' : 'Send sign-in link →'}
+              {/* ── Email input ── */}
+              <View style={styles.fieldWrap}>
+                <TextInput
+                  placeholder="you@example.com"
+                  value={email}
+                  onChangeText={(v) => {
+                    setEmail(v);
+                    if (emailError) setEmailError(false);
+                    if (error) setError(null);
+                  }}
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  keyboardType="email-address"
+                  editable={!busy}
+                  onSubmitEditing={sendLink}
+                  returnKeyType="send"
+                  style={emailError ? styles.inputError : undefined}
+                />
+              </View>
+
+              {/* ── Error message ── */}
+              {error ? (
+                <Text style={styles.errorText}>{error}</Text>
+              ) : null}
+
+              {/* ── Send the link button (coral) ── */}
+              <Pressable
                 onPress={sendLink}
                 disabled={busy}
-                fullWidth
-                size="lg"
-                style={busy ? styles.disabled : undefined}
-              />
+                style={({ pressed }) => [
+                  styles.sendBtn,
+                  pressed && styles.sendBtnPressed,
+                  busy && styles.dimmed,
+                ]}>
+                <Text style={styles.sendBtnLabel}>
+                  {busy ? 'Sending…' : 'Send the link'}
+                </Text>
+                {!busy && (
+                  <View style={styles.sendBtnPlane}>
+                    <ButtonPlane />
+                  </View>
+                )}
+              </Pressable>
+
+              {/* ── Card footer: legal + back home ── */}
+              <View style={styles.cardFooter}>
+                <Text style={styles.legal}>
+                  By continuing, you agree we may email you account-related
+                  updates. We won&apos;t sell or share your address.
+                </Text>
+                {/* Layout lives on a View wrapper because Expo Router's
+                    <Link> is text-typed on web (renders <a>) and rejects
+                    flex/padding styles directly. */}
+                <View style={styles.backHome}>
+                  <Link href="/">
+                    <Text style={styles.backHomeText}>← back home</Text>
+                  </Link>
+                </View>
+              </View>
             </>
           ) : (
-            <>
-              <Text variant="bodySmall" muted style={styles.tip}>
-                Don&apos;t see it? Check your spam folder. The link expires in
-                an hour — if it does, come back and request a fresh one.
-              </Text>
-              <Button
-                label="← Use a different email"
-                variant="ghost"
-                onPress={() => {
-                  setStep('email');
-                  setError(null);
-                }}
-                style={styles.secondary}
-              />
-            </>
-          )}
+            /* ── "Link sent" confirmation state ── */
+            <View style={styles.sentState}>
+              {/* Envelope icon */}
+              <LinearGradient
+                colors={[colors.accent, colors.accentDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.sentEnvelope}>
+                <EnvelopeIcon />
+              </LinearGradient>
 
-          {error ? (
-            <View style={styles.errorBox}>
-              <Text variant="bodySmall" color={colors.danger}>
-                {error}
+              <Text style={styles.sentTitle}>Link on its way!</Text>
+              <Text style={styles.sentBody}>
+                We&apos;ve sent a one-click sign-in link to:
               </Text>
+
+              {/* Email pill */}
+              <View style={styles.sentEmailPill}>
+                <Text style={styles.sentEmailText}>{email || 'your email address'}</Text>
+              </View>
+
+              <Text style={styles.sentHint}>
+                It&apos;s valid for 15 minutes.{'\n'}
+                Check your spam folder if it doesn&apos;t show up in a minute.
+              </Text>
+
+              {/* Resend button */}
+              <Pressable
+                onPress={resend}
+                disabled={resendCooldown > 0 || busy}
+                style={({ pressed }) => [
+                  styles.resendBtn,
+                  pressed && styles.resendPressed,
+                  (resendCooldown > 0 || busy) && styles.dimmed,
+                ]}>
+                <Text style={styles.resendLabel}>
+                  {resendCooldown > 0
+                    ? `Resend in ${resendCooldown}s`
+                    : busy
+                    ? 'Sending…'
+                    : 'Resend'}
+                </Text>
+              </Pressable>
+
+              <View style={styles.backHomeSent}>
+                <Link href="/">
+                  <Text style={styles.backHomeText}>← back home</Text>
+                </Link>
+              </View>
             </View>
-          ) : null}
-
-          <Text variant="caption" muted style={styles.legal}>
-            By continuing, you agree we may email you account-related
-            updates. We won&apos;t sell or share your address.
-          </Text>
-        </Card>
-
-        <View style={styles.cancel}>
-          <LinkButton href="/" label="← Back home" variant="ghost" />
+          )}
         </View>
-      </View>
-    </Screen>
+      </ScrollView>
+    </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const CARD_MAX_W = 440;
+const NARROW_SIDE_MARGIN = 18;
+
 const styles = StyleSheet.create({
-  frame: {
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: 460,
-    paddingVertical: spacing.x2l,
+  root: {
+    flex: 1,
+    // The sky gradient + clouds sit here; content is in the ScrollView.
   },
-  card: {
-    gap: spacing.lg,
+
+  // ── Sun glow ──
+  sunGlow: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: '65%',
+    height: '55%',
+    pointerEvents: 'none',
+  } as ViewStyle,
+
+  // ── Background clouds (fixed positions, pointer-events none) ──
+  bgCloud: {
+    position: 'absolute',
+    pointerEvents: 'none',
+  } as ViewStyle,
+
+  // TL: top: 90px left: -40px (desktop), slightly smaller + adjusted narrow
+  cloudTL: {
+    top: 90,
+    left: -40,
+    opacity: 0.85,
   },
-  sub: {
-    marginTop: -spacing.sm,
+  cloudTLNarrow: {
+    top: 70,
+    left: -20,
   },
-  input: {
-    marginTop: spacing.xs,
+
+  // TR: top: 110px right: 8%
+  cloudTR: {
+    top: 110,
+    right: '8%' as unknown as number,
+    opacity: 0.55,
   },
-  tip: {
-    paddingVertical: spacing.sm,
-  },
-  disabled: {
+
+  // Mid-left: top: 42% left: 4%
+  cloudMidL: {
+    top: '42%' as unknown as number,
+    left: '4%' as unknown as number,
     opacity: 0.6,
   },
-  secondary: {
-    marginTop: spacing.xs,
+
+  // Mid-right: top: 56% right: 6%
+  cloudMidR: {
+    top: '56%' as unknown as number,
+    right: '6%' as unknown as number,
+    opacity: 0.7,
   },
-  errorBox: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: 12,
-    padding: spacing.md,
+
+  // BR: bottom: 40px right: -30px
+  cloudBR: {
+    bottom: 40,
+    right: -30,
+    opacity: 0.8,
   },
-  legal: {
-    marginTop: spacing.md,
-    textAlign: 'center',
+  cloudBRNarrow: {
+    bottom: 24,
+    right: -30,
+    opacity: 0.75,
   },
-  cancel: {
-    marginTop: spacing.lg,
+
+  // BL: bottom: 12% left: 18%
+  cloudBL: {
+    bottom: '12%' as unknown as number,
+    left: '18%' as unknown as number,
+    opacity: 0.45,
+  },
+
+  // ── Background paper plane ──
+  bgPlane: {
+    position: 'absolute',
+    top: '22%' as unknown as number,
+    left: '52%' as unknown as number,
+    transform: [{ rotate: '-18deg' }],
+    opacity: 0.6,
+    pointerEvents: 'none',
+  } as ViewStyle,
+  bgPlaneNarrow: {
+    top: '14%' as unknown as number,
+    left: undefined,
+    right: '8%' as unknown as number,
+    opacity: 0.45,
+  } as ViewStyle,
+
+  // ── ScrollView ──
+  scrollContent: {
+    flexGrow: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.x4l,
+    paddingHorizontal: IS_NARROW ? NARROW_SIDE_MARGIN : spacing.xl,
   },
-  // Google button — white background with a thin border, matches the
-  // standard Google-brand-style sign-in button most users recognise.
+
+  // ── Floating card ──
+  card: {
+    width: '100%',
+    maxWidth: CARD_MAX_W,
+    backgroundColor: colors.background,
+    borderRadius: IS_NARROW ? 20 : radius.xl,
+    padding: IS_NARROW ? 22 : 40,
+    // "sticker peeling off the sky" shadow — asymmetric layers
+    shadowColor: colors.skyAnchor,
+    shadowOffset: { width: 0, height: IS_NARROW ? 12 : 18 },
+    shadowOpacity: IS_NARROW ? 0.22 : 0.12,
+    shadowRadius: IS_NARROW ? 28 : 40,
+    elevation: 16,
+    zIndex: 10,
+  },
+
+  // ── Card header ──
+  cardHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 4,
+  },
+  cardMark: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.skyDeep, // gradient approximation; not worth LinearGradient inside tiny circle
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.skyDeep,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  cardTitle: {
+    fontFamily: fontFamily.displayHeavy,
+    fontSize: 27,
+    letterSpacing: -0.9,
+    lineHeight: 33,
+    color: colors.text,
+  },
+
+  // ── Handwritten tagline ──
+  tagline: {
+    fontFamily: fontFamily.hand,
+    fontSize: 22,
+    fontWeight: fontWeight.medium,
+    color: colors.textMuted,
+    marginTop: 10,
+    marginBottom: 26,
+    lineHeight: 29,
+  },
+
+  // ── Google button ──
   googleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    gap: 12,
+    height: 50,
     backgroundColor: colors.background,
+    borderWidth: 1.5,
+    borderColor: `rgba(31,95,160,0.12)`,
+    borderRadius: radius.md,
+    shadowColor: colors.skyAnchor,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   googlePressed: {
-    backgroundColor: colors.surface,
+    borderColor: colors.skyMid,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   googleLabel: {
     fontFamily: fontFamily.displaySemibold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.text,
   },
-  divider: {
+
+  // ── OR divider ──
+  orRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    marginVertical: spacing.xs,
+    gap: 14,
+    marginVertical: 20,
   },
-  dividerLine: {
+  orLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: `rgba(31,95,160,0.12)`,
   },
-  dividerText: {
+  orText: {
+    fontSize: 12,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSubtle,
+    letterSpacing: 1,
+  },
+
+  // ── Email field ──
+  fieldWrap: {
+    marginBottom: 12,
+  },
+  inputError: {
+    borderColor: colors.accent,
+    // RN Web doesn't support boxShadow in StyleSheet; skip the glow
+  },
+  errorText: {
+    fontSize: 12,
+    color: colors.accent,
+    marginBottom: 8,
+    marginTop: -6,
+  },
+
+  // ── Send the link button (coral) ──
+  sendBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    height: 50,
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.38,
+    shadowRadius: 16,
+    elevation: 8,
+    marginTop: 2,
+  },
+  sendBtnPressed: {
+    shadowOpacity: 0.44,
+    shadowRadius: 20,
+    opacity: 0.93,
+  },
+  sendBtnLabel: {
+    fontFamily: fontFamily.displaySemibold,
+    fontSize: 15,
+    color: colors.textInverse,
+    letterSpacing: -0.2,
+  },
+  sendBtnPlane: {
+    // The plane icon sits beside the label; no hover nudge in RN
+  },
+
+  // ── Card footer ──
+  cardFooter: {
+    flexDirection: IS_NARROW ? 'column' : 'row',
+    alignItems: IS_NARROW ? 'flex-start' : 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 18,
+    flexWrap: 'wrap',
+  },
+  legal: {
+    fontSize: 11,
+    color: colors.textSubtle,
+    lineHeight: 16,
+    flex: IS_NARROW ? undefined : 1,
+    flexShrink: 1,
+  },
+  backHome: {
+    flexShrink: 0,
+    paddingTop: 1,
+  },
+  backHomeText: {
     fontSize: 12,
     fontWeight: fontWeight.medium,
+    color: colors.textSubtle,
+  },
+
+  // ── Dimmed (disabled) state ──
+  dimmed: {
+    opacity: 0.6,
+  },
+
+  // ── Sent state ──
+  sentState: {
+    alignItems: 'center',
+    paddingTop: 4,
+  },
+  sentEnvelope: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.36,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  sentTitle: {
+    fontFamily: fontFamily.displayHeavy,
+    fontSize: 24,
+    letterSpacing: -0.7,
+    color: colors.text,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  sentBody: {
+    fontSize: 14,
     color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  sentEmailPill: {
+    backgroundColor: '#FFF0ED',
+    borderRadius: radius.pill,
+    paddingVertical: 5,
+    paddingHorizontal: 14,
+    marginTop: 10,
+    marginBottom: 16,
+  },
+  sentEmailText: {
+    color: colors.accentDark,
+    fontWeight: fontWeight.bold,
+    fontSize: 13,
+  },
+  sentHint: {
+    fontSize: 12,
+    color: colors.textSubtle,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  resendBtn: {
+    borderWidth: 1.5,
+    borderColor: `rgba(31,95,160,0.12)`,
+    borderRadius: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 20,
+    backgroundColor: 'transparent',
+  },
+  resendPressed: {
+    borderColor: colors.accent,
+  },
+  resendLabel: {
+    fontSize: 13,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+  },
+  backHomeSent: {
+    marginTop: 20,
   },
 });
