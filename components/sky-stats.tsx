@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Dimensions, Platform, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui/text';
 import {
@@ -26,6 +26,10 @@ import { supabase } from '@/lib/supabase';
 const SESSION_KEY = 'cc.visitorCounted.v1';
 
 const ANIM_DURATION_MS = 1600;
+
+// Same narrow breakpoint as the rest of the mobile pass — see
+// `components/site-header.tsx` for the rationale.
+const IS_NARROW = Dimensions.get('window').width < 640;
 
 export function SkyStats() {
   const sectionRef = useRef<View>(null);
@@ -188,19 +192,24 @@ const styles = StyleSheet.create({
   },
   card: {
     flexGrow: 1,
-    flexBasis: 220,
+    // Narrow: 140 basis lets two cards sit side-by-side at 390px
+    // (instead of stacking into 4 tall rows). Desktop keeps 220.
+    flexBasis: IS_NARROW ? 140 : 220,
     backgroundColor: colors.skyPale,
     borderRadius: radius.xl,
-    paddingVertical: spacing.x2l,
+    paddingVertical: IS_NARROW ? spacing.xl : spacing.x2l,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
   },
   num: {
     fontFamily: fontFamily.displayHeavy,
-    fontSize: 80,
-    lineHeight: 80,
+    // 80px reads as imposing on desktop but eats half a phone screen
+    // in vertical space when cards stack — 48 keeps the proof-strip
+    // proportional to its surroundings.
+    fontSize: IS_NARROW ? 48 : 80,
+    lineHeight: IS_NARROW ? 48 : 80,
     color: colors.primary,
-    letterSpacing: -3,
+    letterSpacing: IS_NARROW ? -1.5 : -3,
   },
   label: {
     fontSize: 13,

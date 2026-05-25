@@ -6,7 +6,7 @@
  * path is fully drawn at all times.
  */
 
-import { StyleSheet, View } from 'react-native';
+import { Dimensions, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { Text } from '@/components/ui/text';
@@ -17,6 +17,9 @@ import {
   layout,
   spacing,
 } from '@/constants/theme';
+
+// Shared narrow breakpoint — see `components/site-header.tsx`.
+const IS_NARROW = Dimensions.get('window').width < 640;
 
 const STEPS = [
   {
@@ -50,22 +53,27 @@ export function SkyHow() {
           {'From "I have no idea" to "I know what I want" — in 5 minutes.'}
         </Text>
 
-        {/* Flight path behind the step badges */}
+        {/* Flight path behind the step badges. Hidden on narrow —
+            with steps stacked into a single column the horizontal
+            wave reads as a stray line floating across the section,
+            not a connector. */}
         <View style={styles.stepsWrap}>
-          <Svg
-            style={styles.flightPath}
-            viewBox="0 0 1200 40"
-            preserveAspectRatio="none"
-          >
-            <Path
-              d="M 150 20 Q 300 0, 450 20 T 750 20 T 1050 20"
-              fill="none"
-              stroke={colors.primaryDark}
-              strokeWidth={1.5}
-              strokeDasharray="4 8"
-              opacity={0.5}
-            />
-          </Svg>
+          {!IS_NARROW ? (
+            <Svg
+              style={styles.flightPath}
+              viewBox="0 0 1200 40"
+              preserveAspectRatio="none"
+            >
+              <Path
+                d="M 150 20 Q 300 0, 450 20 T 750 20 T 1050 20"
+                fill="none"
+                stroke={colors.primaryDark}
+                strokeWidth={1.5}
+                strokeDasharray="4 8"
+                opacity={0.5}
+              />
+            </Svg>
+          ) : null}
 
           <View style={styles.steps}>
             {STEPS.map((step) => (
@@ -105,8 +113,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fontFamily.displayHeavy,
-    fontSize: 44,
-    lineHeight: 48,
+    fontSize: IS_NARROW ? 32 : 44,
+    lineHeight: IS_NARROW ? 36 : 48,
     color: colors.text,
     letterSpacing: -1.5,
     marginBottom: spacing.x3l,

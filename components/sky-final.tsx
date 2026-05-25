@@ -10,7 +10,7 @@
  */
 
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View } from 'react-native';
+import { Dimensions, StyleSheet, View } from 'react-native';
 import Svg, {
   Defs,
   Ellipse,
@@ -23,6 +23,15 @@ import { LinkButton } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { colors, fontFamily, spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth';
+
+// Shared narrow breakpoint — see `components/site-header.tsx`.
+const IS_NARROW = Dimensions.get('window').width < 640;
+// The closing headline is set in displayHeavy at 80px on desktop;
+// at phone widths that's roughly half the viewport per letter, so
+// "Where will you go?" wraps and looks broken. 48px keeps the same
+// dramatic presence at 390px without overwhelming the column.
+const H2_SIZE = IS_NARROW ? 48 : 80;
+const H2_LINE = IS_NARROW ? 52 : 84;
 
 function Cloud({ size }: { size: number }) {
   return (
@@ -138,10 +147,10 @@ const styles = StyleSheet.create({
   },
   h2: {
     fontFamily: fontFamily.displayHeavy,
-    fontSize: 80,
-    lineHeight: 84,
+    fontSize: H2_SIZE,
+    lineHeight: H2_LINE,
     color: colors.text,
-    letterSpacing: -3,
+    letterSpacing: IS_NARROW ? -1.5 : -3,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
@@ -151,9 +160,9 @@ const styles = StyleSheet.create({
   // only the colour changes.
   h2Accent: {
     fontFamily: fontFamily.displayHeavy,
-    fontSize: 80,
-    lineHeight: 84,
-    letterSpacing: -3,
+    fontSize: H2_SIZE,
+    lineHeight: H2_LINE,
+    letterSpacing: IS_NARROW ? -1.5 : -3,
     color: colors.accentDark,
   },
   sub: {

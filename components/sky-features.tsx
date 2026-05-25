@@ -7,7 +7,7 @@
 
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ColorValue } from 'react-native';
-import { StyleSheet, View } from 'react-native';
+import { Dimensions, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { Text } from '@/components/ui/text';
@@ -19,6 +19,9 @@ import {
   radius,
   spacing,
 } from '@/constants/theme';
+
+// Shared narrow breakpoint — see `components/site-header.tsx`.
+const IS_NARROW = Dimensions.get('window').width < 640;
 
 type GradientStops = [ColorValue, ColorValue];
 
@@ -141,8 +144,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fontFamily.displayHeavy,
-    fontSize: 48,
-    lineHeight: 50,
+    fontSize: IS_NARROW ? 32 : 48,
+    lineHeight: IS_NARROW ? 36 : 50,
     color: colors.text,
     letterSpacing: -1.5,
     marginBottom: spacing.x3l,

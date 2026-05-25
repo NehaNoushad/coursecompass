@@ -7,7 +7,7 @@
 
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ColorValue } from 'react-native';
-import { StyleSheet, View } from 'react-native';
+import { Dimensions, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui/text';
 import {
@@ -19,6 +19,9 @@ import {
   spacing,
 } from '@/constants/theme';
 import { COURSES } from '@/data';
+
+// Shared narrow breakpoint — see `components/site-header.tsx`.
+const IS_NARROW = Dimensions.get('window').width < 640;
 
 type GradientStops = [ColorValue, ColorValue];
 
@@ -117,8 +120,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fontFamily.displayHeavy,
-    fontSize: 44,
-    lineHeight: 48,
+    fontSize: IS_NARROW ? 32 : 44,
+    lineHeight: IS_NARROW ? 36 : 48,
     color: colors.text,
     letterSpacing: -1.5,
     marginBottom: spacing.x2l,
@@ -132,7 +135,9 @@ const styles = StyleSheet.create({
   tile: {
     position: 'relative',
     flexGrow: 1,
-    flexBasis: 220,
+    // Narrow: 260 basis means one tile per row that uses the full
+    // viewport width — better than 220 which left awkward gutters.
+    flexBasis: IS_NARROW ? 260 : 220,
     aspectRatio: 3 / 4,
     borderRadius: radius.xl,
     overflow: 'hidden',
