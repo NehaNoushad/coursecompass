@@ -119,16 +119,6 @@
     padding-top: 80px;
     padding-bottom: 0;
   }
-  /* Cloud puffs */
-  .hero::before {
-    content: '';
-    position: absolute;
-    right: 6%; top: 24px;
-    width: 220px; height: 80px;
-    background: radial-gradient(ellipse at 50% 70%, white 60%, transparent 100%);
-    opacity: 0.5;
-    pointer-events: none;
-  }
   /* Fade into paper */
   .hero::after {
     content: '';
@@ -136,12 +126,25 @@
     height: 64px;
     background: linear-gradient(to bottom, transparent, var(--paper));
     pointer-events: none;
+    z-index: 1;
   }
+  /* Cloud puffs — white SVG, positioned with percentage offsets so
+     they live in the sky around (not behind) the avatar and action row. */
+  .heroCloud { position: absolute; pointer-events: none; }
+  .heroCloud svg { width: 100%; height: 100%; }
+  .heroCloud-1 { width: 180px; height: 70px; top: 30px;  right: 22%; opacity: 0.7; }
+  .heroCloud-2 { width: 130px; height: 50px; top: 80px;  right: 6%;  opacity: 0.55; }
+  /* Third cloud sits in the empty band between the avatar and the
+     action buttons so it doesn't paint behind the greeting / email. */
+  .heroCloud-3 { width: 160px; height: 60px; top: 56%;   left: 8%;  opacity: 0.4; }
+
   .heroInner {
     max-width: 1120px; margin: 0 auto;
-    padding: 0 32px 56px;
+    padding: 0 32px 36px;
     display: flex;
-    align-items: flex-end;
+    /* Centre vertically so the greeting + email sit beside the middle
+       of the avatar, not glued to its base. */
+    align-items: center;
     gap: 28px;
     position: relative; z-index: 2;
   }
@@ -161,7 +164,8 @@
   }
   .heroText {
     flex: 1;
-    padding-bottom: 12px;
+    /* No padding-bottom — heroInner is align-items:center now, so the
+       block aligns to the avatar's midline directly. */
   }
   .heroGreeting {
     font-family: 'Caveat', cursive;
@@ -177,7 +181,6 @@
   }
   .heroActions {
     display: flex; gap: 10px;
-    padding-bottom: 12px;
     flex-shrink: 0;
   }
   .btn-ghost {
@@ -579,14 +582,30 @@
   <div class="nav-right">
     <a href="/colleges" class="nav-link-hide">Colleges</a>
     <a href="/courses" class="nav-link-hide">Courses</a>
-    <!-- Avatar circle (signed in) -->
-    <a href="#" class="nav-avatar" title="My account">N</a>
-    <a href="/quiz" class="nav-cta">Take the quiz</a>
+    <!-- No "Sign in" link (signed-in state). No nav-avatar — the dashboard
+         hero already shows the avatar; duplicating it crowds the right
+         side. No "Take the quiz" CTA either — Neha has already taken
+         the quiz, so it would be misleading; live app gates this on
+         hasTakenQuiz. -->
   </div>
 </nav>
 
 <!-- ─── HERO STRIP ─── -->
 <section class="hero">
+  <!-- Soft white cloud puffs scattered across the sky, replacing the
+       earlier rectangular radial-gradient pseudo-element. These sit
+       at z-index 0 — behind the heroInner (z-index 2) — so they
+       decorate the sky without crowding the avatar or actions. -->
+  <div class="heroCloud heroCloud-1">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+  <div class="heroCloud heroCloud-2">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+  <div class="heroCloud heroCloud-3">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+
   <div class="heroInner">
     <div class="heroAvatar">N</div>
     <div class="heroText">
