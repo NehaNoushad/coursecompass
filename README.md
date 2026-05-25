@@ -1,50 +1,41 @@
-# Welcome to your Expo app 👋
+# Paper Plane
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A course- and college-discovery web app for Indian students who have finished
+Class 12. Launch market is **Kerala**; the catalogue covers 394 colleges and
+181 courses across all 14 districts.
 
-## Get started
+Live: <https://paper-plane-phi.vercel.app>
 
-1. Install dependencies
+## What it does
 
-   ```bash
-   npm install
-   ```
+- Browse colleges by district, course, type, fees.
+- Browse courses by stream + entrance exam.
+- Take a 6-question quiz and get matched to courses + colleges.
+- Sign in (Google or email magic link) to save your results.
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Run it locally
 
 ```bash
-npm run reset-project
+npm install --legacy-peer-deps
+npm run web        # starts the web dev server on localhost:8081
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Other targets: `npm run ios`, `npm run android`, `npm run start` (Metro picker).
+Type-check + lint: `npx tsc --noEmit && npm run lint`.
 
-## Learn more
+## Stack
 
-To learn more about developing your project with Expo, look at the following resources:
+Expo Router + React Native + TypeScript on web (Vercel) + Supabase (auth, db).
+See **[CLAUDE.md](./CLAUDE.md)** for the full project map — phases, conventions,
+file structure, data model, and the working agreement between the two non-
+technical collaborators on this repo.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Repo layout (quick)
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- `app/` — Expo Router file-based routes (`/`, `/colleges`, `/courses`, `/quiz`, `/signin`, `/account`, plus detail pages).
+- `components/` — `sky-*` design-system pieces + `ui/` primitives + shared cards.
+- `data/` — seed dataset (colleges, courses, exams, categories) — single source of truth until the Supabase admin panel lands.
+- `lib/` — non-UI logic (recommendation engine, auth provider, browse-gate timer, supabase client).
+- `constants/theme.ts` — every design token. Reference it; never hardcode values.
+- `design_prototypes/` — throwaway static HTML/CSS sketches kept as design reference; one folder per page.
+- `docs/` — phone-survey checklist, Supabase schema, deployment notes.

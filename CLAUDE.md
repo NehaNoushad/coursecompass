@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-**Phase 2 complete (discovery).** Foundation + seed data (391 colleges, 119 courses, 37 exams, 20 categories) plus the full discovery experience: filterable college and course catalogues, college/course detail pages, and the 6-step guided quiz with a recommendation engine. The dataset was expanded via a district-by-district web audit. Next: Phase 3 (accounts + 10-minute browse gate).
+**Phases 1–5 complete.** Foundation, full discovery experience (catalogues + detail pages + 6-step quiz), Supabase phone/Google auth + 10-minute browse gate, signed-in dashboard with quiz history, mobile UI pass, and the sky-theme design system (paper-plane / cyan-azure gradient / Sora display + Caveat handwritten accent — chosen from prototype 4) ported to every page. Seed data: 394 colleges, 181 courses, 37 exams, 20 categories. Live on Vercel.
+
+Next: **Phase 6 — monetization (2027 only)**. Wire Razorpay + automated PDF report generation + unique-code redemption. Until then 2026 stays entirely free; the paywall structure is built but inactive.
 
 ## Commands
 
