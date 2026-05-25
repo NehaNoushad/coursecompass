@@ -67,6 +67,16 @@ import { Text } from '@/components/ui/text';
 
 const BREAKPOINT = 980;
 
+/**
+ * Module-load snapshot for use inside `StyleSheet.create()` (which can't
+ * read React state). Matches the pattern used by other pages in this
+ * codebase — e.g. components/site-header.tsx, components/colleges-hero.tsx.
+ * The runtime `useWindowWidth` hook below is used for layout decisions
+ * that need to react to resize after mount (e.g. swapping the desktop
+ * profile pane for the mobile summary strip).
+ */
+const IS_NARROW = Dimensions.get('window').width < 640;
+
 function useWindowWidth() {
   const [w, setW] = useState(Dimensions.get('window').width);
   useEffect(() => {
@@ -758,8 +768,19 @@ function AnswerChip({
 
 const chipStyles = StyleSheet.create({
   chip: {
-    flexBasis: 160,
-    flexGrow: 1,
+    // Uniform chip sizing. flexGrow:0 + maxWidth + fixed minHeight
+    // means every chip is the same width AND the same height — even
+    // when a long name like "Thiruvananthapuram" wraps to two lines,
+    // the row doesn't get taller than its neighbours. Last partial
+    // row left-aligns instead of stretching (preferred to mismatched
+    // sizes).
+    //
+    // 3 per row on desktop (one chip ~= 32% wide), 2 per row on phone.
+    flexBasis: IS_NARROW ? '47%' : '32%',
+    maxWidth: IS_NARROW ? '48%' : '32.3%',
+    flexGrow: 0,
+    flexShrink: 0,
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -1483,18 +1504,22 @@ function QuizResult({
   return (
     <View style={resultStyles.root}>
       <SiteHeader />
-      {/* Sky-band hero for the result screen */}
-      <SkyBandHero>
-        <Badge label="Your results" tone="success" />
-        <Text variant="title" style={resultStyles.heroTitle}>
-          Here&apos;s what fits you
-        </Text>
-      </SkyBandHero>
 
       <ScrollView
         contentContainerStyle={resultStyles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Sky-band hero is INSIDE the ScrollView so it scrolls up
+            out of view as the user reads through their matches. When
+            it sat above the ScrollView, the cards moved but the blue
+            strip stayed pinned at the top — bad UX. */}
+        <SkyBandHero>
+          <Badge label="Your results" tone="success" />
+          <Text variant="title" style={resultStyles.heroTitle}>
+            Here&apos;s what fits you
+          </Text>
+        </SkyBandHero>
+
         <View style={resultStyles.inner}>
           {marks ? (
             <Card muted style={resultStyles.marksCard}>
@@ -1557,11 +1582,13 @@ const resultStyles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    alignItems: 'center',
+    // No `alignItems: 'center'` — that shrinks SkyBandHero to fit
+    // the centred body. inner block sets its own alignSelf:center.
   },
   inner: {
     width: '100%',
     maxWidth: layout.maxContentWidth,
+    alignSelf: 'center',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.x2l,
   },
