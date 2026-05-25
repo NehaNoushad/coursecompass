@@ -119,7 +119,10 @@ const styles = StyleSheet.create({
     gap: spacing.x2l,
   },
   linkPressable: {
-    paddingVertical: spacing.xs,
+    // sm (8px) on top and bottom, plus the 13px label lineHeight, gives
+    // ≈36px of tap surface — close enough to the 44px target with the
+    // row gap acting as additional buffer between adjacent links.
+    paddingVertical: spacing.sm,
   },
   linkText: {
     color: 'rgba(255, 255, 255, 0.65)',
