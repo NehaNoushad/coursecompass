@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { LinkButton } from '@/components/ui/button';
@@ -20,6 +20,14 @@ const NAV_LINKS = [
   { label: 'Colleges', href: '/colleges' as const },
   { label: 'Courses', href: '/courses' as const },
 ];
+
+// One-shot snapshot at module load. The header needs the narrow
+// breakpoint earlier than the hero (its right-hand block hits 406px
+// of intrinsic width — fitting two text links + Sign in + CTA next
+// to the brand mark forces the page wider than the viewport on phones).
+// 640 is the shared "phone vs everything else" line for the mobile
+// pass; bumping past it gets you the desktop header back.
+const IS_NARROW = Dimensions.get('window').width < 640;
 
 /**
  * Small clickable avatar — replaces the "Account" text link when the
@@ -104,15 +112,20 @@ export function SiteHeader() {
         </Link>
 
         <View style={styles.right}>
-          <View style={styles.nav}>
-            {NAV_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} asChild>
-                <Pressable style={styles.navItem}>
-                  <Text style={styles.navLink}>{link.label}</Text>
-                </Pressable>
-              </Link>
-            ))}
-          </View>
+          {/* Nav links hide on narrow — the footer and home-page CTAs
+              cover catalogue navigation, and a hamburger menu lands
+              with the catalogue redesign. */}
+          {!IS_NARROW ? (
+            <View style={styles.nav}>
+              {NAV_LINKS.map((link) => (
+                <Link key={link.href} href={link.href} asChild>
+                  <Pressable style={styles.navItem}>
+                    <Text style={styles.navLink}>{link.label}</Text>
+                  </Pressable>
+                </Link>
+              ))}
+            </View>
+          ) : null}
 
           {session ? (
             <HeaderAvatar />
@@ -129,8 +142,15 @@ export function SiteHeader() {
           )}
 
           {/* Hide the quiz CTA once the signed-in user has taken it —
-              the dashboard's "Retake" action takes over from here. */}
-          {!hasTakenQuiz ? <LinkButton href="/quiz" label="Take the quiz" /> : null}
+              the dashboard's "Retake" action takes over from here.
+              On narrow we shrink the label to "Quiz →" so the button
+              fits next to the brand mark + auth control. */}
+          {!hasTakenQuiz ? (
+            <LinkButton
+              href="/quiz"
+              label={IS_NARROW ? 'Quiz →' : 'Take the quiz'}
+            />
+          ) : null}
         </View>
       </View>
     </View>
@@ -147,12 +167,14 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: layout.maxContentWidth,
     alignSelf: 'center',
-    paddingHorizontal: spacing.xl,
+    // Tighter horizontal padding + outer gap on phones; the brand mark,
+    // auth control and quiz CTA are otherwise pushed off the right edge.
+    paddingHorizontal: IS_NARROW ? spacing.lg : spacing.xl,
     paddingVertical: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: spacing.lg,
+    gap: IS_NARROW ? spacing.md : spacing.lg,
   },
   brand: {
     flexDirection: 'row',
@@ -191,7 +213,8 @@ const styles = StyleSheet.create({
   right: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xl,
+    // Narrow: tighter gap because the row has fewer items.
+    gap: IS_NARROW ? spacing.md : spacing.xl,
   },
   nav: {
     flexDirection: 'row',
