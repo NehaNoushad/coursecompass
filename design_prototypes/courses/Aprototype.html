@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+  DESIGN COMMENT — Aprototype.html: "Editorial mirror"
+  ─────────────────────────────────────────────────────
+  This is the courses catalogue page designed as a direct sibling of the
+  colleges catalogue (colleges/6prototype.html). Same sky-gradient hero
+  strip, same sticky filter sidebar on the left, same magazine card grid
+  on the right. The only structural differences from the colleges page are:
+
+  1. The sidebar filters are tuned to course data:
+     • Stream radio (PCM / PCB / Commerce / Arts / Any)
+     • Category multi-select chips (Engineering, Medical, Law…)
+     • Entrance exam multi-select chips (KEAM, NEET, CLAT, JEE, CUET…)
+     • Duration radio (Any / 3 yrs / 4 yrs / 5+ yrs)
+
+  2. Card headers are coloured by course category (not district/type):
+     engineering=blue gradient, medical=coral, law=sun→coral,
+     design=teal→sky-deep, pharmacy/nursing=purple, commerce=amber,
+     arts=green-teal, hotel=warm-orange.
+
+  3. Each card tagline reads as "N-year programme · Stream · Exam(s)".
+
+  4. The hero eyebrow chip reads "181 COURSES ACROSS KERALA" and the
+     handwritten nudge says "or take the quiz →".
+
+  Layout: 280px sidebar + 1fr grid, same max-width 1320px container.
+  Breakpoint at 980px: sidebar unsticks, grid goes single-column.
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper Plane — Browse courses (Editorial)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ───────── DESIGN TOKENS (identical to colleges/6prototype.html) ───────── */
+  :root {
+    --sky-pale:    #E8F4FD;
+    --sky-bright:  #87CEEB;
+    --sky-mid:     #4FA3E0;
+    --sky-deep:    #2D7DD2;
+    --sky-anchor:  #1F5FA0;
+
+    --cloud:        #FFFFFF;
+    --cloud-shadow: rgba(31, 95, 160, 0.08);
+
+    --sun:          #FFD93D;
+    --sun-glow:     #FFE680;
+    --coral:        #FF8C7A;
+    --coral-deep:   #E66E5A;
+
+    --ink:        #0D2840;
+    --ink-soft:   #4A5A6E;
+    --ink-muted:  #8895A6;
+    --paper:      #FBFCFE;
+    --line:       rgba(31, 95, 160, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display { font-family: 'Sora', system-ui, sans-serif; }
+  .hand    { font-family: 'Caveat', cursive; }
+
+  /* ───────── NAV ───────── */
+  .nav {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: none; }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav-right { display: flex; align-items: center; gap: 28px; }
+  .nav-right a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px; font-weight: 500;
+  }
+  .nav-right a:hover { color: var(--sky-anchor); }
+  .nav-cta {
+    padding: 10px 18px;
+    background: var(--ink); color: white;
+    border-radius: 999px; font-weight: 600; font-size: 14px;
+  }
+
+  /* ───────── HERO STRIP ───────── */
+  .hero {
+    position: relative;
+    min-height: 320px;
+    padding: 100px 32px 64px;
+    background: linear-gradient(180deg, var(--sky-bright) 0%, var(--sky-mid) 100%);
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute; inset: auto 0 0 0;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--paper));
+    pointer-events: none;
+  }
+  .heroInner {
+    max-width: 1320px; margin: 0 auto;
+    position: relative; z-index: 1;
+  }
+  .heroEyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--ink);
+    margin-bottom: 18px;
+  }
+  .heroEyebrow::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--coral);
+  }
+  .heroTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 64px;
+    line-height: 1;
+    letter-spacing: -2.5px;
+    color: var(--ink);
+    max-width: 720px;
+  }
+  .heroTitle em {
+    font-style: normal;
+    color: var(--coral);
+  }
+  .heroSub {
+    margin-top: 20px;
+    color: var(--ink-soft);
+    font-size: 17px;
+    max-width: 600px;
+  }
+  .heroSub .hand {
+    color: var(--sky-anchor);
+    font-size: 24px; line-height: 1;
+    display: inline-block;
+    transform: rotate(-3deg);
+    margin: 0 3px;
+  }
+  .cloud {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.9;
+  }
+  .cloud svg { width: 100%; height: 100%; }
+  .cloud-1 { width: 260px; height: 100px; top: 30px; right: 5%; opacity: 0.85; }
+  .cloud-2 { width: 180px; height: 70px; bottom: 30%; right: 25%; opacity: 0.7; }
+  .cloud-3 { width: 220px; height: 85px; bottom: -10px; left: -2%; opacity: 0.6; }
+
+  /* ───────── LAYOUT ───────── */
+  .layout {
+    max-width: 1320px; margin: -28px auto 80px;
+    padding: 0 32px;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+    position: relative; z-index: 2;
+  }
+
+  /* ─── Sidebar ─── */
+  .sidebar {
+    position: sticky; top: 24px;
+    align-self: start;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 12px 32px -16px rgba(31, 95, 160, 0.18);
+  }
+  .sidebarHead {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 20px;
+  }
+  .sidebarTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.3px;
+  }
+  .sidebarClear {
+    background: none; border: 0;
+    color: var(--sky-deep);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  .sidebarSearch {
+    width: 100%;
+    height: 42px;
+    padding: 0 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--paper);
+    font-family: inherit; font-size: 14px;
+    outline: none;
+    margin-bottom: 24px;
+  }
+  .sidebarSearch:focus {
+    border-color: var(--sky-deep);
+    background: white;
+  }
+  .filterSection { margin-bottom: 24px; }
+  .filterSection:last-child { margin-bottom: 0; }
+  .filterLabel {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .filterList { display: flex; flex-direction: column; gap: 4px; }
+  .filterRow {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .filterRow:hover { background: var(--sky-pale); color: var(--ink); }
+  .filterRow.active { background: var(--sky-pale); color: var(--sky-anchor); font-weight: 600; }
+  .filterRow .dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--ink-muted);
+    flex-shrink: 0;
+  }
+  .filterRow.active .dot {
+    border-color: var(--sky-deep);
+    background: var(--sky-deep);
+    box-shadow: inset 0 0 0 3px white;
+  }
+  .filterRow .pill {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--ink-muted);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 1px 8px;
+    border-radius: 999px;
+  }
+  .filterRow.active .pill {
+    color: var(--sky-deep);
+    border-color: var(--sky-deep);
+    background: white;
+  }
+
+  /* Multi-select chip groups (category, exam) */
+  .chipGroup { display: flex; flex-wrap: wrap; gap: 6px; }
+  .fChip {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: white;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .fChip:hover { border-color: var(--sky-mid); color: var(--ink); }
+  .fChip.active {
+    background: var(--sky-deep);
+    border-color: var(--sky-deep);
+    color: white;
+    font-weight: 600;
+  }
+  .expandMore {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 999px;
+    border: 1px dashed var(--line);
+    background: transparent;
+    color: var(--sky-deep);
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+  }
+
+  /* ─── Results ─── */
+  .results { min-width: 0; }
+  .resultsHead {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 12px 0 24px;
+    flex-wrap: wrap;
+  }
+  .resultsCount {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.3px;
+  }
+  .resultsCount em {
+    font-style: normal;
+    color: var(--sky-deep);
+  }
+  .resultsHint { color: var(--ink-muted); font-size: 14px; }
+  .sortPill {
+    margin-left: auto;
+    padding: 8px 14px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    font-family: inherit;
+  }
+
+  /* ─── Magazine cards ─── */
+  .cardGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    position: relative;
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px -6px rgba(31, 95, 160, 0.15);
+    transition: transform 0.25s, box-shadow 0.25s;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    text-decoration: none; color: inherit;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -12px rgba(31, 95, 160, 0.25);
+  }
+
+  /* Card header: gradient coloured by category */
+  .cardHeader {
+    position: relative;
+    height: 140px;
+    background: var(--card-gradient, linear-gradient(135deg, var(--sky-bright), var(--sky-deep)));
+    padding: 20px;
+    overflow: hidden;
+  }
+  /* decorative bubble overlays */
+  .cardHeader::after {
+    content: '';
+    position: absolute;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    bottom: -50px; right: -50px;
+  }
+  .cardHeader::before {
+    content: '';
+    position: absolute;
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    top: 20px; right: 60px;
+  }
+
+  /* Duration badge: top-right corner of header */
+  .cardDuration {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(4px);
+    color: white;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    z-index: 1;
+    letter-spacing: 0.5px;
+  }
+
+  .cardCategory {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink);
+    position: relative; z-index: 1;
+  }
+  .cardBody {
+    padding: 20px 22px 22px;
+    display: flex; flex-direction: column;
+    flex: 1;
+  }
+  .cardName {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 19px;
+    line-height: 1.2;
+    letter-spacing: -0.4px;
+    color: var(--ink);
+    margin-top: 2px;
+  }
+  .cardTagline {
+    margin-top: 7px;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  /* Stat strip */
+  .cardStats {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px dashed var(--line);
+    display: flex; gap: 0;
+    justify-content: space-between;
+    color: var(--ink-soft);
+    font-size: 12px;
+    margin-top: 16px;
+  }
+  .cardStats div { text-align: center; flex: 1; }
+  .cardStats strong {
+    display: block;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+    margin-bottom: 1px;
+  }
+
+  .cardCta {
+    margin-top: 14px;
+    color: var(--sky-deep);
+    font-weight: 600;
+    font-size: 14px;
+    display: flex; align-items: center; gap: 4px;
+    justify-content: space-between;
+  }
+  .cardCta .primary { display: flex; align-items: center; gap: 4px; }
+  .cardCta svg {
+    width: 14px; height: 14px;
+    transition: transform 0.2s;
+  }
+  .card:hover .cardCta svg { transform: translateX(4px); }
+  .cardCtaSub {
+    font-size: 12px;
+    color: var(--ink-muted);
+    font-weight: 400;
+  }
+
+  /* Exam badge strip below tagline */
+  .cardExams {
+    display: flex; flex-wrap: wrap; gap: 5px;
+    margin-top: 10px;
+  }
+  .examBadge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--sky-pale);
+    color: var(--sky-anchor);
+    border: 1px solid rgba(31, 95, 160, 0.18);
+    letter-spacing: 0.3px;
+  }
+
+  /* ───────── FOOTER ───────── */
+  .footer {
+    background: var(--ink);
+    color: rgba(255, 255, 255, 0.65);
+    padding: 40px 32px 32px;
+    margin-top: 40px;
+  }
+  .footerInner { max-width: 1320px; margin: 0 auto; }
+  .footerTop {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 24px;
+  }
+  .footerBrand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 16px;
+    color: white;
+  }
+  .footerMark {
+    width: 26px; height: 26px;
+    background: var(--sky-deep);
+    border-radius: 50%;
+    display: grid; place-items: center;
+  }
+  .footerMark svg { width: 14px; height: 14px; }
+  .footerLinks { display: flex; gap: 32px; }
+  .footerLinks a {
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
+    font-size: 13px; font-weight: 500;
+  }
+  .footerLinks a:hover { color: white; }
+  .footerDivider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 20px 0;
+  }
+  .footerBottom {
+    display: flex; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 12px;
+  }
+
+  /* ───────── RESPONSIVE ───────── */
+  @media (max-width: 980px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .heroTitle { font-size: 44px; letter-spacing: -1.5px; }
+    .hero { padding-top: 90px; }
+    .nav-right a:not(.nav-cta) { display: none; }
+    .cardGrid { grid-template-columns: 1fr; }
+    .resultsHead { gap: 8px; }
+    .sortPill { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="#" class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span>Paper Plane</span>
+  </a>
+  <div class="nav-right">
+    <a href="#">Colleges</a>
+    <a href="#" style="color: var(--ink); font-weight: 600;">Courses</a>
+    <a href="#" style="color: var(--sky-anchor); font-weight: 600;">Sign in</a>
+    <a href="#" class="nav-cta">Take the quiz</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="cloud cloud-1">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+  <div class="cloud cloud-2">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+  <div class="cloud cloud-3">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+
+  <div class="heroInner">
+    <div class="heroEyebrow">181 COURSES ACROSS KERALA</div>
+    <h1 class="heroTitle display">Browse <em>181</em> courses.</h1>
+    <p class="heroSub">
+      Filter by stream, entrance exam, and subject.
+      <span class="hand">or take the quiz →</span>
+      and we'll match courses to your 12th marks.
+    </p>
+  </div>
+</section>
+
+<div class="layout">
+
+  <!-- ─── Sidebar ─── -->
+  <aside class="sidebar">
+    <div class="sidebarHead">
+      <span class="sidebarTitle">Filters</span>
+      <button class="sidebarClear" id="clearBtn">Clear</button>
+    </div>
+
+    <input class="sidebarSearch" placeholder="Search by course name…" id="searchInput">
+
+    <!-- Stream filter — radio -->
+    <div class="filterSection" id="streamSection">
+      <div class="filterLabel">Stream</div>
+      <div class="filterList">
+        <div class="filterRow active"><span class="dot"></span><span>All streams</span><span class="pill">181</span></div>
+        <div class="filterRow"><span class="dot"></span><span>PCM</span><span class="pill">73</span></div>
+        <div class="filterRow"><span class="dot"></span><span>PCB</span><span class="pill">58</span></div>
+        <div class="filterRow"><span class="dot"></span><span>Commerce</span><span class="pill">34</span></div>
+        <div class="filterRow"><span class="dot"></span><span>Arts / Humanities</span><span class="pill">29</span></div>
+        <div class="filterRow"><span class="dot"></span><span>Any stream</span><span class="pill">12</span></div>
+      </div>
+    </div>
+
+    <!-- Category chips — multi-select -->
+    <div class="filterSection">
+      <div class="filterLabel">Category</div>
+      <div class="chipGroup" id="categoryChips">
+        <button class="fChip">Engineering</button>
+        <button class="fChip">Medical</button>
+        <button class="fChip">Law</button>
+        <button class="fChip">Design</button>
+        <button class="fChip">Commerce</button>
+        <button class="fChip">Arts</button>
+        <button class="fChip">Sciences</button>
+        <button class="fChip">Pharmacy</button>
+        <button class="expandMore">+ 12 more</button>
+      </div>
+    </div>
+
+    <!-- Exam chips — multi-select -->
+    <div class="filterSection">
+      <div class="filterLabel">Entrance exam</div>
+      <div class="chipGroup" id="examChips">
+        <button class="fChip">KEAM</button>
+        <button class="fChip">NEET-UG</button>
+        <button class="fChip">JEE Main</button>
+        <button class="fChip">CLAT</button>
+        <button class="fChip">CUET-UG</button>
+        <button class="fChip">KLEE</button>
+        <button class="fChip">NCHMCT JEE</button>
+        <button class="fChip">UCEED</button>
+        <button class="fChip">NID DAT</button>
+        <button class="expandMore">+ 28 more</button>
+      </div>
+    </div>
+
+    <!-- Duration filter — radio -->
+    <div class="filterSection" id="durationSection">
+      <div class="filterLabel">Duration</div>
+      <div class="filterList">
+        <div class="filterRow active"><span class="dot"></span><span>Any duration</span></div>
+        <div class="filterRow"><span class="dot"></span><span>3 years</span><span class="pill">58</span></div>
+        <div class="filterRow"><span class="dot"></span><span>4 years</span><span class="pill">71</span></div>
+        <div class="filterRow"><span class="dot"></span><span>5+ years</span><span class="pill">52</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Magazine grid ─── -->
+  <section class="results">
+    <div class="resultsHead">
+      <span class="resultsCount display"><em>181</em> courses</span>
+      <span class="resultsHint">— all streams</span>
+      <button class="sortPill">
+        Sort: A – Z
+        <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="cardGrid">
+
+      <!-- B.Tech CSE — Engineering (blue gradient) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #5DB8F0 0%, #1F5FA0 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Engineering</span>
+          <span class="cardDuration">4 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">B.Tech Computer Science Engineering</div>
+          <div class="cardTagline">4-year programme · PCM stream · KEAM or JEE Main</div>
+          <div class="cardExams">
+            <span class="examBadge">KEAM</span>
+            <span class="examBadge">JEE Main</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>4</strong>years</div>
+            <div><strong>PCM</strong>stream</div>
+            <div><strong>112</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 112 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MBBS — Medical (coral gradient) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #FF8C7A 0%, #C0392B 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Medical</span>
+          <span class="cardDuration">5.5 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">MBBS</div>
+          <div class="cardTagline">5.5-year programme · PCB stream · NEET-UG required</div>
+          <div class="cardExams">
+            <span class="examBadge" style="background:#FFF0EE;color:#C0392B;border-color:rgba(192,57,43,0.2)">NEET-UG</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>5.5</strong>years</div>
+            <div><strong>PCB</strong>stream</div>
+            <div><strong>22</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 22 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BDS — Dental (warm coral-amber) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #F5A623 0%, #E66E5A 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Dental</span>
+          <span class="cardDuration">5 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">BDS — Bachelor of Dental Surgery</div>
+          <div class="cardTagline">5-year programme · PCB stream · NEET-UG required</div>
+          <div class="cardExams">
+            <span class="examBadge" style="background:#FFF5E6;color:#B7560A;border-color:rgba(183,86,10,0.2)">NEET-UG</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>5</strong>years</div>
+            <div><strong>PCB</strong>stream</div>
+            <div><strong>7</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 7 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.A.LL.B — Law (sun → coral) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #FFD93D 0%, #FF8C7A 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Law</span>
+          <span class="cardDuration">5 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">B.A.LL.B — 5-Year Integrated Law</div>
+          <div class="cardTagline">5-year programme · Any stream · CLAT or KLEE</div>
+          <div class="cardExams">
+            <span class="examBadge" style="background:#FFFBE6;color:#8B6914;border-color:rgba(139,105,20,0.2)">CLAT</span>
+            <span class="examBadge" style="background:#FFFBE6;color:#8B6914;border-color:rgba(139,105,20,0.2)">KLEE</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>5</strong>years</div>
+            <div><strong>Any</strong>stream</div>
+            <div><strong>9</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 9 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.Des — Design (teal gradient) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #2ECBA1 0%, #2D7DD2 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Design</span>
+          <span class="cardDuration">4 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">B.Des Communication Design</div>
+          <div class="cardTagline">4-year programme · Any stream · UCEED or NID DAT</div>
+          <div class="cardExams">
+            <span class="examBadge" style="background:#E6FAF5;color:#0E7A58;border-color:rgba(14,122,88,0.2)">UCEED</span>
+            <span class="examBadge" style="background:#E6FAF5;color:#0E7A58;border-color:rgba(14,122,88,0.2)">NID DAT</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>4</strong>years</div>
+            <div><strong>Any</strong>stream</div>
+            <div><strong>6</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 6 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.Pharm — Pharmacy (purple-blue) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #A78BFA 0%, #4F46E5 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Pharmacy</span>
+          <span class="cardDuration">4 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">B.Pharm</div>
+          <div class="cardTagline">4-year programme · PCB or PCM stream · KEAM</div>
+          <div class="cardExams">
+            <span class="examBadge" style="background:#EDE9FE;color:#4C1D95;border-color:rgba(76,29,149,0.2)">KEAM</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>4</strong>years</div>
+            <div><strong>PCB/PCM</strong>stream</div>
+            <div><strong>31</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 31 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.Sc Nursing — Nursing (pink-purple) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #F9A8D4 0%, #BE185D 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Nursing</span>
+          <span class="cardDuration">4 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">B.Sc Nursing</div>
+          <div class="cardTagline">4-year programme · PCB stream · KEAM (BSc Nursing entrance)</div>
+          <div class="cardExams">
+            <span class="examBadge" style="background:#FDF2F8;color:#9D174D;border-color:rgba(157,23,77,0.2)">KEAM</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>4</strong>years</div>
+            <div><strong>PCB</strong>stream</div>
+            <div><strong>44</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 44 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.Com — Commerce (amber-gold) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #FCD34D 0%, #D97706 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Commerce</span>
+          <span class="cardDuration">3 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">B.Com</div>
+          <div class="cardTagline">3-year programme · Commerce stream · Direct admission or CUET</div>
+          <div class="cardExams">
+            <span class="examBadge" style="background:#FFFBEB;color:#92400E;border-color:rgba(146,64,14,0.2)">CUET-UG</span>
+            <span class="examBadge" style="background:#FFFBEB;color:#92400E;border-color:rgba(146,64,14,0.2)">Direct</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>3</strong>years</div>
+            <div><strong>Commerce</strong>stream</div>
+            <div><strong>96</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 96 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.B.A — Commerce (green-teal) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #6EE7B7 0%, #059669 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Commerce</span>
+          <span class="cardDuration">3 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">B.B.A — Bachelor of Business Administration</div>
+          <div class="cardTagline">3-year programme · Any stream · Direct admission or CUET</div>
+          <div class="cardExams">
+            <span class="examBadge" style="background:#ECFDF5;color:#065F46;border-color:rgba(6,95,70,0.2)">CUET-UG</span>
+            <span class="examBadge" style="background:#ECFDF5;color:#065F46;border-color:rgba(6,95,70,0.2)">Direct</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>3</strong>years</div>
+            <div><strong>Any</strong>stream</div>
+            <div><strong>74</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 74 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.A. English — Arts (slate-blue) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #93C5FD 0%, #3730A3 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Arts</span>
+          <span class="cardDuration">3 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">B.A. English</div>
+          <div class="cardTagline">3-year programme · Arts / Any stream · Direct admission or CUET</div>
+          <div class="cardExams">
+            <span class="examBadge" style="background:#EEF2FF;color:#3730A3;border-color:rgba(55,48,163,0.2)">CUET-UG</span>
+            <span class="examBadge" style="background:#EEF2FF;color:#3730A3;border-color:rgba(55,48,163,0.2)">Direct</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>3</strong>years</div>
+            <div><strong>Arts</strong>stream</div>
+            <div><strong>87</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 87 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.Sc Computer Science — Sciences (sky gradient) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #87CEEB 0%, #2D7DD2 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Pure Sciences</span>
+          <span class="cardDuration">3 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">B.Sc Computer Science</div>
+          <div class="cardTagline">3-year programme · PCM stream · Direct admission or KEAM</div>
+          <div class="cardExams">
+            <span class="examBadge">KEAM</span>
+            <span class="examBadge">Direct</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>3</strong>years</div>
+            <div><strong>PCM</strong>stream</div>
+            <div><strong>68</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 68 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.HMCT — Hotel Management (warm orange) -->
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #FB923C 0%, #9A3412 100%)">
+        <div class="cardHeader">
+          <span class="cardCategory">Hotel Management</span>
+          <span class="cardDuration">4 yrs</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">B.HMCT — Hotel Management &amp; Catering Technology</div>
+          <div class="cardTagline">4-year programme · Any stream · NCHMCT JEE</div>
+          <div class="cardExams">
+            <span class="examBadge" style="background:#FFF7ED;color:#7C2D12;border-color:rgba(124,45,18,0.2)">NCHMCT JEE</span>
+          </div>
+          <div class="cardStats">
+            <div><strong>4</strong>years</div>
+            <div><strong>Any</strong>stream</div>
+            <div><strong>8</strong>colleges</div>
+          </div>
+          <div class="cardCta">
+            <span class="primary">View course <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cardCtaSub">→ 8 colleges offer this</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /cardGrid -->
+  </section>
+
+</div><!-- /layout -->
+
+<footer class="footer">
+  <div class="footerInner">
+    <div class="footerTop">
+      <div class="footerBrand">
+        <div class="footerMark">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Paper Plane
+      </div>
+      <div class="footerLinks">
+        <a href="#">Colleges</a>
+        <a href="#">Courses</a>
+        <a href="#">Take the quiz</a>
+      </div>
+    </div>
+    <div class="footerDivider"></div>
+    <div class="footerBottom">
+      <span>Built in Kerala for Class 12 students.</span>
+      <span>© 2026 Paper Plane.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Stream filter — radio (single select per section)
+  document.querySelectorAll('#streamSection .filterRow, #durationSection .filterRow').forEach(row => {
+    row.addEventListener('click', () => {
+      const section = row.closest('.filterSection');
+      section.querySelectorAll('.filterRow').forEach(r => r.classList.remove('active'));
+      row.classList.add('active');
+    });
+  });
+
+  // Category / exam chips — multi-select
+  document.querySelectorAll('.fChip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+
+  // Clear all filters
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    document.querySelectorAll('.fChip.active').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#streamSection .filterRow, #durationSection .filterRow').forEach((r, i, arr) => {
+      const section = r.closest('.filterSection');
+      const sectionRows = section.querySelectorAll('.filterRow');
+      sectionRows.forEach((row, idx) => row.classList.toggle('active', idx === 0));
+    });
+    document.getElementById('searchInput').value = '';
+  });
+</script>
+</body>
+</html>

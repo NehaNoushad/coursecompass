@@ -1,0 +1,942 @@
+<!-- ─────────────────────────────────────────────────────────────────────────
+  DIRECTION A — "Profile" layout  |  /colleges/[id] detail page
+  ─────────────────────────────────────────────────────────────────────────
+
+  LAYOUT STRATEGY
+  ───────────────
+  This is the utilitarian, information-dense direction. Users arrive here
+  to make a decision: does this college deserve a shortlist slot? The page
+  answers that with structured, scannable content.
+
+  Hero: same sky-gradient feel as the catalogue hero, but the headline is
+  the college name rather than a marketing claim. The eyebrow carries the
+  district + type signal so the user can instantly orient ("Ernakulam ·
+  Aided"). Accreditation pills sit below the name because they're the
+  single strongest trust signal for an Indian college page. The Caveat
+  handwritten nudge keeps the Paper Plane voice alive without overloading
+  the hero.
+
+  Two-column body: a sticky left TOC (~280px) mirrors the catalogue's
+  sticky filter sidebar — same card treatment, same border-radius, same
+  shadow — so the right-hand content area is visually consistent with the
+  card grid the user just came from. The TOC links are pure jump anchors;
+  the active-highlight is handled in JS via IntersectionObserver.
+
+  Section cards: each content block is a white card with a section label
+  and ruled divider, giving the page a clear reading hierarchy without
+  needing headers in every 3rd line. Cards are deliberately NOT given
+  coloured gradients — those are reserved for the catalogue items; the
+  detail page uses flat white so the data reads clearly.
+
+  Graceful degradation: every "unknown" field shows a muted "not listed"
+  or "not confirmed" string rather than hiding the row entirely, so the
+  layout doesn't shift when data is sparse.
+
+  Closing CTA card: restates the quiz prompt that lives in the catalogue
+  hero — the sky-gradient treatment here mirrors that hero and closes the
+  page with the brand voice.
+  ───────────────────────────────────────────────────────────────────────── -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sacred Heart College Thevara — Paper Plane</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ───────── DESIGN TOKENS ───────── */
+  :root {
+    --sky-pale:    #E8F4FD;
+    --sky-bright:  #87CEEB;
+    --sky-mid:     #4FA3E0;
+    --sky-deep:    #2D7DD2;
+    --sky-anchor:  #1F5FA0;
+
+    --cloud:        #FFFFFF;
+    --cloud-shadow: rgba(31, 95, 160, 0.08);
+
+    --sun:          #FFD93D;
+    --sun-glow:     #FFE680;
+    --coral:        #FF8C7A;
+    --coral-deep:   #E66E5A;
+
+    --ink:        #0D2840;
+    --ink-soft:   #4A5A6E;
+    --ink-muted:  #8895A6;
+    --paper:      #FBFCFE;
+    --line:       rgba(31, 95, 160, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display { font-family: 'Sora', system-ui, sans-serif; }
+  .hand    { font-family: 'Caveat', cursive; }
+
+  /* ───────── NAV ───────── */
+  .nav {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: none; }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav-right { display: flex; align-items: center; gap: 28px; }
+  .nav-right a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px; font-weight: 500;
+  }
+  .nav-right a:hover { color: var(--sky-anchor); }
+  .nav-cta {
+    padding: 10px 18px;
+    background: var(--ink); color: white;
+    border-radius: 999px; font-weight: 600; font-size: 14px;
+  }
+
+  /* ───────── HERO ───────── */
+  .hero {
+    position: relative;
+    min-height: 320px;
+    padding: 100px 32px 72px;
+    background: linear-gradient(180deg, var(--sky-bright) 0%, var(--sky-mid) 100%);
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute; inset: auto 0 0 0;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--paper));
+    pointer-events: none;
+  }
+  .heroInner {
+    max-width: 1320px; margin: 0 auto;
+    position: relative; z-index: 1;
+  }
+  .heroBreadcrumb {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--ink-soft);
+    margin-bottom: 20px;
+  }
+  .heroBreadcrumb a { color: var(--ink-soft); text-decoration: none; }
+  .heroBreadcrumb a:hover { color: var(--sky-anchor); }
+  .heroBreadcrumb span { color: var(--ink-muted); }
+  .heroEyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .heroEyebrow::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--coral);
+  }
+  .heroName {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 58px;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    color: var(--ink);
+    max-width: 800px;
+    margin-bottom: 20px;
+  }
+  /* Accreditation pill row */
+  .heroPills {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 18px;
+  }
+  .heroPill {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px; font-weight: 600;
+    color: var(--ink);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .heroPill.accent { background: var(--ink); color: white; }
+  .heroPill .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--coral);
+  }
+  .heroNudge {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    color: var(--sky-anchor);
+    display: inline-flex; align-items: center; gap: 6px;
+    transform: rotate(-1deg);
+    margin-top: 4px;
+  }
+
+  /* Cloud decorations */
+  .cloud { position: absolute; pointer-events: none; opacity: 0.9; }
+  .cloud svg { width: 100%; height: 100%; }
+  .cloud-1 { width: 240px; height: 90px; top: 40px; right: 5%; opacity: 0.75; }
+  .cloud-2 { width: 160px; height: 65px; bottom: 25%; right: 30%; opacity: 0.6; }
+
+  /* ───────── TWO-COLUMN LAYOUT ───────── */
+  .layout {
+    max-width: 1320px; margin: -28px auto 80px;
+    padding: 0 32px;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+    position: relative; z-index: 2;
+    align-items: start;
+  }
+
+  /* ─── TOC Sidebar ─── */
+  .toc {
+    position: sticky; top: 24px;
+    align-self: start;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 12px 32px -16px rgba(31, 95, 160, 0.18);
+  }
+  .tocTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 11px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 16px;
+  }
+  .tocList { display: flex; flex-direction: column; gap: 2px; }
+  .tocLink {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 14px; font-weight: 500;
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+    cursor: pointer;
+  }
+  .tocLink:hover { background: var(--sky-pale); color: var(--ink); }
+  .tocLink.active {
+    background: var(--sky-pale);
+    color: var(--sky-anchor);
+    font-weight: 600;
+  }
+  .tocLink .tocDot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--line);
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .tocLink.active .tocDot { background: var(--sky-deep); }
+  .tocDivider { height: 1px; background: var(--line); margin: 16px 0; }
+  .tocQuizBtn {
+    display: block; width: 100%;
+    padding: 11px 16px;
+    background: var(--sky-deep);
+    color: white;
+    border-radius: 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600; font-size: 13px;
+    text-align: center;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .tocQuizBtn:hover { background: var(--sky-anchor); }
+
+  /* ─── Main content ─── */
+  .main { min-width: 0; }
+
+  /* Section card */
+  .sectionCard {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 32px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px -8px rgba(31, 95, 160, 0.1);
+  }
+  .sectionLabel {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 11px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sectionLabel::after {
+    content: '';
+    flex: 1; height: 1px;
+    background: var(--line);
+  }
+  .sectionTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 22px;
+    letter-spacing: -0.3px;
+    color: var(--ink);
+    margin-bottom: 16px;
+    margin-top: 8px;
+  }
+
+  /* Overview */
+  .overviewText {
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  .overviewText:last-child { margin-bottom: 0; }
+
+  /* Programmes */
+  .progCategory {
+    margin-bottom: 20px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .progCategory:last-child { margin-bottom: 0; }
+  .progCatHeader {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--sky-pale);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .progCatHeader:hover { background: #dceefa; }
+  .progCatTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600; font-size: 15px;
+    color: var(--ink);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .progCatCount {
+    font-size: 12px; font-weight: 500;
+    color: var(--ink-muted);
+    background: white;
+    border: 1px solid var(--line);
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .progChevron {
+    color: var(--ink-muted);
+    transition: transform 0.2s;
+    font-size: 14px;
+  }
+  .progCategory.open .progChevron { transform: rotate(180deg); }
+  .progCourseList {
+    display: none;
+    padding: 14px 18px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .progCategory.open .progCourseList { display: flex; }
+  .coursePill {
+    padding: 5px 12px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .coursePillConfirmed {
+    border-color: var(--sky-mid);
+    color: var(--sky-anchor);
+    background: rgba(79, 163, 224, 0.06);
+  }
+
+  /* Fees */
+  .feesNote {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fff8e6;
+    border: 1px solid #ffd966;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px; font-weight: 600;
+    color: #8a6a00;
+    margin-bottom: 16px;
+  }
+  .feesNote svg { width: 13px; height: 13px; }
+  .feesTable { width: 100%; border-collapse: collapse; }
+  .feesTable th {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600; font-size: 11px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--ink-muted);
+    text-align: left; padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .feesTable td {
+    padding: 12px 12px;
+    font-size: 14px; color: var(--ink-soft);
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+  .feesTable tr:last-child td { border-bottom: 0; }
+  .feesTable .feesBand {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+    background: var(--sky-pale);
+    color: var(--sky-anchor);
+  }
+  .feesMuted { color: var(--ink-muted); font-size: 13px; margin-top: 12px; }
+
+  /* Admissions */
+  .admRow {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .admRow:first-child { padding-top: 0; }
+  .admRow:last-child { border-bottom: 0; padding-bottom: 0; }
+  .admIcon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--sky-pale);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .admIcon svg { width: 17px; height: 17px; color: var(--sky-deep); }
+  .admLabel {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600; font-size: 13px;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+  .admValue { font-size: 15px; color: var(--ink-soft); line-height: 1.5; }
+  .examPills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .examPill {
+    padding: 4px 12px;
+    background: var(--sky-pale);
+    border: 1px solid rgba(79, 163, 224, 0.3);
+    border-radius: 999px;
+    font-size: 13px; font-weight: 600;
+    color: var(--sky-anchor);
+  }
+
+  /* Contact */
+  .contactRow {
+    display: flex; align-items: center; gap: 14px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    color: var(--ink-soft);
+    transition: color 0.15s;
+  }
+  .contactRow:first-child { padding-top: 0; }
+  .contactRow:last-child { border-bottom: 0; padding-bottom: 0; }
+  .contactRow:hover { color: var(--sky-anchor); }
+  .contactIcon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--sky-pale);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .contactRow:hover .contactIcon { background: #dceefa; }
+  .contactIcon svg { width: 17px; height: 17px; color: var(--sky-deep); }
+  .contactLabel {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--ink-muted);
+    margin-bottom: 2px;
+  }
+  .contactValue { font-size: 15px; font-weight: 500; }
+
+  /* Closing CTA */
+  .ctaCard {
+    background: linear-gradient(135deg, var(--sky-bright) 0%, var(--sky-mid) 50%, var(--sky-deep) 100%);
+    border-radius: 24px;
+    padding: 40px 36px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 0;
+    border: none;
+  }
+  .ctaCard::before {
+    content: '';
+    position: absolute;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    bottom: -80px; right: -60px;
+  }
+  .ctaCard::after {
+    content: '';
+    position: absolute;
+    width: 100px; height: 100px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    top: -30px; left: 40%;
+  }
+  .ctaPlane {
+    position: absolute; right: 48px; top: 50%;
+    transform: translateY(-50%) rotate(-12deg);
+    opacity: 0.18;
+  }
+  .ctaPlane svg { width: 72px; height: 72px; }
+  .ctaTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800; font-size: 26px;
+    color: var(--ink); letter-spacing: -0.5px;
+    margin-bottom: 10px;
+    position: relative; z-index: 1;
+  }
+  .ctaSub {
+    color: var(--ink-soft); font-size: 15px;
+    max-width: 420px; margin: 0 auto 24px;
+    position: relative; z-index: 1;
+  }
+  .ctaBtn {
+    display: inline-block;
+    padding: 13px 28px;
+    background: var(--ink); color: white;
+    border-radius: 999px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 15px;
+    text-decoration: none;
+    transition: opacity 0.15s;
+    position: relative; z-index: 1;
+  }
+  .ctaBtn:hover { opacity: 0.85; }
+
+  /* ───────── FOOTER ───────── */
+  .footer {
+    background: var(--ink);
+    color: rgba(255, 255, 255, 0.65);
+    padding: 40px 32px 32px;
+    margin-top: 40px;
+  }
+  .footerInner { max-width: 1320px; margin: 0 auto; }
+  .footerTop {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 24px;
+  }
+  .footerBrand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 16px;
+    color: white;
+  }
+  .footerMark {
+    width: 26px; height: 26px;
+    background: var(--sky-deep);
+    border-radius: 50%;
+    display: grid; place-items: center;
+  }
+  .footerMark svg { width: 14px; height: 14px; }
+  .footerLinks { display: flex; gap: 32px; }
+  .footerLinks a {
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none; font-size: 13px; font-weight: 500;
+  }
+  .footerLinks a:hover { color: white; }
+  .footerDivider { height: 1px; background: rgba(255,255,255,0.08); margin: 20px 0; }
+  .footerBottom {
+    display: flex; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px;
+    color: rgba(255,255,255,0.45); font-size: 12px;
+  }
+
+  /* ───────── RESPONSIVE ───────── */
+  @media (max-width: 980px) {
+    .layout {
+      grid-template-columns: 1fr;
+      margin-top: -12px;
+    }
+    .toc { position: static; }
+    .tocList { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .tocLink { padding: 7px 12px; }
+    .tocDivider { display: none; }
+    .tocQuizBtn { display: none; }
+    .heroName { font-size: 36px; letter-spacing: -1px; }
+    .hero { padding-top: 90px; padding-bottom: 60px; }
+    .sectionCard { padding: 22px; border-radius: 18px; }
+    .ctaCard { padding: 30px 24px; }
+    .ctaTitle { font-size: 20px; }
+    .nav { padding: 16px 20px; }
+    .layout { padding: 0 20px; }
+    .footer { padding: 32px 20px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── Nav ─── -->
+<nav class="nav">
+  <a href="#" class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span>Paper Plane</span>
+  </a>
+  <div class="nav-right">
+    <a href="#" style="color: var(--ink); font-weight: 600;">Colleges</a>
+    <a href="#">Courses</a>
+    <a href="#" style="color: var(--sky-anchor); font-weight: 600;">Sign in</a>
+    <a href="#" class="nav-cta">Take the quiz</a>
+  </div>
+</nav>
+
+<!-- ─── Hero ─── -->
+<section class="hero">
+  <!-- Cloud puffs -->
+  <div class="cloud cloud-1">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+  <div class="cloud cloud-2">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+
+  <div class="heroInner">
+    <div class="heroBreadcrumb">
+      <a href="#">Colleges</a>
+      <span>/</span>
+      <span>Sacred Heart College Thevara</span>
+    </div>
+    <div class="heroEyebrow">ERNAKULAM · AIDED COLLEGE</div>
+    <h1 class="heroName display">Sacred Heart College Thevara</h1>
+    <div class="heroPills">
+      <div class="heroPill"><span class="dot"></span>NAAC A++</div>
+      <div class="heroPill">NIRF #57</div>
+      <div class="heroPill">Est. 1944</div>
+      <div class="heroPill">~2,100 seats</div>
+      <div class="heroPill accent">Medium fees</div>
+    </div>
+    <div class="heroNudge hand">
+      ✈ Take the quiz to see if this matches you
+    </div>
+  </div>
+</section>
+
+<!-- ─── Two-column body ─── -->
+<div class="layout">
+
+  <!-- TOC Sidebar -->
+  <aside class="toc">
+    <div class="tocTitle">On this page</div>
+    <nav class="tocList">
+      <a class="tocLink active" href="#overview"><span class="tocDot"></span>Overview</a>
+      <a class="tocLink" href="#programmes"><span class="tocDot"></span>Programmes</a>
+      <a class="tocLink" href="#fees"><span class="tocDot"></span>Fees</a>
+      <a class="tocLink" href="#admissions"><span class="tocDot"></span>Admissions</a>
+      <a class="tocLink" href="#contact"><span class="tocDot"></span>Contact</a>
+    </nav>
+    <div class="tocDivider"></div>
+    <a class="tocQuizBtn" href="#">Take the 6-question quiz →</a>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- Overview -->
+    <div class="sectionCard" id="overview">
+      <div class="sectionLabel">Overview</div>
+      <div class="sectionTitle">About Sacred Heart College</div>
+      <p class="overviewText">Founded by the Carmelites of Mary Immaculate (CMI) in 1944 and located on the scenic banks of the Vembanad Lake in Thevara, Ernakulam, Sacred Heart College is one of Kerala's most academically decorated institutions. The college received the UGC's Autonomous status — a mark of independent academic excellence — and has maintained a NAAC A++ accreditation, placing it in the top tier of Indian arts and sciences colleges.</p>
+      <p class="overviewText">The college is particularly well known for its English Literature, Economics, Mathematics, and Physics departments, whose faculty have a strong research publication record. Students benefit from a structured mentorship programme, an active placement cell, and a campus culture that balances academic rigour with a vibrant extracurricular scene. The annual intercollegiate arts and cultural festival draws participants from across Kerala.</p>
+      <p class="overviewText">With around 2,100 seats across undergraduate and postgraduate programmes, and aided-college fee structures that keep costs accessible, Sacred Heart consistently ranks in the NIRF national top-100 — reaching #57 in the most recent listing. It is affiliated to Mahatma Gandhi University, Kottayam, while exercising full autonomy in curriculum design and examinations.</p>
+    </div>
+
+    <!-- Programmes -->
+    <div class="sectionCard" id="programmes">
+      <div class="sectionLabel">Programmes</div>
+      <div class="sectionTitle">What's on offer</div>
+
+      <div class="progCategory open">
+        <div class="progCatHeader" onclick="this.parentElement.classList.toggle('open')">
+          <span class="progCatTitle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="var(--sky-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Arts &amp; Humanities
+          </span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="progCatCount">7 courses</span>
+            <span class="progChevron">▾</span>
+          </div>
+        </div>
+        <div class="progCourseList">
+          <span class="coursePill coursePillConfirmed">BA English</span>
+          <span class="coursePill coursePillConfirmed">BA History</span>
+          <span class="coursePill coursePillConfirmed">BA Economics</span>
+          <span class="coursePill coursePillConfirmed">BA Sociology</span>
+          <span class="coursePill coursePillConfirmed">BA Philosophy</span>
+          <span class="coursePill coursePillConfirmed">MA English</span>
+          <span class="coursePill coursePillConfirmed">MA Economics</span>
+        </div>
+      </div>
+
+      <div class="progCategory">
+        <div class="progCatHeader" onclick="this.parentElement.classList.toggle('open')">
+          <span class="progCatTitle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="var(--sky-deep)" stroke-width="2"/><path d="M12 8v4l2 2" stroke="var(--sky-deep)" stroke-width="2" stroke-linecap="round"/></svg>
+            Pure Sciences
+          </span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="progCatCount">6 courses</span>
+            <span class="progChevron">▾</span>
+          </div>
+        </div>
+        <div class="progCourseList">
+          <span class="coursePill coursePillConfirmed">BSc Mathematics</span>
+          <span class="coursePill coursePillConfirmed">BSc Physics</span>
+          <span class="coursePill coursePillConfirmed">BSc Chemistry</span>
+          <span class="coursePill coursePillConfirmed">BSc Botany</span>
+          <span class="coursePill coursePillConfirmed">BSc Zoology</span>
+          <span class="coursePill coursePillConfirmed">MSc Mathematics</span>
+        </div>
+      </div>
+
+      <div class="progCategory">
+        <div class="progCatHeader" onclick="this.parentElement.classList.toggle('open')">
+          <span class="progCatTitle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 13h4l3 7 4-14 3 7h4" stroke="var(--sky-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Commerce
+          </span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="progCatCount">4 courses</span>
+            <span class="progChevron">▾</span>
+          </div>
+        </div>
+        <div class="progCourseList">
+          <span class="coursePill coursePillConfirmed">BCom Regular</span>
+          <span class="coursePill coursePillConfirmed">BCom Finance</span>
+          <span class="coursePill coursePillConfirmed">BCom Computer Application</span>
+          <span class="coursePill coursePillConfirmed">MCom</span>
+        </div>
+      </div>
+
+      <div class="progCategory">
+        <div class="progCatHeader" onclick="this.parentElement.classList.toggle('open')">
+          <span class="progCatTitle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="var(--sky-deep)" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="var(--sky-deep)" stroke-width="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="var(--sky-deep)" stroke-width="2" stroke-linecap="round"/></svg>
+            Education
+          </span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="progCatCount">2 courses</span>
+            <span class="progChevron">▾</span>
+          </div>
+        </div>
+        <div class="progCourseList">
+          <span class="coursePill coursePillConfirmed">BEd</span>
+          <span class="coursePill coursePillConfirmed">MEd</span>
+        </div>
+      </div>
+
+      <p style="margin-top:14px; font-size:13px; color:var(--ink-muted);">
+        ✓ Courses marked in blue are confirmed from the college prospectus. Seat counts vary per programme.
+      </p>
+    </div>
+
+    <!-- Fees -->
+    <div class="sectionCard" id="fees">
+      <div class="sectionLabel">Fees</div>
+      <div class="sectionTitle">Estimated annual fees</div>
+      <div class="feesNote">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Estimated — exact figures vary by programme and batch year
+      </div>
+      <table class="feesTable">
+        <thead>
+          <tr>
+            <th>Quota</th>
+            <th>Estimated range (per year)</th>
+            <th>Band</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Government merit seat (aided)</td>
+            <td>₹2,000 – ₹5,000</td>
+            <td><span class="feesBand">Low</span></td>
+          </tr>
+          <tr>
+            <td>Minority / Community merit seat</td>
+            <td>₹8,000 – ₹18,000</td>
+            <td><span class="feesBand">Medium</span></td>
+          </tr>
+          <tr>
+            <td>Management quota</td>
+            <td>₹25,000 – ₹50,000</td>
+            <td><span class="feesBand">Medium</span></td>
+          </tr>
+          <tr>
+            <td>NRI / international quota</td>
+            <td>Contact admissions office</td>
+            <td><span class="feesBand" style="background:var(--paper);color:var(--ink-muted);">Not listed</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="feesMuted">Fees shown here are broad estimates based on publicly available aided-college schedules. The admissions office can provide the current-year fee schedule for each programme.</p>
+    </div>
+
+    <!-- Admissions -->
+    <div class="sectionCard" id="admissions">
+      <div class="sectionLabel">Admissions</div>
+      <div class="sectionTitle">How to apply</div>
+
+      <div class="admRow">
+        <div class="admIcon">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+        <div>
+          <div class="admLabel">Application window</div>
+          <div class="admValue">Typically May – June each year, through the Kerala CAP (Centralised Admissions Process) portal. Some management quota seats are filled directly by the college. Check the official website for this year's opening date.</div>
+        </div>
+      </div>
+
+      <div class="admRow">
+        <div class="admIcon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="admLabel">Entrance exams accepted</div>
+          <div class="admValue">For UG admission to aided-college seats, KMAT (Kerala Management Aptitude Test) and CUET scores are considered where applicable. Arts, Science, and Commerce UG seats are primarily merit-based (Class 12 marks).</div>
+          <div class="examPills">
+            <span class="examPill">CUET</span>
+            <span class="examPill">KMAT</span>
+            <span class="examPill">Class 12 merit</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="admRow">
+        <div class="admIcon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="admLabel">How to apply</div>
+          <div class="admValue">Register on the Kerala Higher Education admission portal (hscap.kerala.gov.in), submit your Class 12 mark sheet and community certificate. Admission lists are published on the college notice board and website. No separate entrance test for most UG programmes.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="sectionCard" id="contact">
+      <div class="sectionLabel">Contact</div>
+      <div class="sectionTitle">Get in touch</div>
+
+      <a class="contactRow" href="tel:+914842870247">
+        <div class="contactIcon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 7.09 7.09l.98-1.08a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="contactLabel">Phone</div>
+          <div class="contactValue">+91 484 287 0247</div>
+        </div>
+      </a>
+
+      <a class="contactRow" href="mailto:admissions@shcollege.ac.in">
+        <div class="contactIcon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="2"/><polyline points="22,6 12,13 2,6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="contactLabel">Admissions email</div>
+          <div class="contactValue">admissions@shcollege.ac.in</div>
+        </div>
+      </a>
+
+      <a class="contactRow" href="https://www.shcollege.ac.in" target="_blank" rel="noopener">
+        <div class="contactIcon">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+        <div>
+          <div class="contactLabel">Website</div>
+          <div class="contactValue">www.shcollege.ac.in ↗</div>
+        </div>
+      </a>
+
+      <div class="contactRow" style="cursor:default;">
+        <div class="contactIcon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+        <div>
+          <div class="contactLabel">Address</div>
+          <div class="contactValue">Thevara P.O., Ernakulam, Kerala – 682013</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Closing CTA -->
+    <div class="sectionCard ctaCard">
+      <div class="ctaPlane">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="ctaTitle display">Found your match?</div>
+      <p class="ctaSub">Take the 6-question quiz and we'll line up your top college + course picks, ranked for your stream, district, and budget.</p>
+      <a href="#" class="ctaBtn">Take the quiz — it's free</a>
+    </div>
+
+  </main>
+</div>
+
+<!-- ─── Footer ─── -->
+<footer class="footer">
+  <div class="footerInner">
+    <div class="footerTop">
+      <div class="footerBrand">
+        <div class="footerMark">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Paper Plane
+      </div>
+      <div class="footerLinks">
+        <a href="#">Colleges</a>
+        <a href="#">Courses</a>
+      </div>
+    </div>
+    <div class="footerDivider"></div>
+    <div class="footerBottom">
+      <span>Built in Kerala for Class 12 students.</span>
+      <span>© 2026 Paper Plane.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ─── Expandable programme categories ───
+  // (already handled inline with onclick; this is a no-op fallback)
+
+  // ─── TOC active-section highlight via IntersectionObserver ───
+  const sections = document.querySelectorAll('.sectionCard[id]');
+  const tocLinks = document.querySelectorAll('.tocLink');
+
+  function setActive(id) {
+    tocLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      link.classList.toggle('active', href === '#' + id);
+    });
+  }
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) setActive(entry.target.id);
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

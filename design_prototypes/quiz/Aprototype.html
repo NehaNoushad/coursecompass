@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<!-- ═══════════════════════════════════════════════════════════════
+     DIRECTION A — "Postcard Journey"
+     ───────────────────────────────────────────────────────────────
+     CONCEPT
+     Each quiz step is a visual scene. A paper-plane mascot drifts
+     across a sky-gradient strip at the top of the page; its horizontal
+     position reflects progress (step 1 = far left, step 6 = near the
+     sun on the right horizon). A dotted flight-trail follows behind it.
+
+     LAYOUT (top → bottom)
+     1. Nav bar (same as 6prototype.html, no "Take the quiz" CTA here)
+     2. Sky strip (~120 px)  — plane + trail + step dots overlay
+     3. Step indicator bar   — "Step 3 of 6" small-caps + coral fraction bar
+     4. Quiz card            — centred white card on paper bg
+          • Question (Sora display)
+          • Hint line (muted ink)
+          • District chip-cards (14 districts + "Any district")
+          • Prev / Continue action row
+     5. No footer (quiz is a focused screen — Screen noFooter)
+
+     PROGRESS THEMING (comment-only; wire up via JS in production)
+     step 1 → morning sky: #B8E4F9 → #87CEEB  plane at ~10% left
+     step 2 → mid morning: #87CEEB → #4FA3E0  plane at ~28%
+     step 3 → midday:      #87CEEB → #4FA3E0  plane at ~45%  ← SHOWN
+     step 4 → afternoon:   #4FA3E0 → #2D7DD2  plane at ~62%
+     step 5 → late aftn:   #2D7DD2 → #1F5FA0  plane at ~78%
+     step 6 → dusk edge:   #2D7DD2 → #1F5FA0  plane at ~92%
+
+     RESPONSIVE
+     Single breakpoint at 980 px.
+     ═══════════════════════════════════════════════════════════════ -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper Plane — Find your path (Quiz)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ── TOKENS (lifted verbatim from 6prototype.html) ── */
+  :root {
+    --sky-pale:    #E8F4FD;
+    --sky-bright:  #87CEEB;
+    --sky-mid:     #4FA3E0;
+    --sky-deep:    #2D7DD2;
+    --sky-anchor:  #1F5FA0;
+
+    --cloud:        #FFFFFF;
+    --cloud-shadow: rgba(31, 95, 160, 0.08);
+
+    --sun:          #FFD93D;
+    --sun-glow:     #FFE680;
+    --coral:        #FF8C7A;
+    --coral-deep:   #E66E5A;
+
+    --ink:        #0D2840;
+    --ink-soft:   #4A5A6E;
+    --ink-muted:  #8895A6;
+    --paper:      #FBFCFE;
+    --line:       rgba(31, 95, 160, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .display { font-family: 'Sora', system-ui, sans-serif; }
+  .hand    { font-family: 'Caveat', cursive; }
+
+  /* ── NAV (position:relative here — sky strip is below, not behind nav) ── */
+  .nav {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+    background: white;
+    border-bottom: 1px solid var(--line);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px;
+    color: var(--ink); text-decoration: none;
+  }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
+    flex-shrink: 0;
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav-right { display: flex; align-items: center; gap: 28px; }
+  .nav-right a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px; font-weight: 500;
+  }
+  .nav-right a:hover { color: var(--sky-anchor); }
+  .nav-cta {
+    padding: 10px 18px;
+    background: var(--ink); color: white;
+    border-radius: 999px; font-weight: 600; font-size: 14px;
+  }
+
+  /* ── SKY STRIP ── */
+  .skyStrip {
+    position: relative;
+    height: 120px;
+    background: linear-gradient(180deg, var(--sky-bright) 0%, var(--sky-mid) 100%);
+    overflow: hidden;
+  }
+
+  /* Mini sun on the right horizon */
+  .sunOrb {
+    position: absolute;
+    right: 48px;
+    bottom: 18px;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--sun-glow) 30%, var(--sun) 100%);
+    box-shadow: 0 0 28px 10px rgba(255, 217, 61, 0.35);
+  }
+
+  /* Flight trail — a dashed SVG line from left to plane position */
+  .trailSvg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* Cloud puffs in the sky strip */
+  .skyCloud {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.75;
+  }
+  .skyCloud svg ellipse { fill: white; }
+
+  /* Paper-plane mascot */
+  .planeMascot {
+    position: absolute;
+    /* step 3 of 6 → ~45% across */
+    left: calc(45% - 22px);
+    top: 28px;
+    width: 44px; height: 44px;
+    filter: drop-shadow(0 4px 10px rgba(13, 40, 64, 0.25));
+    transition: left 0.5s ease;
+  }
+  /* Gentle float animation */
+  @keyframes planeFloat {
+    0%, 100% { transform: translateY(0) rotate(-8deg); }
+    50%       { transform: translateY(-6px) rotate(-4deg); }
+  }
+  .planeMascot svg { animation: planeFloat 3s ease-in-out infinite; }
+
+  /* Step dots row under the plane */
+  .stepDots {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .stepDot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    border: 1.5px solid rgba(255, 255, 255, 0.7);
+    transition: all 0.2s;
+  }
+  .stepDot.done {
+    background: white;
+    border-color: white;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+  }
+  .stepDot.current {
+    background: var(--coral);
+    border-color: var(--coral);
+    width: 10px; height: 10px;
+    box-shadow: 0 0 0 3px rgba(255, 140, 122, 0.4);
+  }
+
+  /* ── STEP INDICATOR BAR ── */
+  .stepBar {
+    max-width: 680px;
+    margin: 28px auto 0;
+    padding: 0 24px;
+  }
+  .stepMeta {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .stepLabel {
+    font-family: 'Sora', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .stepFraction {
+    font-family: 'Sora', sans-serif;
+    font-size: 13px; font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .progressTrack {
+    height: 4px;
+    background: var(--line);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progressFill {
+    height: 100%;
+    width: 50%; /* step 3 of 6 = 50% */
+    background: linear-gradient(90deg, var(--coral), var(--coral-deep));
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── QUIZ CARD ── */
+  .quizWrap {
+    max-width: 680px;
+    margin: 20px auto 60px;
+    padding: 0 24px;
+  }
+  .quizCard {
+    background: white;
+    border-radius: 28px;
+    padding: 40px 44px 36px;
+    box-shadow: 0 8px 48px -12px rgba(31, 95, 160, 0.16), 0 2px 8px -4px rgba(31, 95, 160, 0.08);
+    border: 1px solid var(--line);
+  }
+
+  .questionEyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--sky-anchor);
+    margin-bottom: 14px;
+  }
+  .questionEyebrow .qIcon {
+    width: 24px; height: 24px;
+    background: var(--sky-pale);
+    border-radius: 6px;
+    display: grid; place-items: center;
+  }
+  .questionEyebrow .qIcon svg { width: 13px; height: 13px; }
+
+  .questionTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .questionHint {
+    color: var(--ink-muted);
+    font-size: 14px;
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  /* District chip grid */
+  .districtGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  /* "Any district" spans the full width on its own row */
+  .districtGrid .anyChip {
+    grid-column: 1 / -1;
+  }
+
+  .districtChip {
+    position: relative;
+    padding: 13px 16px;
+    border-radius: 14px;
+    border: 1.5px solid var(--line);
+    background: white;
+    cursor: pointer;
+    font-size: 14px; font-weight: 500;
+    color: var(--ink-soft);
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    user-select: none;
+  }
+  .districtChip:hover {
+    border-color: var(--sky-mid);
+    background: var(--sky-pale);
+    color: var(--ink);
+  }
+  .districtChip.selected {
+    border-color: var(--sky-deep);
+    background: var(--sky-pale);
+    color: var(--sky-anchor);
+    font-weight: 600;
+    box-shadow: inset 0 0 0 1px var(--sky-deep);
+  }
+  .chipCheck {
+    flex-shrink: 0;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    display: grid; place-items: center;
+    transition: all 0.15s;
+  }
+  .districtChip.selected .chipCheck {
+    background: var(--sky-deep);
+    border-color: var(--sky-deep);
+  }
+  .chipCheck svg {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .districtChip.selected .chipCheck svg { opacity: 1; }
+
+  /* "Any" chip style */
+  .districtChip.anyChip {
+    background: var(--sky-pale);
+    border-style: dashed;
+    border-color: var(--sky-mid);
+    color: var(--sky-anchor);
+    font-weight: 500;
+    justify-content: center;
+    padding: 12px;
+  }
+  .districtChip.anyChip.selected {
+    background: var(--sky-deep);
+    color: white;
+    border-style: solid;
+  }
+  .districtChip.anyChip.selected .chipCheck {
+    background: rgba(255,255,255,0.25);
+    border-color: rgba(255,255,255,0.5);
+  }
+  .districtChip.anyChip.selected .chipCheck svg { opacity: 1; }
+
+  /* ── CARD FOOTER ACTIONS ── */
+  .cardActions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 24px;
+    border-top: 1px dashed var(--line);
+    gap: 12px;
+  }
+
+  .btnGhost {
+    background: transparent;
+    border: 1.5px solid var(--line);
+    color: var(--ink-soft);
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: border-color 0.15s, color 0.15s;
+    font-family: inherit;
+  }
+  .btnGhost:hover { border-color: var(--sky-mid); color: var(--ink); }
+  .btnGhost svg { width: 14px; height: 14px; }
+
+  .btnPrimary {
+    background: linear-gradient(135deg, var(--sky-mid), var(--sky-deep));
+    color: white;
+    border: none;
+    padding: 13px 28px;
+    border-radius: 999px;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 9px;
+    transition: opacity 0.15s, box-shadow 0.15s, transform 0.15s;
+    font-family: inherit;
+    box-shadow: 0 4px 18px -4px rgba(45, 125, 210, 0.45);
+  }
+  .btnPrimary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px -4px rgba(45, 125, 210, 0.55);
+  }
+  .btnPrimary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .btnPrimary svg { width: 15px; height: 15px; transition: transform 0.2s; }
+  .btnPrimary:hover:not(:disabled) svg { transform: translateX(3px); }
+
+  /* Selection counter badge */
+  .selCounter {
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-style: italic;
+    flex: 1;
+    text-align: center;
+  }
+  .selCounter strong { color: var(--sky-anchor); font-style: normal; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 980px) {
+    .nav { padding: 14px 20px; }
+    .nav-right { gap: 18px; }
+    .nav-right a.nav-hide { display: none; }
+    .skyStrip { height: 96px; }
+    .quizCard { padding: 28px 24px 28px; }
+    .questionTitle { font-size: 24px; }
+    .districtGrid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+    .planeMascot { width: 36px; height: 36px; top: 20px; left: calc(45% - 18px); }
+    .sunOrb { width: 28px; height: 28px; right: 28px; bottom: 14px; }
+    .quizWrap { margin-top: 16px; margin-bottom: 40px; }
+    .stepBar { margin-top: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="nav">
+  <a href="/" class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span>Paper Plane</span>
+  </a>
+  <div class="nav-right">
+    <a href="/colleges" class="nav-hide">Colleges</a>
+    <a href="/courses" class="nav-hide">Courses</a>
+    <a href="/signin" style="color: var(--sky-anchor); font-weight: 600;">Sign in</a>
+    <!-- "Take the quiz" CTA omitted — user is already on the quiz page -->
+  </div>
+</nav>
+
+<!-- ── SKY STRIP — plane floats across at ~45% for step 3 ── -->
+<div class="skyStrip" id="skyStrip">
+
+  <!-- Cloud puffs -->
+  <div class="skyCloud" style="left:8%; top:12px; width:130px; height:50px;">
+    <svg viewBox="0 0 240 100" style="width:100%;height:100%;"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+  <div class="skyCloud" style="right:22%; top:8px; width:100px; height:40px; opacity:0.6;">
+    <svg viewBox="0 0 240 100" style="width:100%;height:100%;"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+
+  <!-- Sun on right horizon -->
+  <div class="sunOrb"></div>
+
+  <!-- Flight trail SVG (static for prototype; in prod driven by JS) -->
+  <svg class="trailSvg" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true">
+    <!-- Trail goes from left edge to just behind the plane at ~45% width -->
+    <path
+      d="M 20 52 Q 120 44 200 56 Q 280 66 360 48 Q 410 38 445 50"
+      stroke="white"
+      stroke-width="1.8"
+      stroke-dasharray="6 5"
+      fill="none"
+      opacity="0.55"
+    />
+    <!-- Small dots marking earlier steps -->
+    <circle cx="140" cy="52" r="3" fill="white" opacity="0.5"/>
+    <circle cx="280" cy="56" r="3" fill="white" opacity="0.5"/>
+  </svg>
+
+  <!-- Paper-plane mascot -->
+  <div class="planeMascot" aria-hidden="true">
+    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:44px;height:44px;">
+      <!-- Body of plane -->
+      <path d="M4 24 L44 8 L34 44 L24 30 L4 24Z" fill="white" stroke="rgba(31,95,160,0.25)" stroke-width="1"/>
+      <!-- Wing fold line -->
+      <path d="M4 24 L24 30 L34 44" stroke="rgba(79,163,224,0.6)" stroke-width="1.2" fill="none"/>
+      <!-- Spine -->
+      <path d="M24 30 L44 8" stroke="rgba(45,125,210,0.4)" stroke-width="1" fill="none"/>
+    </svg>
+  </div>
+
+  <!-- Step dots (●●●○○○) — 3 done/current + 3 upcoming -->
+  <div class="stepDots" aria-hidden="true">
+    <div class="stepDot done"   title="Step 1 — Stream"></div>
+    <div class="stepDot done"   title="Step 2 — Marks"></div>
+    <div class="stepDot current" title="Step 3 — District"></div>
+    <div class="stepDot"        title="Step 4 — Budget"></div>
+    <div class="stepDot"        title="Step 5 — Interests"></div>
+    <div class="stepDot"        title="Step 6 — Exams"></div>
+  </div>
+</div>
+
+<!-- ── STEP INDICATOR BAR ── -->
+<div class="stepBar">
+  <div class="stepMeta">
+    <span class="stepLabel">Step 3 of 6</span>
+    <span class="stepFraction">District</span>
+  </div>
+  <div class="progressTrack">
+    <div class="progressFill" id="progressFill"></div>
+  </div>
+</div>
+
+<!-- ── QUIZ CARD ── -->
+<div class="quizWrap">
+  <div class="quizCard">
+
+    <div class="questionEyebrow">
+      <div class="qIcon">
+        <!-- Map-pin icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--sky-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C8.68 2 6 4.68 6 8c0 5.25 6 13 6 13s6-7.75 6-13c0-3.32-2.68-6-6-6z"/>
+          <circle cx="12" cy="8" r="2.5"/>
+        </svg>
+      </div>
+      LOCATION
+    </div>
+
+    <h1 class="questionTitle display">Which district do you want to study in?</h1>
+    <p class="questionHint">Pick any — or choose "Any district" and we'll consider all 14. You can select more than one.</p>
+
+    <!-- District options — 14 Kerala districts + Any -->
+    <div class="districtGrid" id="districtGrid" role="group" aria-label="Select districts">
+
+      <!-- Any district (spans full row) -->
+      <button class="districtChip anyChip" data-value="any" role="checkbox" aria-checked="false">
+        Any district — show me all of Kerala
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <!-- 14 districts -->
+      <button class="districtChip selected" data-value="Thiruvananthapuram" role="checkbox" aria-checked="true">
+        Thiruvananthapuram
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Kollam" role="checkbox" aria-checked="false">
+        Kollam
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip selected" data-value="Pathanamthitta" role="checkbox" aria-checked="true">
+        Pathanamthitta
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Alappuzha" role="checkbox" aria-checked="false">
+        Alappuzha
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Kottayam" role="checkbox" aria-checked="false">
+        Kottayam
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Idukki" role="checkbox" aria-checked="false">
+        Idukki
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Ernakulam" role="checkbox" aria-checked="false">
+        Ernakulam
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Thrissur" role="checkbox" aria-checked="false">
+        Thrissur
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Palakkad" role="checkbox" aria-checked="false">
+        Palakkad
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Malappuram" role="checkbox" aria-checked="false">
+        Malappuram
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Kozhikode" role="checkbox" aria-checked="false">
+        Kozhikode
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Wayanad" role="checkbox" aria-checked="false">
+        Wayanad
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Kannur" role="checkbox" aria-checked="false">
+        Kannur
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      <button class="districtChip" data-value="Kasaragod" role="checkbox" aria-checked="false">
+        Kasaragod
+        <div class="chipCheck">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4 L3.5 6.5 L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="cardActions">
+      <button class="btnGhost" id="prevBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M11 6l-6 6 6 6"/>
+        </svg>
+        Previous
+      </button>
+
+      <span class="selCounter" id="selCounter"><strong>2</strong> selected</span>
+
+      <button class="btnPrimary" id="continueBtn">
+        Continue
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── District chip multi-select logic ──
+  const grid    = document.getElementById('districtGrid');
+  const counter = document.getElementById('selCounter');
+  const contBtn = document.getElementById('continueBtn');
+  const anyBtn  = grid.querySelector('[data-value="any"]');
+
+  function updateCounter() {
+    const sel = [...grid.querySelectorAll('.districtChip.selected')].filter(c => c.dataset.value !== 'any');
+    const isAny = anyBtn.classList.contains('selected');
+    if (isAny) {
+      counter.innerHTML = '<strong>All Kerala</strong> selected';
+    } else if (sel.length === 0) {
+      counter.textContent = 'Select at least one district';
+    } else {
+      counter.innerHTML = '<strong>' + sel.length + '</strong> selected';
+    }
+    contBtn.disabled = !isAny && sel.length === 0;
+  }
+
+  grid.querySelectorAll('.districtChip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      if (chip === anyBtn) {
+        // Selecting "Any" deselects all specific districts
+        const wasSelected = anyBtn.classList.contains('selected');
+        grid.querySelectorAll('.districtChip').forEach(c => c.classList.remove('selected'));
+        grid.querySelectorAll('.districtChip').forEach(c => c.setAttribute('aria-checked', 'false'));
+        if (!wasSelected) {
+          anyBtn.classList.add('selected');
+          anyBtn.setAttribute('aria-checked', 'true');
+        }
+      } else {
+        // Selecting a specific district deselects "Any"
+        anyBtn.classList.remove('selected');
+        anyBtn.setAttribute('aria-checked', 'false');
+        chip.classList.toggle('selected');
+        chip.setAttribute('aria-checked', chip.classList.contains('selected') ? 'true' : 'false');
+      }
+      updateCounter();
+    });
+  });
+
+  // Initial count
+  updateCounter();
+
+  // Prev button — in prototype just alert
+  document.getElementById('prevBtn').addEventListener('click', () => {
+    alert('← Step 2: Marks (prototype — would navigate back)');
+  });
+
+  // Continue button
+  contBtn.addEventListener('click', () => {
+    if (!contBtn.disabled) {
+      alert('→ Step 4: Budget (prototype — would navigate forward)');
+    }
+  });
+</script>
+
+</body>
+</html>

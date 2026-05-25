@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<!-- ═══════════════════════════════════════════════════════════════
+     DIRECTION B — "Notepad / Journal"
+     ───────────────────────────────────────────────────────────────
+     CONCEPT
+     The quiz reads like writing in a personal notebook. The background
+     is a ruled-paper texture. A single off-white "page" sits centred
+     with a subtle ~0.3 deg tilt and a layered shadow giving it physical
+     depth. Earlier answers peek as a stack of completed pages on the
+     left. The typeface shifts: questions are Caveat (handwritten) and
+     body text is Inter. Actions are styled as cursive page-turn links.
+
+     LAYOUT (top → bottom)
+     1. Nav bar (same tokens as 6prototype.html, no CTA)
+     2. Full-height ruled background
+        ├── Stack of earlier pages (left, desktop only)
+        └── Notebook page (centred)
+             ├── Page header: "page 3 of 6" in Caveat top-right
+             ├── Handwritten section title (Caveat, ~36 px)
+             ├── Sub-hint (Inter)
+             ├── District chip grid (flowing, not strict matrix)
+             └── Page-turn actions (Caveat italic, underlined)
+     3. No footer (quiz focused screen)
+
+     RESPONSIVE
+     Single breakpoint 980 px. Left peek-stack hidden on mobile;
+     page goes full-width minus 24 px margins; rotation dropped.
+     ═══════════════════════════════════════════════════════════════ -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper Plane — Find your path (Quiz · Journal)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ── TOKENS (verbatim from 6prototype.html) ── */
+  :root {
+    --sky-pale:    #E8F4FD;
+    --sky-bright:  #87CEEB;
+    --sky-mid:     #4FA3E0;
+    --sky-deep:    #2D7DD2;
+    --sky-anchor:  #1F5FA0;
+
+    --cloud:        #FFFFFF;
+    --cloud-shadow: rgba(31, 95, 160, 0.08);
+
+    --sun:          #FFD93D;
+    --sun-glow:     #FFE680;
+    --coral:        #FF8C7A;
+    --coral-deep:   #E66E5A;
+
+    --ink:        #0D2840;
+    --ink-soft:   #4A5A6E;
+    --ink-muted:  #8895A6;
+    --paper:      #FBFCFE;
+    --line:       rgba(31, 95, 160, 0.12);
+
+    /* Journal-specific extras */
+    --ruled-line:   rgba(31, 95, 160, 0.06);
+    --page-bg:      #FEFEFE;
+    --page-shadow:  rgba(13, 40, 64, 0.12);
+    --peek-bg:      #F7F9FC;
+    --margin-pink:  rgba(255, 140, 122, 0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    /* Ruled-paper background — evokes a real notebook */
+    background-color: #F0F4F8;
+    background-image:
+      /* Faint horizontal ruled lines every 28 px */
+      linear-gradient(180deg, transparent 27px, var(--ruled-line) 28px),
+      /* Very subtle grid overlay */
+      linear-gradient(90deg, transparent calc(100% - 1px), rgba(31,95,160,0.025) 100%);
+    background-size: 100% 28px, 28px 28px;
+    min-height: 100vh;
+  }
+  .display { font-family: 'Sora', system-ui, sans-serif; }
+  .hand    { font-family: 'Caveat', cursive; }
+
+  /* ── NAV ── */
+  .nav {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+    background: white;
+    border-bottom: 1px solid var(--line);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px;
+    color: var(--ink); text-decoration: none;
+  }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
+    flex-shrink: 0;
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav-right { display: flex; align-items: center; gap: 28px; }
+  .nav-right a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px; font-weight: 500;
+  }
+  .nav-right a:hover { color: var(--sky-anchor); }
+  .nav-cta {
+    padding: 10px 18px;
+    background: var(--ink); color: white;
+    border-radius: 999px; font-weight: 600; font-size: 14px;
+  }
+
+  /* ── OUTER STAGE — centres the notebook scene ── */
+  .stage {
+    min-height: calc(100vh - 73px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 24px 64px;
+    gap: 32px;
+  }
+
+  /* ── LEFT: stack of earlier pages ── */
+  .peekStack {
+    flex-shrink: 0;
+    width: 160px;
+    margin-top: 20px; /* aligns with top of notebook page */
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+
+  /* Individual peeked earlier pages — each slightly offset */
+  .peekPage {
+    background: var(--peek-bg);
+    border: 1px solid rgba(31, 95, 160, 0.10);
+    border-radius: 6px 6px 2px 2px;
+    padding: 14px 16px;
+    position: relative;
+    box-shadow: 0 2px 8px -4px var(--page-shadow);
+  }
+  .peekPage + .peekPage { margin-top: -4px; }
+  /* Give each page a tiny unique tilt */
+  .peekPage:nth-child(1) { transform: rotate(-0.8deg) translateX(-2px); z-index: 2; }
+  .peekPage:nth-child(2) { transform: rotate(0.4deg) translateX(2px); z-index: 1; }
+
+  .peekLabel {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+    letter-spacing: 0.2px;
+  }
+  .peekAnswer {
+    font-family: 'Caveat', cursive;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .peekCheck {
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--coral);
+    display: grid; place-items: center;
+  }
+  .peekCheck svg { width: 9px; height: 9px; }
+
+  /* "Earlier pages" label at the very top of the stack */
+  .peekStackLabel {
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-bottom: 10px;
+    padding-left: 2px;
+    opacity: 0.7;
+  }
+
+  /* ── NOTEBOOK PAGE ── */
+  .notebook {
+    flex: 1;
+    max-width: 620px;
+    background: var(--page-bg);
+    border-radius: 4px 4px 4px 4px;
+    /* Very subtle off-axis tilt — the "just picked it up" feel */
+    transform: rotate(0.3deg);
+    box-shadow:
+      0 2px 4px -2px rgba(13,40,64,0.06),
+      0 8px 32px -8px rgba(13,40,64,0.14),
+      0 24px 64px -20px rgba(13,40,64,0.08),
+      /* Left-edge binding shadow */
+      inset 8px 0 16px -12px rgba(31,95,160,0.06);
+    /* Ruled lines inside the page — same as body but more visible */
+    background-image:
+      /* Left margin pink line (like a real college ruled pad) */
+      linear-gradient(90deg, transparent 52px, var(--margin-pink) 52px, var(--margin-pink) 54px, transparent 54px),
+      /* Ruled lines */
+      linear-gradient(180deg, transparent 27px, rgba(31,95,160,0.055) 28px);
+    background-size: 100% 100%, 100% 28px;
+    position: relative;
+    overflow: hidden;
+    padding: 40px 48px 44px 68px;
+  }
+
+  /* Spiral binding dots on the left edge */
+  .notebook::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 20px;
+    background: repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent 36px,
+      rgba(31,95,160,0.10) 36px,
+      rgba(31,95,160,0.10) 40px
+    );
+    pointer-events: none;
+  }
+
+  /* ── PAGE HEADER ROW ── */
+  .pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+  }
+
+  /* Progress steps row — simple dot chain on the left */
+  .pageDots {
+    display: flex; align-items: center; gap: 6px;
+    padding-top: 4px;
+  }
+  .pageDot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: rgba(31, 95, 160, 0.15);
+    transition: all 0.2s;
+  }
+  .pageDot.done   { background: var(--sky-mid); }
+  .pageDot.active { background: var(--coral); width: 9px; height: 9px; }
+
+  /* "page 3 of 6" handwritten label + ink-dot accent */
+  .pageNum {
+    display: flex; align-items: center; gap: 8px;
+    text-align: right;
+  }
+  .pageNumText {
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    line-height: 1;
+  }
+  /* Small ink dot accent */
+  .inkDot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--ink-muted);
+    opacity: 0.4;
+    flex-shrink: 0;
+  }
+
+  /* ── QUESTION HEADING ── */
+  .questionTitle {
+    font-family: 'Caveat', cursive;
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--ink);
+    margin-bottom: 12px;
+    /* Slightly irregular — like natural handwriting */
+    letter-spacing: 0.3px;
+  }
+
+  .questionHint {
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 28px;
+    max-width: 440px;
+    /* Inter for body text — contrast with Caveat heading */
+    font-family: 'Inter', sans-serif;
+    border-left: 3px solid var(--coral);
+    padding-left: 12px;
+  }
+
+  /* ── DISTRICT CHIP GRID ── */
+  /* Flowing, not a strict matrix. Chips vary in implicit width by label length */
+  .districtFlow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+
+  .dChip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(31, 95, 160, 0.15);
+    background: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px; font-weight: 500;
+    color: var(--ink-soft);
+    transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+    user-select: none;
+    /* Very subtle bottom shadow — like a sticker on paper */
+    box-shadow: 0 1px 3px -1px rgba(13,40,64,0.10);
+  }
+  .dChip:hover {
+    border-color: var(--sky-mid);
+    background: var(--sky-pale);
+    color: var(--ink);
+  }
+  .dChip.selected {
+    border-color: var(--sky-deep);
+    background: var(--sky-pale);
+    color: var(--sky-anchor);
+    font-weight: 600;
+  }
+
+  /* Hand-drawn SVG checkmark icon — coral, inside a small circle */
+  .doodleCheck {
+    flex-shrink: 0;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(31,95,160,0.25);
+    display: grid; place-items: center;
+    transition: all 0.15s;
+    background: transparent;
+  }
+  .doodleCheck svg {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .dChip.selected .doodleCheck {
+    border: 1.5px solid var(--coral);
+    background: rgba(255, 140, 122, 0.08);
+  }
+  .dChip.selected .doodleCheck svg { opacity: 1; }
+
+  /* "Any district" chip — full-width, dashed border */
+  .dChip.anyChip {
+    width: 100%;
+    justify-content: center;
+    border-style: dashed;
+    border-color: rgba(79, 163, 224, 0.4);
+    background: rgba(232, 244, 253, 0.5);
+    font-style: italic;
+    color: var(--sky-anchor);
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    padding: 11px 16px;
+  }
+  .dChip.anyChip.selected {
+    border-style: solid;
+    border-color: var(--sky-deep);
+    background: var(--sky-pale);
+    font-style: normal;
+  }
+
+  /* ── SELECTION FEEDBACK ── */
+  .selNote {
+    font-family: 'Caveat', cursive;
+    font-size: 17px;
+    color: var(--ink-muted);
+    margin-bottom: 28px;
+    margin-top: -18px;
+    min-height: 22px;
+  }
+  .selNote strong { color: var(--coral-deep); }
+
+  /* ── PAGE BOTTOM DIVIDER ── */
+  .pageDivider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(31,95,160,0.12) 20%, rgba(31,95,160,0.12) 80%, transparent);
+    margin-bottom: 24px;
+  }
+
+  /* ── PAGE-TURN ACTIONS ── */
+  .pageActions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .pageTurnBtn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+    font-weight: 500;
+    font-style: italic;
+    color: var(--ink-muted);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 4px;
+    display: flex; align-items: center; gap: 7px;
+    transition: color 0.15s;
+    padding: 0;
+  }
+  .pageTurnBtn:hover { color: var(--sky-anchor); }
+  .pageTurnBtn svg { width: 16px; height: 16px; transition: transform 0.2s; }
+  .pageTurnBtn.prev:hover svg { transform: translateX(-3px); }
+  .pageTurnBtn.next:hover:not(:disabled) svg { transform: translateX(3px); }
+  .pageTurnBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .pageTurnBtn.next {
+    color: var(--sky-anchor);
+    font-weight: 700;
+    font-style: normal;
+    text-decoration-style: solid;
+  }
+  .pageTurnBtn.next:not(:disabled) { color: var(--coral-deep); }
+
+  /* ── MOBILE ── */
+  @media (max-width: 980px) {
+    .nav { padding: 14px 20px; }
+    .nav-right { gap: 18px; }
+    .nav-right .nav-hide { display: none; }
+    .stage {
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 16px 48px;
+      gap: 0;
+    }
+    .peekStack { display: none; } /* hidden on mobile — space is precious */
+    .notebook {
+      max-width: 100%;
+      width: 100%;
+      transform: none; /* no tilt on mobile */
+      padding: 28px 24px 32px 36px;
+    }
+    .questionTitle { font-size: 30px; }
+    .districtFlow { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="nav">
+  <a href="/" class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span>Paper Plane</span>
+  </a>
+  <div class="nav-right">
+    <a href="/colleges" class="nav-hide">Colleges</a>
+    <a href="/courses" class="nav-hide">Courses</a>
+    <a href="/signin" style="color: var(--sky-anchor); font-weight: 600;">Sign in</a>
+    <!-- "Take the quiz" CTA omitted — user is on the quiz page -->
+  </div>
+</nav>
+
+<!-- ── STAGE (ruled-paper background) ── -->
+<div class="stage">
+
+  <!-- LEFT: stack of earlier answered pages -->
+  <div class="peekStack" aria-label="Your earlier answers">
+    <div class="peekStackLabel">earlier pages</div>
+
+    <!-- Page 1: Stream -->
+    <div class="peekPage">
+      <div class="peekLabel">stream</div>
+      <div class="peekAnswer">PCM ✓</div>
+      <div class="peekCheck">
+        <!-- Hand-drawn check — slightly wobbly path -->
+        <svg viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1.5 5.5 C2.2 6.3 3 7.2 3.8 7.8 C5.5 5.8 8 3.2 10.5 1.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Page 2: Marks -->
+    <div class="peekPage">
+      <div class="peekLabel">marks</div>
+      <div class="peekAnswer">85–95% ✓</div>
+      <div class="peekCheck">
+        <svg viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1.5 5.5 C2.2 6.3 3 7.2 3.8 7.8 C5.5 5.8 8 3.2 10.5 1.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTRE: the notebook page -->
+  <div class="notebook" role="main">
+
+    <!-- Page header row -->
+    <div class="pageHeader">
+      <!-- Dot-chain progress on the left -->
+      <div class="pageDots" aria-label="Step 3 of 6">
+        <div class="pageDot done"   title="Step 1"></div>
+        <div class="pageDot done"   title="Step 2"></div>
+        <div class="pageDot active" title="Step 3 (current)"></div>
+        <div class="pageDot"        title="Step 4"></div>
+        <div class="pageDot"        title="Step 5"></div>
+        <div class="pageDot"        title="Step 6"></div>
+      </div>
+
+      <!-- "page 3 of 6" with ink-dot accent -->
+      <div class="pageNum" aria-label="Page 3 of 6">
+        <span class="pageNumText hand">page 3 of 6</span>
+        <div class="inkDot" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <!-- Handwritten question title -->
+    <h1 class="questionTitle">where do you want to go to college?</h1>
+
+    <!-- Body-copy hint in Inter -->
+    <p class="questionHint">
+      Pick any district. You can choose more than one — we'll prioritise them when we match you to colleges.
+    </p>
+
+    <!-- District chips — flowing grid, not strict matrix -->
+    <div class="districtFlow" id="districtFlow" role="group" aria-label="Select districts">
+
+      <!-- Any district — full width, Caveat italic -->
+      <button class="dChip anyChip" data-value="any" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <!-- Hand-drawn check SVG -->
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        any district — show me all of Kerala
+      </button>
+
+      <!-- 14 Kerala districts — some pre-selected for demo (Thiruvananthapuram + Ernakulam) -->
+      <button class="dChip selected" data-value="Thiruvananthapuram" role="checkbox" aria-checked="true">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Thiruvananthapuram
+      </button>
+
+      <button class="dChip" data-value="Kollam" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Kollam
+      </button>
+
+      <button class="dChip" data-value="Pathanamthitta" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Pathanamthitta
+      </button>
+
+      <button class="dChip" data-value="Alappuzha" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Alappuzha
+      </button>
+
+      <button class="dChip" data-value="Kottayam" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Kottayam
+      </button>
+
+      <button class="dChip" data-value="Idukki" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Idukki
+      </button>
+
+      <button class="dChip selected" data-value="Ernakulam" role="checkbox" aria-checked="true">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Ernakulam
+      </button>
+
+      <button class="dChip" data-value="Thrissur" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Thrissur
+      </button>
+
+      <button class="dChip" data-value="Palakkad" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Palakkad
+      </button>
+
+      <button class="dChip" data-value="Malappuram" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Malappuram
+      </button>
+
+      <button class="dChip" data-value="Kozhikode" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Kozhikode
+      </button>
+
+      <button class="dChip" data-value="Wayanad" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Wayanad
+      </button>
+
+      <button class="dChip" data-value="Kannur" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Kannur
+      </button>
+
+      <button class="dChip" data-value="Kasaragod" role="checkbox" aria-checked="false">
+        <div class="doodleCheck" aria-hidden="true">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4.2 C1.8 5.3 2.6 6.2 3.3 6.9 C5 4.8 7.2 2.6 9.2 1.2" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Kasaragod
+      </button>
+
+    </div>
+
+    <!-- Selection feedback in Caveat — updates live -->
+    <div class="selNote hand" id="selNote">
+      <strong>2</strong> districts chosen
+    </div>
+
+    <div class="pageDivider"></div>
+
+    <!-- Page-turn actions -->
+    <div class="pageActions">
+      <button class="pageTurnBtn prev" id="prevBtn" aria-label="Go to previous step">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M11 6l-6 6 6 6"/>
+        </svg>
+        ← previous page
+      </button>
+
+      <button class="pageTurnBtn next" id="nextBtn" aria-label="Go to next step">
+        next page →
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+  <!-- /notebook -->
+
+</div>
+<!-- /stage -->
+
+<script>
+  const flow    = document.getElementById('districtFlow');
+  const selNote = document.getElementById('selNote');
+  const nextBtn = document.getElementById('nextBtn');
+  const anyChip = flow.querySelector('[data-value="any"]');
+
+  function updateNote() {
+    const sel = [...flow.querySelectorAll('.dChip.selected')].filter(c => c.dataset.value !== 'any');
+    const isAny = anyChip.classList.contains('selected');
+    if (isAny) {
+      selNote.innerHTML = '<strong>All Kerala</strong> — showing everything';
+    } else if (sel.length === 0) {
+      selNote.innerHTML = 'nothing chosen yet — pick at least one';
+    } else {
+      selNote.innerHTML = '<strong>' + sel.length + '</strong> ' + (sel.length === 1 ? 'district' : 'districts') + ' chosen';
+    }
+    nextBtn.disabled = !isAny && sel.length === 0;
+  }
+
+  flow.querySelectorAll('.dChip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      if (chip === anyChip) {
+        const was = anyChip.classList.contains('selected');
+        flow.querySelectorAll('.dChip').forEach(c => {
+          c.classList.remove('selected');
+          c.setAttribute('aria-checked', 'false');
+        });
+        if (!was) {
+          anyChip.classList.add('selected');
+          anyChip.setAttribute('aria-checked', 'true');
+        }
+      } else {
+        anyChip.classList.remove('selected');
+        anyChip.setAttribute('aria-checked', 'false');
+        chip.classList.toggle('selected');
+        chip.setAttribute('aria-checked', chip.classList.contains('selected') ? 'true' : 'false');
+      }
+      updateNote();
+    });
+  });
+
+  updateNote();
+
+  document.getElementById('prevBtn').addEventListener('click', () => {
+    alert('← Step 2: Marks (prototype — would navigate back)');
+  });
+  nextBtn.addEventListener('click', () => {
+    if (!nextBtn.disabled) {
+      alert('→ Step 4: Budget (prototype — would navigate forward)');
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- ─────────────────────────────────────────────────────────────────────────
+  DIRECTION A — "Course profile"
+  Layout intent:
+  · A compact sky-blue gradient hero carries the course identity: category pill,
+    big Sora display name, a strip of pill-stats, and a Caveat handwritten nudge.
+  · Below the hero the page splits into a two-column layout: a ~250px sticky
+    table-of-contents on the left with jump-link nav (active state updates on
+    scroll via IntersectionObserver), and a long-form content column on the right
+    composed of clearly-labelled card sections.
+  · Sections in order: Overview · Who qualifies · Entrance exams · Colleges
+    offering it · What's next.
+  · Closes with a full-width CTA band directing students to the quiz.
+  · At 980px the sticky sidebar stacks above the content; pill-stats wrap;
+    the college scroll remains horizontal.
+  · All data is realistic B.Tech CSE sample data — no lorem ipsum.
+───────────────────────────────────────────────────────────────────────── -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B.Tech Computer Science &amp; Engineering — Paper Plane</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ─── DESIGN TOKENS (lifted from 6prototype.html) ─── */
+  :root {
+    --sky-pale:    #E8F4FD;
+    --sky-bright:  #87CEEB;
+    --sky-mid:     #4FA3E0;
+    --sky-deep:    #2D7DD2;
+    --sky-anchor:  #1F5FA0;
+
+    --cloud:        #FFFFFF;
+    --cloud-shadow: rgba(31, 95, 160, 0.08);
+
+    --sun:          #FFD93D;
+    --sun-glow:     #FFE680;
+    --coral:        #FF8C7A;
+    --coral-deep:   #E66E5A;
+
+    --ink:        #0D2840;
+    --ink-soft:   #4A5A6E;
+    --ink-muted:  #8895A6;
+    --paper:      #FBFCFE;
+    --line:       rgba(31, 95, 160, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display { font-family: 'Sora', system-ui, sans-serif; }
+  .hand    { font-family: 'Caveat', cursive; }
+
+  /* ─── NAV ─── */
+  .nav {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: none; }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav-right { display: flex; align-items: center; gap: 28px; }
+  .nav-right a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px; font-weight: 500;
+  }
+  .nav-right a:hover { color: var(--sky-anchor); }
+  .nav-cta {
+    padding: 10px 18px;
+    background: var(--ink); color: white;
+    border-radius: 999px; font-weight: 600; font-size: 14px;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    position: relative;
+    min-height: 340px;
+    padding: 110px 32px 72px;
+    background: linear-gradient(160deg, var(--sky-bright) 0%, var(--sky-mid) 55%, var(--sky-deep) 100%);
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute; inset: auto 0 0 0;
+    height: 64px;
+    background: linear-gradient(to bottom, transparent, var(--paper));
+    pointer-events: none;
+  }
+  .heroInner {
+    max-width: 1280px; margin: 0 auto;
+    position: relative; z-index: 1;
+  }
+  .heroCrumb {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 20px;
+    font-size: 13px; color: rgba(255,255,255,0.75);
+  }
+  .heroCrumb a { color: rgba(255,255,255,0.75); text-decoration: none; }
+  .heroCrumb a:hover { color: white; }
+  .heroCrumb span { opacity: 0.5; }
+  .heroCategoryPill {
+    display: inline-block;
+    background: rgba(255,255,255,0.92);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--sky-anchor);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .heroTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 52px;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    color: white;
+    max-width: 780px;
+    text-shadow: 0 2px 24px rgba(13,40,64,0.18);
+    margin-bottom: 24px;
+  }
+  .heroPills {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    margin-bottom: 18px;
+  }
+  .heroPill {
+    background: rgba(255,255,255,0.22);
+    border: 1px solid rgba(255,255,255,0.45);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px; font-weight: 600;
+    color: white;
+    backdrop-filter: blur(4px);
+  }
+  .heroHand {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    color: var(--sun-glow);
+    transform: rotate(-2deg);
+    display: inline-block;
+    margin-top: 2px;
+  }
+  .cloud {
+    position: absolute;
+    pointer-events: none;
+  }
+  .cloud svg { width: 100%; height: 100%; }
+  .cloud-1 { width: 240px; height: 90px; top: 28px; right: 6%; opacity: 0.75; }
+  .cloud-2 { width: 160px; height: 60px; top: 70px; right: 30%; opacity: 0.55; }
+
+  /* ─── BODY LAYOUT ─── */
+  .body {
+    max-width: 1280px; margin: -24px auto 80px;
+    padding: 0 32px;
+    display: grid;
+    grid-template-columns: 248px 1fr;
+    gap: 40px;
+    position: relative; z-index: 2;
+    align-items: start;
+  }
+
+  /* ─── TOC SIDEBAR ─── */
+  .toc {
+    position: sticky; top: 24px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 20px 16px;
+    box-shadow: 0 8px 28px -12px rgba(31, 95, 160, 0.16);
+  }
+  .tocTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 14px;
+    padding: 0 8px;
+  }
+  .tocList { list-style: none; }
+  .tocItem a {
+    display: block;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 14px; font-weight: 500;
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .tocItem a:hover {
+    background: var(--sky-pale);
+    color: var(--ink);
+  }
+  .tocItem.active a {
+    background: var(--sky-pale);
+    color: var(--sky-anchor);
+    font-weight: 600;
+    border-left-color: var(--sky-deep);
+  }
+  .tocDivider {
+    height: 1px;
+    background: var(--line);
+    margin: 14px 8px;
+  }
+  .tocQuizBtn {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 11px 14px;
+    background: var(--sky-deep);
+    color: white;
+    border: none; border-radius: 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600; font-size: 13px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .tocQuizBtn:hover { background: var(--sky-anchor); }
+
+  /* ─── CONTENT AREA ─── */
+  .content { min-width: 0; padding-top: 12px; }
+
+  /* Section blocks */
+  .section {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px -6px rgba(31, 95, 160, 0.08);
+  }
+  .sectionLabel {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px;
+  }
+  .sectionIcon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--sky-pale);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .sectionIcon svg { width: 18px; height: 18px; color: var(--sky-deep); }
+  .sectionTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.4px;
+    color: var(--ink);
+  }
+
+  /* Overview */
+  .overviewBody p {
+    color: var(--ink-soft);
+    font-size: 15.5px;
+    line-height: 1.75;
+    margin-bottom: 14px;
+  }
+  .overviewBody p:last-child { margin-bottom: 0; }
+
+  /* Who qualifies — stream cards */
+  .streamGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .streamCard {
+    border-radius: 14px;
+    padding: 18px 14px;
+    border: 2px solid var(--line);
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .streamCard.qualifies {
+    border-color: var(--sky-deep);
+    background: linear-gradient(140deg, var(--sky-pale) 0%, white 100%);
+  }
+  .streamCard.muted { opacity: 0.45; }
+  .streamIcon {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  .streamName {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .streamStatus {
+    font-size: 12px; font-weight: 600;
+    border-radius: 999px;
+    padding: 2px 10px;
+    display: inline-block;
+  }
+  .streamCard.qualifies .streamStatus {
+    background: var(--sky-deep);
+    color: white;
+  }
+  .streamCard.muted .streamStatus {
+    background: var(--line);
+    color: var(--ink-muted);
+  }
+  .marksNote {
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: var(--sky-pale);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    border-left: 3px solid var(--sky-mid);
+  }
+
+  /* Entrance exams — expandable */
+  .examCard {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    transition: box-shadow 0.15s;
+  }
+  .examCard:last-child { margin-bottom: 0; }
+  .examCard:hover { box-shadow: 0 4px 16px -6px rgba(45, 125, 210, 0.18); }
+  .examHead {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .examBadge {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    background: var(--sky-deep);
+    color: white;
+    display: grid; place-items: center;
+    font-family: 'Sora', sans-serif;
+    font-weight: 800; font-size: 11px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .examHeadInfo { flex: 1; }
+  .examName {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 16px;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .examShortDesc { font-size: 13px; color: var(--ink-muted); }
+  .examToggle {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--sky-pale);
+    display: grid; place-items: center;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .examToggle svg { width: 14px; height: 14px; color: var(--sky-deep); }
+  .examCard.open .examToggle { transform: rotate(180deg); }
+  .examBody {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid var(--line);
+    margin-top: 0;
+  }
+  .examCard.open .examBody { display: block; }
+  .examGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 16px;
+  }
+  .examStat { }
+  .examStatLabel {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+  }
+  .examStatValue {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 15px;
+    color: var(--ink);
+  }
+  .difficultyBar {
+    display: flex; gap: 4px; margin-top: 4px;
+  }
+  .diffDot {
+    width: 20px; height: 6px;
+    border-radius: 999px;
+    background: var(--line);
+  }
+  .diffDot.filled { background: var(--sky-deep); }
+  .diffDot.filled.med { background: var(--sun); }
+  .diffDot.filled.high { background: var(--coral); }
+  .examUnlocks {
+    margin-top: 14px;
+    font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;
+  }
+  .examLink {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 12px;
+    font-size: 13px; font-weight: 600;
+    color: var(--sky-deep);
+    text-decoration: none;
+  }
+  .examLink svg { width: 13px; height: 13px; }
+  .examLink:hover { color: var(--sky-anchor); }
+
+  /* Colleges scroll */
+  .collegesScroll {
+    display: flex; gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+  .collegeTile {
+    flex: 0 0 200px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: box-shadow 0.18s, transform 0.18s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+  }
+  .collegeTile:hover {
+    box-shadow: 0 8px 24px -8px rgba(45, 125, 210, 0.22);
+    transform: translateY(-2px);
+  }
+  .collegeTileHeader {
+    height: 72px;
+    background: var(--cg, linear-gradient(135deg, var(--sky-bright), var(--sky-deep)));
+    position: relative;
+    overflow: hidden;
+  }
+  .collegeTileHeader::after {
+    content: '';
+    position: absolute;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    bottom: -30px; right: -20px;
+  }
+  .collegeTileType {
+    position: absolute; bottom: 8px; left: 10px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .collegeTileBody { padding: 12px; }
+  .collegeTileName {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 13px;
+    line-height: 1.3;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .collegeTileDistrict {
+    font-size: 12px; color: var(--ink-muted);
+  }
+  .allCollegesLink {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 16px;
+    font-size: 14px; font-weight: 600;
+    color: var(--sky-deep);
+    text-decoration: none;
+  }
+  .allCollegesLink svg { width: 14px; height: 14px; }
+  .allCollegesLink:hover { color: var(--sky-anchor); }
+
+  /* Career paths / what's next */
+  .careerPills {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin-bottom: 18px;
+  }
+  .careerPill {
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--sky-pale);
+    border: 1px solid rgba(45, 125, 210, 0.2);
+    font-size: 14px; font-weight: 500;
+    color: var(--sky-anchor);
+    cursor: default;
+    transition: background 0.15s;
+  }
+  .careerPill:hover { background: #d6ebf9; }
+  .salaryBand {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 20px;
+    background: linear-gradient(120deg, var(--sky-pale), white);
+    border: 1px solid rgba(45, 125, 210, 0.18);
+    border-radius: 14px;
+    margin-top: 4px;
+  }
+  .salaryIcon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--sky-deep);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .salaryIcon svg { width: 20px; height: 20px; color: white; }
+  .salaryLabel { font-size: 12px; color: var(--ink-muted); margin-bottom: 4px; }
+  .salaryValue {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800; font-size: 22px;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+  }
+  .salaryNote { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+
+  /* CTA BAND */
+  .ctaBand {
+    background: linear-gradient(120deg, var(--sky-deep) 0%, var(--sky-anchor) 100%);
+    border-radius: 24px;
+    padding: 40px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ctaBand::before {
+    content: '';
+    position: absolute;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    right: -60px; top: -80px;
+  }
+  .ctaBand::after {
+    content: '';
+    position: absolute;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    right: 100px; bottom: -60px;
+  }
+  .ctaText { position: relative; z-index: 1; }
+  .ctaHead {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800; font-size: 22px;
+    letter-spacing: -0.5px;
+    color: white;
+    margin-bottom: 6px;
+  }
+  .ctaSub { font-size: 14px; color: rgba(255,255,255,0.75); }
+  .ctaBtn {
+    position: relative; z-index: 1;
+    padding: 14px 28px;
+    background: white;
+    color: var(--sky-anchor);
+    border-radius: 999px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 15px;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    transition: transform 0.15s, box-shadow 0.15s;
+    flex-shrink: 0;
+  }
+  .ctaBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+  }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    background: var(--ink);
+    color: rgba(255, 255, 255, 0.65);
+    padding: 40px 32px 32px;
+    margin-top: 40px;
+  }
+  .footerInner { max-width: 1280px; margin: 0 auto; }
+  .footerTop {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 24px;
+  }
+  .footerBrand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 16px;
+    color: white;
+    text-decoration: none;
+  }
+  .footerMark {
+    width: 26px; height: 26px;
+    background: var(--sky-deep);
+    border-radius: 50%;
+    display: grid; place-items: center;
+  }
+  .footerMark svg { width: 14px; height: 14px; }
+  .footerLinks { display: flex; gap: 32px; }
+  .footerLinks a {
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
+    font-size: 13px; font-weight: 500;
+  }
+  .footerLinks a:hover { color: white; }
+  .footerDivider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 20px 0;
+  }
+  .footerBottom {
+    display: flex; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 12px;
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 980px) {
+    .body {
+      grid-template-columns: 1fr;
+      margin-top: 0;
+      padding-top: 24px;
+    }
+    .toc { position: static; }
+    .tocList { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tocDivider { display: none; }
+    .tocTitle { margin-bottom: 10px; }
+    .tocQuizBtn { display: none; }
+    .heroTitle { font-size: 36px; letter-spacing: -1.2px; }
+    .hero { padding-top: 90px; padding-bottom: 56px; }
+    .streamGrid { grid-template-columns: repeat(2, 1fr); }
+    .examGrid { grid-template-columns: 1fr 1fr; }
+    .ctaBand { padding: 28px 24px; }
+    .ctaHead { font-size: 18px; }
+    .section { padding: 22px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span>Paper Plane</span>
+  </a>
+  <div class="nav-right">
+    <a href="#">Colleges</a>
+    <a href="#" style="color: var(--ink); font-weight: 600;">Courses</a>
+    <a href="#" style="color: var(--sky-anchor); font-weight: 600;">Sign in</a>
+    <a href="#" class="nav-cta">Take the quiz</a>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <div class="cloud cloud-1">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+  <div class="cloud cloud-2">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+  <div class="heroInner">
+    <div class="heroCrumb">
+      <a href="#">Courses</a>
+      <span>›</span>
+      <a href="#">Engineering</a>
+      <span>›</span>
+      <span style="color:white;">B.Tech CSE</span>
+    </div>
+    <div class="heroCategoryPill">Engineering</div>
+    <h1 class="heroTitle display">B.Tech Computer Science &amp; Engineering</h1>
+    <div class="heroPills">
+      <span class="heroPill">4 years</span>
+      <span class="heroPill">PCM stream</span>
+      <span class="heroPill">2 entrance exams</span>
+      <span class="heroPill">Offered at 76 colleges</span>
+    </div>
+    <div class="heroHand hand">the most-applied-to course in Kerala ✈</div>
+  </div>
+</section>
+
+<!-- ─── BODY: TOC + CONTENT ─── -->
+<div class="body">
+
+  <!-- LEFT: sticky TOC -->
+  <aside class="toc">
+    <div class="tocTitle">On this page</div>
+    <ul class="tocList">
+      <li class="tocItem active" data-for="overview">
+        <a href="#overview">Overview</a>
+      </li>
+      <li class="tocItem" data-for="qualifies">
+        <a href="#qualifies">Who qualifies</a>
+      </li>
+      <li class="tocItem" data-for="exams">
+        <a href="#exams">Entrance exams</a>
+      </li>
+      <li class="tocItem" data-for="colleges">
+        <a href="#colleges">Colleges offering it</a>
+      </li>
+      <li class="tocItem" data-for="next">
+        <a href="#next">What's next</a>
+      </li>
+    </ul>
+    <div class="tocDivider"></div>
+    <a href="#" class="tocQuizBtn">Find colleges for me →</a>
+  </aside>
+
+  <!-- RIGHT: content sections -->
+  <main class="content">
+
+    <!-- OVERVIEW -->
+    <section class="section" id="overview">
+      <div class="sectionLabel">
+        <div class="sectionIcon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <h2 class="sectionTitle">Overview</h2>
+      </div>
+      <div class="overviewBody">
+        <p>B.Tech in Computer Science &amp; Engineering is a four-year undergraduate degree that turns you into someone who can design, build, and reason about software systems. The first two years build your mathematical and programming foundation — discrete mathematics, data structures, algorithms, computer organisation. The final two years branch into specialisations: operating systems, networks, databases, AI/ML, and a major project where you ship something real.</p>
+        <p>It is consistently the most-applied-to engineering branch in Kerala, and for good reason: the job market for CSE graduates stretches from Infopark Kochi to Bengaluru to the Bay Area. Kerala's strong IT sector (TCS, Infosys, UST, IBS, and dozens of product companies) recruits heavily from state engineering colleges, so a local B.Tech CSE opens genuine doors — you don't need to relocate on day one unless you want to.</p>
+      </div>
+    </section>
+
+    <!-- WHO QUALIFIES -->
+    <section class="section" id="qualifies">
+      <div class="sectionLabel">
+        <div class="sectionIcon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h2 class="sectionTitle">Who qualifies</h2>
+      </div>
+
+      <div class="streamGrid">
+        <div class="streamCard qualifies">
+          <div class="streamIcon">🔬</div>
+          <div class="streamName">PCM</div>
+          <div>Physics · Chemistry · Maths</div>
+          <div style="margin-top:8px;"><span class="streamStatus">Qualifies ✓</span></div>
+        </div>
+        <div class="streamCard muted">
+          <div class="streamIcon">🧬</div>
+          <div class="streamName">PCB</div>
+          <div>Physics · Chemistry · Biology</div>
+          <div style="margin-top:8px;"><span class="streamStatus">Doesn't qualify</span></div>
+        </div>
+        <div class="streamCard muted">
+          <div class="streamIcon">📊</div>
+          <div class="streamName">Commerce</div>
+          <div>Business &amp; Accounts</div>
+          <div style="margin-top:8px;"><span class="streamStatus">Doesn't qualify</span></div>
+        </div>
+        <div class="streamCard muted">
+          <div class="streamIcon">🎨</div>
+          <div class="streamName">Arts</div>
+          <div>Humanities &amp; Languages</div>
+          <div style="margin-top:8px;"><span class="streamStatus">Doesn't qualify</span></div>
+        </div>
+      </div>
+
+      <p class="marksNote">
+        <strong>Minimum marks:</strong> varies by college — government colleges typically require 45–50 % in PCM, top NITs look for 75 %+. Exact cut-offs are set by the admissions round and change every year.
+      </p>
+    </section>
+
+    <!-- ENTRANCE EXAMS -->
+    <section class="section" id="exams">
+      <div class="sectionLabel">
+        <div class="sectionIcon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <h2 class="sectionTitle">Entrance exams</h2>
+      </div>
+      <p style="color:var(--ink-muted);font-size:14px;margin-bottom:18px;">You need to clear at least one of these to get an admission offer. Many students appear for both to widen their options.</p>
+
+      <!-- KEAM -->
+      <div class="examCard open" id="exam-keam">
+        <div class="examHead" onclick="toggleExam(this)">
+          <div class="examBadge">KEAM</div>
+          <div class="examHeadInfo">
+            <div class="examName">KEAM</div>
+            <div class="examShortDesc">Kerala Engineering Architecture Medical — state-level, LBS administered</div>
+          </div>
+          <div class="examToggle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div class="examBody">
+          <div class="examGrid">
+            <div class="examStat">
+              <div class="examStatLabel">Full name</div>
+              <div class="examStatValue" style="font-size:13px;font-weight:600;">Kerala Engineering Architecture Medical</div>
+            </div>
+            <div class="examStat">
+              <div class="examStatLabel">Conducted by</div>
+              <div class="examStatValue" style="font-size:14px;">LBS Centre, Kerala</div>
+            </div>
+            <div class="examStat">
+              <div class="examStatLabel">Typical exam window</div>
+              <div class="examStatValue" style="font-size:14px;">April – May</div>
+            </div>
+            <div class="examStat">
+              <div class="examStatLabel">Prep difficulty</div>
+              <div class="examStatValue">
+                Medium
+                <div class="difficultyBar">
+                  <div class="diffDot filled med"></div>
+                  <div class="diffDot filled med"></div>
+                  <div class="diffDot"></div>
+                </div>
+              </div>
+            </div>
+            <div class="examStat">
+              <div class="examStatLabel">Scope</div>
+              <div class="examStatValue" style="font-size:13px;font-weight:600;">Kerala state colleges only</div>
+            </div>
+          </div>
+          <div class="examUnlocks">
+            <strong>What it unlocks:</strong> All Kerala Engineering colleges under LBS counselling — including CET, GEC Thrissur, TKM, Barton Hill, and all government-aided engineering colleges. Rank + marks determines your allotment.
+          </div>
+          <a href="#" class="examLink">
+            View exam details
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- JEE Main -->
+      <div class="examCard" id="exam-jee">
+        <div class="examHead" onclick="toggleExam(this)">
+          <div class="examBadge" style="background:var(--coral-deep);">JEE</div>
+          <div class="examHeadInfo">
+            <div class="examName">JEE Main</div>
+            <div class="examShortDesc">Joint Entrance Exam — national level, NTA administered</div>
+          </div>
+          <div class="examToggle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div class="examBody">
+          <div class="examGrid">
+            <div class="examStat">
+              <div class="examStatLabel">Full name</div>
+              <div class="examStatValue" style="font-size:13px;font-weight:600;">Joint Entrance Examination — Main</div>
+            </div>
+            <div class="examStat">
+              <div class="examStatLabel">Conducted by</div>
+              <div class="examStatValue" style="font-size:14px;">NTA (Nat. Testing Agency)</div>
+            </div>
+            <div class="examStat">
+              <div class="examStatLabel">Typical exam window</div>
+              <div class="examStatValue" style="font-size:14px;">Jan &amp; Apr (2 attempts)</div>
+            </div>
+            <div class="examStat">
+              <div class="examStatLabel">Prep difficulty</div>
+              <div class="examStatValue">
+                High
+                <div class="difficultyBar">
+                  <div class="diffDot filled high"></div>
+                  <div class="diffDot filled high"></div>
+                  <div class="diffDot filled high"></div>
+                </div>
+              </div>
+            </div>
+            <div class="examStat">
+              <div class="examStatLabel">Scope</div>
+              <div class="examStatValue" style="font-size:13px;font-weight:600;">National — NITs, IIITs, GFTIs</div>
+            </div>
+          </div>
+          <div class="examUnlocks">
+            <strong>What it unlocks:</strong> NIT Calicut and NIT Tiruchirappalli (via JoSAA counselling), plus many private engineering colleges in Kerala that accept JEE Main scores as an alternative to KEAM.
+          </div>
+          <a href="#" class="examLink">
+            View exam details
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLLEGES OFFERING IT -->
+    <section class="section" id="colleges">
+      <div class="sectionLabel">
+        <div class="sectionIcon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h2 class="sectionTitle">Colleges offering it</h2>
+      </div>
+      <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px;">A selection from the 76 colleges offering B.Tech CSE in Kerala. Scroll to see more.</p>
+
+      <div class="collegesScroll">
+
+        <a href="#" class="collegeTile" style="--cg:linear-gradient(135deg,#87CEEB,#2D7DD2)">
+          <div class="collegeTileHeader">
+            <div class="collegeTileType">Government</div>
+          </div>
+          <div class="collegeTileBody">
+            <div class="collegeTileName">College of Engineering Trivandrum</div>
+            <div class="collegeTileDistrict">Thiruvananthapuram</div>
+          </div>
+        </a>
+
+        <a href="#" class="collegeTile" style="--cg:linear-gradient(135deg,#4FA3E0,#1F5FA0)">
+          <div class="collegeTileHeader">
+            <div class="collegeTileType">Government</div>
+          </div>
+          <div class="collegeTileBody">
+            <div class="collegeTileName">GEC Thrissur</div>
+            <div class="collegeTileDistrict">Thrissur</div>
+          </div>
+        </a>
+
+        <a href="#" class="collegeTile" style="--cg:linear-gradient(135deg,#FFD93D,#FF8C7A)">
+          <div class="collegeTileHeader">
+            <div class="collegeTileType">Central (NIT)</div>
+          </div>
+          <div class="collegeTileBody">
+            <div class="collegeTileName">NIT Calicut</div>
+            <div class="collegeTileDistrict">Kozhikode</div>
+          </div>
+        </a>
+
+        <a href="#" class="collegeTile" style="--cg:linear-gradient(135deg,#87CEEB,#4FA3E0)">
+          <div class="collegeTileHeader">
+            <div class="collegeTileType">Aided</div>
+          </div>
+          <div class="collegeTileBody">
+            <div class="collegeTileName">TKM College of Engineering</div>
+            <div class="collegeTileDistrict">Kollam</div>
+          </div>
+        </a>
+
+        <a href="#" class="collegeTile" style="--cg:linear-gradient(135deg,#FF8C7A,#E66E5A)">
+          <div class="collegeTileHeader">
+            <div class="collegeTileType">Aided</div>
+          </div>
+          <div class="collegeTileBody">
+            <div class="collegeTileName">Mar Athanasius College of Engineering</div>
+            <div class="collegeTileDistrict">Kothamangalam, Ernakulam</div>
+          </div>
+        </a>
+
+        <a href="#" class="collegeTile" style="--cg:linear-gradient(135deg,#2D7DD2,#1F5FA0)">
+          <div class="collegeTileHeader">
+            <div class="collegeTileType">Government</div>
+          </div>
+          <div class="collegeTileBody">
+            <div class="collegeTileName">GEC Barton Hill</div>
+            <div class="collegeTileDistrict">Thiruvananthapuram</div>
+          </div>
+        </a>
+
+      </div>
+      <a href="#" class="allCollegesLink">
+        Browse all 76 colleges offering B.Tech CSE
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </section>
+
+    <!-- WHAT'S NEXT -->
+    <section class="section" id="next">
+      <div class="sectionLabel">
+        <div class="sectionIcon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h2 class="sectionTitle">What's next</h2>
+      </div>
+      <p style="color:var(--ink-soft);font-size:15px;margin-bottom:16px;">B.Tech CSE graduates are among the most employable in India. Common first-job titles:</p>
+
+      <div class="careerPills">
+        <span class="careerPill">Software Engineer</span>
+        <span class="careerPill">Data Analyst</span>
+        <span class="careerPill">ML Engineer</span>
+        <span class="careerPill">Product Engineer</span>
+        <span class="careerPill">Cybersecurity Analyst</span>
+        <span class="careerPill">DevOps Engineer</span>
+        <span class="careerPill">Full-Stack Developer</span>
+        <span class="careerPill">M.Tech / MS (higher studies)</span>
+      </div>
+
+      <div class="salaryBand">
+        <div class="salaryIcon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div>
+          <div class="salaryLabel">Average starting salary range</div>
+          <div class="salaryValue">₹3.5 – 12 LPA</div>
+          <div class="salaryNote">After a few years of experience, senior roles typically pay ₹18–40 LPA+</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA BAND -->
+    <div class="ctaBand">
+      <div class="ctaText">
+        <div class="ctaHead">Find the right college for B.Tech CSE.</div>
+        <div class="ctaSub">Answer 6 questions — we'll match you to colleges that fit your district, budget &amp; exam score.</div>
+      </div>
+      <a href="#" class="ctaBtn">Take the 6-question quiz →</a>
+    </div>
+
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footerInner">
+    <div class="footerTop">
+      <a href="/" class="footerBrand">
+        <div class="footerMark">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Paper Plane
+      </a>
+      <div class="footerLinks">
+        <a href="#">Colleges</a>
+        <a href="#">Courses</a>
+      </div>
+    </div>
+    <div class="footerDivider"></div>
+    <div class="footerBottom">
+      <span>Built in Kerala for Class 12 students.</span>
+      <span>© 2026 Paper Plane.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Expandable exam cards
+  function toggleExam(head) {
+    head.closest('.examCard').classList.toggle('open');
+  }
+
+  // Sticky TOC: highlight active section via IntersectionObserver
+  const sections = document.querySelectorAll('.content .section[id]');
+  const tocItems = document.querySelectorAll('.tocItem[data-for]');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        tocItems.forEach(item => {
+          item.classList.toggle('active', item.dataset.for === id);
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -60% 0px', threshold: 0 });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

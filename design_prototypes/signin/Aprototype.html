@@ -1,0 +1,647 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     DIRECTION A — "Boarding pass"
+     ───────────────────────────────────────────────────────────────
+     LAYOUT INTENT
+     Split screen at 50 / 50.  The LEFT half is a sky-gradient
+     illustration panel — same cyan→azure palette as the rest of the
+     design system — containing a large paper-plane SVG (–8 deg tilt),
+     a dotted motion trail, two cloud puffs, and a handwritten Caveat
+     tagline.  This panel never scrolls; it anchors the emotional
+     context ("you're on a journey, this is just the boarding gate").
+
+     The RIGHT half is a clean white/paper form panel, max-width 420 px
+     centred in its half.  Order top-to-bottom: tiny brand mark circle +
+     "Sign in to Paper Plane" headline → sub-line about magic link →
+     Google button → OR divider → email input → Send button → legal →
+     Back home link.
+
+     After "Send sign-in link" is clicked the form area cross-fades to
+     a "Check your inbox" confirmation state that shows the entered
+     address and a Resend affordance.
+
+     On mobile (≤ 980 px) the two panels stack vertically: illustration
+     panel on top at 280 px height, form below with generous padding.
+     ═══════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — Paper Plane</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ───────── DESIGN TOKENS (from prototype 4 / 6) ───────── */
+  :root {
+    --sky-pale:    #E8F4FD;
+    --sky-bright:  #87CEEB;
+    --sky-mid:     #4FA3E0;
+    --sky-deep:    #2D7DD2;
+    --sky-anchor:  #1F5FA0;
+
+    --cloud:        #FFFFFF;
+    --cloud-shadow: rgba(31, 95, 160, 0.08);
+
+    --sun:          #FFD93D;
+    --sun-glow:     #FFE680;
+    --coral:        #FF8C7A;
+    --coral-deep:   #E66E5A;
+
+    --ink:        #0D2840;
+    --ink-soft:   #4A5A6E;
+    --ink-muted:  #8895A6;
+    --paper:      #FBFCFE;
+    --line:       rgba(31, 95, 160, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display { font-family: 'Sora', system-ui, sans-serif; }
+  .hand    { font-family: 'Caveat', cursive; }
+
+  /* ───────── TOP NAV ───────── */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+    /* glassy tint so it sits on both panels */
+    background: rgba(251, 252, 254, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px;
+    color: var(--ink); text-decoration: none;
+  }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
+    flex-shrink: 0;
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav-right { display: flex; align-items: center; gap: 28px; }
+  .nav-right a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px; font-weight: 500;
+  }
+  .nav-right a:hover { color: var(--sky-anchor); }
+
+  /* ───────── SPLIT LAYOUT ───────── */
+  .split {
+    display: flex;
+    min-height: 100vh;
+    padding-top: 73px; /* nav height */
+  }
+
+  /* ─── LEFT: sky illustration panel ─── */
+  .panel-sky {
+    flex: 1;
+    position: relative;
+    background: linear-gradient(160deg, var(--sky-bright) 0%, var(--sky-mid) 55%, var(--sky-deep) 100%);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 480px;
+  }
+
+  /* handwritten tagline at top */
+  .sky-tagline {
+    position: absolute;
+    top: 36px; left: 50%; transform: translateX(-50%);
+    font-family: 'Caveat', cursive;
+    font-size: 28px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
+    white-space: nowrap;
+    text-shadow: 0 2px 12px rgba(31, 95, 160, 0.25);
+    letter-spacing: 0.3px;
+  }
+
+  /* plane + trail container */
+  .plane-wrap {
+    position: relative;
+    width: 180px; height: 180px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .plane-trail {
+    position: absolute;
+    /* dotted trail running from left of plane */
+    width: 180px; height: 2px;
+    top: 50%; left: -100px;
+    transform: translateY(-50%) rotate(-8deg);
+  }
+  .plane-trail::before {
+    content: '';
+    display: block;
+    width: 100%; height: 2px;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.75) 0px,
+      rgba(255,255,255,0.75) 8px,
+      transparent 8px,
+      transparent 16px
+    );
+  }
+  .plane-svg {
+    transform: rotate(-8deg);
+    filter: drop-shadow(0 16px 40px rgba(13, 40, 64, 0.25));
+  }
+
+  /* clouds */
+  .sky-cloud {
+    position: absolute;
+    pointer-events: none;
+  }
+  .sky-cloud svg { width: 100%; height: 100%; }
+  .sky-cloud-1 { width: 240px; height: 90px; top: 18%; right: 6%; opacity: 0.75; }
+  .sky-cloud-2 { width: 160px; height: 62px; bottom: 28%; left: 8%;  opacity: 0.6; }
+  .sky-cloud-3 { width: 190px; height: 74px; bottom: 10%; right: 15%; opacity: 0.45; }
+
+  /* muted note at bottom of sky panel */
+  .sky-note {
+    position: absolute;
+    bottom: 28px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.65);
+    font-size: 12px;
+    text-align: center;
+    width: 260px;
+    line-height: 1.5;
+  }
+
+  /* ─── RIGHT: form panel ─── */
+  .panel-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper);
+    padding: 48px 32px;
+  }
+  .form-box {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  /* brand mark + headline */
+  .form-head {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 12px;
+  }
+  .form-brand-mark {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.28);
+    flex-shrink: 0;
+  }
+  .form-brand-mark svg { width: 22px; height: 22px; }
+
+  h1.form-title {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    letter-spacing: -1px;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .form-sub {
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.55;
+    margin-bottom: 32px;
+  }
+
+  /* Google button */
+  .btn-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    height: 52px;
+    background: white;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.15s;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(31, 95, 160, 0.06);
+  }
+  .btn-google:hover {
+    border-color: var(--sky-mid);
+    box-shadow: 0 0 0 3px rgba(79, 163, 224, 0.18);
+    background: white;
+  }
+  .google-logo {
+    width: 20px; height: 20px; flex-shrink: 0;
+  }
+
+  /* OR divider */
+  .or-divider {
+    display: flex; align-items: center; gap: 16px;
+    margin: 24px 0;
+    color: var(--ink-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .or-divider::before,
+  .or-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* Email form */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  .field input {
+    width: 100%;
+    height: 52px;
+    padding: 0 18px;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    background: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field input::placeholder { color: var(--ink-muted); }
+  .field input:focus {
+    border-color: var(--sky-mid);
+    box-shadow: 0 0 0 3px rgba(79, 163, 224, 0.18);
+  }
+
+  /* Send button */
+  .btn-send {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 52px;
+    background: linear-gradient(135deg, var(--sky-mid), var(--sky-deep));
+    border: none;
+    border-radius: 14px;
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 6px 20px rgba(45, 125, 210, 0.35);
+    margin-top: 6px;
+    letter-spacing: -0.2px;
+  }
+  .btn-send:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 28px rgba(45, 125, 210, 0.4);
+  }
+  .btn-send:active { transform: translateY(0); }
+
+  /* Legal note */
+  .legal {
+    margin-top: 20px;
+    color: var(--ink-muted);
+    font-size: 11.5px;
+    line-height: 1.55;
+    text-align: center;
+  }
+
+  /* Back home */
+  .back-home {
+    display: block;
+    text-align: center;
+    margin-top: 24px;
+    color: var(--ink-muted);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .back-home:hover { color: var(--sky-anchor); }
+
+  /* ─── "Check your inbox" success state ─── */
+  .inbox-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 8px 0 0;
+  }
+  .inbox-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-mid));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 24px rgba(45, 125, 210, 0.3);
+  }
+  .inbox-icon svg { width: 34px; height: 34px; }
+  .inbox-title {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    letter-spacing: -0.7px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .inbox-body {
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 6px;
+  }
+  .inbox-email {
+    display: inline-block;
+    background: var(--sky-pale);
+    color: var(--sky-anchor);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 5px 14px;
+    border-radius: 999px;
+    margin: 10px 0 20px;
+  }
+  .inbox-resend {
+    background: none;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .inbox-resend:hover { border-color: var(--sky-mid); color: var(--sky-anchor); }
+
+  /* ───────── RESPONSIVE ───────── */
+  @media (max-width: 980px) {
+    .split { flex-direction: column; }
+    .panel-sky { min-height: 280px; flex: none; }
+    .sky-cloud-3 { display: none; }
+    .panel-form { padding: 36px 24px 48px; justify-content: flex-start; }
+    h1.form-title { font-size: 26px; }
+    .nav { padding: 14px 20px; }
+    .nav-right { gap: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── Top nav ─── -->
+<nav class="nav">
+  <a href="/" class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span>Paper Plane</span>
+  </a>
+  <div class="nav-right">
+    <a href="/colleges">Colleges</a>
+    <a href="/courses">Courses</a>
+  </div>
+</nav>
+
+<!-- ─── Split layout ─── -->
+<div class="split">
+
+  <!-- LEFT: sky illustration panel -->
+  <div class="panel-sky">
+
+    <span class="sky-tagline hand">you're almost in ✈</span>
+
+    <!-- Cloud 1 -->
+    <div class="sky-cloud sky-cloud-1">
+      <svg viewBox="0 0 240 100">
+        <ellipse cx="58" cy="65" rx="50" ry="30" fill="white"/>
+        <ellipse cx="113" cy="48" rx="56" ry="38" fill="white"/>
+        <ellipse cx="170" cy="60" rx="44" ry="30" fill="white"/>
+      </svg>
+    </div>
+
+    <!-- Cloud 2 -->
+    <div class="sky-cloud sky-cloud-2">
+      <svg viewBox="0 0 240 100">
+        <ellipse cx="58" cy="65" rx="50" ry="30" fill="white"/>
+        <ellipse cx="113" cy="48" rx="56" ry="38" fill="white"/>
+        <ellipse cx="170" cy="60" rx="44" ry="30" fill="white"/>
+      </svg>
+    </div>
+
+    <!-- Cloud 3 -->
+    <div class="sky-cloud sky-cloud-3">
+      <svg viewBox="0 0 240 100">
+        <ellipse cx="58" cy="65" rx="50" ry="30" fill="white"/>
+        <ellipse cx="113" cy="48" rx="56" ry="38" fill="white"/>
+        <ellipse cx="170" cy="60" rx="44" ry="30" fill="white"/>
+      </svg>
+    </div>
+
+    <!-- Paper plane + dotted trail -->
+    <div class="plane-wrap">
+      <div class="plane-trail"></div>
+      <svg class="plane-svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
+        <!-- Paper plane body -->
+        <polygon
+          points="10,60 110,10 75,110"
+          fill="rgba(255,255,255,0.95)"
+          stroke="rgba(255,255,255,0.4)"
+          stroke-width="1"
+        />
+        <!-- Inner fold shadow -->
+        <polyline
+          points="10,60 75,55 110,10"
+          stroke="rgba(31,95,160,0.18)"
+          stroke-width="1.5"
+          fill="none"
+        />
+        <polyline
+          points="75,55 75,110"
+          stroke="rgba(31,95,160,0.15)"
+          stroke-width="1.5"
+          fill="none"
+        />
+      </svg>
+    </div>
+
+    <p class="sky-note">
+      Signing in is optional for the first 10 minutes of browsing — no rush.
+    </p>
+  </div>
+
+  <!-- RIGHT: form panel -->
+  <div class="panel-form">
+    <div class="form-box">
+
+      <!-- Headline -->
+      <div class="form-head">
+        <div class="form-brand-mark">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h1 class="form-title display">Sign in to Paper Plane</h1>
+      </div>
+      <p class="form-sub">We'll email you a one-click sign-in link. No password.</p>
+
+      <!-- ─── Sign-in form (default visible) ─── -->
+      <div id="signInForm">
+        <!-- Google -->
+        <a href="#" class="btn-google">
+          <!-- Google "G" logo -->
+          <svg class="google-logo" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            <path fill="none" d="M0 0h48v48H0z"/>
+          </svg>
+          Continue with Google
+        </a>
+
+        <!-- OR divider -->
+        <div class="or-divider">OR WITH EMAIL</div>
+
+        <!-- Email field -->
+        <div class="field">
+          <label for="emailInput">Email</label>
+          <input
+            id="emailInput"
+            type="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+          >
+        </div>
+
+        <!-- Send button -->
+        <button class="btn-send" id="sendBtn" type="button">
+          Send sign-in link
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <!-- Legal -->
+        <p class="legal">
+          By continuing, you agree we may email you account-related updates.<br>
+          We won't sell or share your address.
+        </p>
+      </div>
+
+      <!-- ─── "Check your inbox" confirmation state ─── -->
+      <div id="inboxState" class="inbox-state">
+        <div class="inbox-icon">
+          <!-- envelope with checkmark / plane icon -->
+          <svg viewBox="0 0 34 34" fill="none">
+            <rect x="3" y="9" width="28" height="19" rx="3" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="1.8"/>
+            <polyline points="3,9 17,20 31,9" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="26" cy="9" r="5" fill="#FFD93D"/>
+            <polyline points="23,9 25.5,11.5 29,7.5" stroke="var(--ink)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="inbox-title display">Check your inbox</div>
+        <p class="inbox-body">We've sent a sign-in link to:</p>
+        <span class="inbox-email" id="inboxEmail">you@example.com</span>
+        <p class="inbox-body" style="font-size:13px; color: var(--ink-muted);">
+          Click the link in the email to sign in — it's valid for 15 minutes.<br>
+          Check your spam folder if it doesn't arrive in a minute or two.
+        </p>
+        <button class="inbox-resend" id="resendBtn" style="margin-top: 20px;">Resend the link</button>
+      </div>
+
+      <!-- Back home -->
+      <a href="/" class="back-home">← Back home</a>
+
+    </div>
+  </div><!-- /panel-form -->
+
+</div><!-- /split -->
+
+<script>
+  const sendBtn   = document.getElementById('sendBtn');
+  const signForm  = document.getElementById('signInForm');
+  const inboxState = document.getElementById('inboxState');
+  const inboxEmail = document.getElementById('inboxEmail');
+  const resendBtn  = document.getElementById('resendBtn');
+  const emailInput = document.getElementById('emailInput');
+
+  function showInbox(email) {
+    inboxEmail.textContent = email || 'your email address';
+    signForm.style.display = 'none';
+    inboxState.style.display = 'flex';
+    resendBtn.textContent = 'Resend the link';
+    resendBtn.disabled = false;
+  }
+
+  sendBtn.addEventListener('click', () => {
+    const email = emailInput.value.trim();
+    if (!email || !email.includes('@')) {
+      emailInput.focus();
+      emailInput.style.borderColor = 'var(--coral)';
+      emailInput.style.boxShadow = '0 0 0 3px rgba(255,140,122,0.2)';
+      return;
+    }
+    emailInput.style.borderColor = '';
+    emailInput.style.boxShadow = '';
+    showInbox(email);
+  });
+
+  emailInput.addEventListener('input', () => {
+    emailInput.style.borderColor = '';
+    emailInput.style.boxShadow = '';
+  });
+
+  emailInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendBtn.click();
+  });
+
+  resendBtn.addEventListener('click', () => {
+    resendBtn.textContent = 'Link sent ✓';
+    resendBtn.disabled = true;
+    setTimeout(() => {
+      resendBtn.textContent = 'Resend the link';
+      resendBtn.disabled = false;
+    }, 8000);
+  });
+</script>
+</body>
+</html>

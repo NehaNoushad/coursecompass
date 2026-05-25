@@ -1,0 +1,731 @@
+<!-- design comment ─────────────────────────────────────────────────────────
+  Direction B — "Cockpit dashboard"
+
+  Layout intent:
+  · A compact identity strip at the very top (~80px, paper background, no
+    gradient) keeps the avatar + name + sign-out link on a single line so
+    the four panels below can own the page.
+  · A 2×2 panel grid fills the remaining viewport — each panel is a white
+    card with rounded-xl corners and a subtle drop shadow. Each panel has a
+    thin coloured left-border accent that acts as its visual identity at a
+    glance: coral for quiz, sky for profile, muted grey for shortlist (locked),
+    neutral for account settings.
+  · The top-left quiz panel gets the largest visual weight by spanning the
+    tallest natural height — it's the richest with content.
+  · The bottom-left shortlist panel carries a "Coming soon" lock badge and
+    blurred placeholder cards to hint at the future feature without faking it.
+  · Mobile (≤ 980px): grid collapses to a single column, panels stack in
+    reading order (quiz → profile → shortlist → account).
+  · The nav shows a coloured initial-circle avatar ("N") instead of
+    the "Sign in" text link.
+──────────────────────────────────────────────────────────────────────────── -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper Plane — My account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ─── DESIGN TOKENS (lifted from colleges/6prototype.html) ─── */
+  :root {
+    --sky-pale:    #E8F4FD;
+    --sky-bright:  #87CEEB;
+    --sky-mid:     #4FA3E0;
+    --sky-deep:    #2D7DD2;
+    --sky-anchor:  #1F5FA0;
+
+    --cloud:        #FFFFFF;
+    --cloud-shadow: rgba(31, 95, 160, 0.08);
+
+    --sun:          #FFD93D;
+    --sun-glow:     #FFE680;
+    --coral:        #FF8C7A;
+    --coral-deep:   #E66E5A;
+
+    --ink:        #0D2840;
+    --ink-soft:   #4A5A6E;
+    --ink-muted:  #8895A6;
+    --paper:      #FBFCFE;
+    --line:       rgba(31, 95, 160, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display { font-family: 'Sora', system-ui, sans-serif; }
+  .hand    { font-family: 'Caveat', cursive; }
+
+  /* ─── NAV ─── */
+  .nav {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 32px;
+    background: white;
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 2px 12px -4px rgba(31, 95, 160, 0.08);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px;
+    color: var(--ink); text-decoration: none;
+  }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
+    flex-shrink: 0;
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav-right { display: flex; align-items: center; gap: 28px; }
+  .nav-right a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px; font-weight: 500;
+  }
+  .nav-right a:hover { color: var(--sky-anchor); }
+  .nav-cta {
+    padding: 10px 18px;
+    background: var(--ink); color: white !important;
+    border-radius: 999px; font-weight: 600; font-size: 14px;
+  }
+  /* Signed-in avatar circle */
+  .nav-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--sky-mid), var(--sky-anchor));
+    display: grid; place-items: center;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 13px;
+    color: white;
+    box-shadow: 0 2px 8px rgba(31, 95, 160, 0.25);
+    cursor: pointer;
+    text-decoration: none !important;
+    flex-shrink: 0;
+  }
+
+  /* ─── COMPACT IDENTITY STRIP ─── */
+  .identityStrip {
+    max-width: 1120px; margin: 0 auto;
+    padding: 20px 32px 16px;
+    display: flex; align-items: center; gap: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .stripAvatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--sky-mid), var(--sky-anchor));
+    display: grid; place-items: center;
+    font-family: 'Sora', sans-serif;
+    font-weight: 800; font-size: 22px;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px var(--sky-pale), 0 4px 16px rgba(31, 95, 160, 0.2);
+  }
+  .stripName {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 17px;
+    color: var(--ink); line-height: 1.2;
+  }
+  .stripEmail {
+    font-size: 13px; color: var(--ink-muted);
+    margin-top: 1px;
+  }
+  .stripSignout {
+    margin-left: auto;
+    font-size: 13px; font-weight: 600;
+    color: var(--ink-muted);
+    text-decoration: none;
+    padding: 7px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .stripSignout:hover { color: var(--coral-deep); border-color: rgba(230, 110, 90, 0.3); }
+
+  /* ─── PANEL GRID ─── */
+  .gridWrap {
+    max-width: 1120px; margin: 0 auto;
+    padding: 28px 32px 80px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 20px;
+  }
+
+  /* ─── BASE PANEL ─── */
+  .panel {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    box-shadow: 0 4px 20px -8px rgba(31, 95, 160, 0.12);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .panelHead {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .panelAccent {
+    width: 4px;
+    border-radius: 2px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .panelTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 14px;
+    color: var(--ink);
+    letter-spacing: -0.2px;
+  }
+  .panelBody { padding: 20px 24px 24px; flex: 1; display: flex; flex-direction: column; }
+
+  /* ─── PANEL 1: QUIZ SUMMARY (top-left) ─── */
+  .panel-quiz {
+    /* sky-pale gradient corner accent */
+    position: relative;
+  }
+  .panel-quiz::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 120px; height: 120px;
+    background: radial-gradient(ellipse at top right, var(--sky-pale) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .panelAccent-coral { background: var(--coral); }
+  .quizDateRow {
+    font-size: 12px; color: var(--ink-muted);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .quizDateRow::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--coral);
+    flex-shrink: 0;
+  }
+  .quizResultRow {
+    margin-bottom: 14px;
+  }
+  .quizResultLabel {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 3px;
+  }
+  .quizResultValue {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+    line-height: 1.25;
+  }
+  .quizResultValue.coral { color: var(--coral-deep); }
+  .quizDivider {
+    height: 1px;
+    background: var(--line);
+    margin: 16px 0;
+  }
+  .quizBottom {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: auto;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .quizSeeResults {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--sky-deep); font-weight: 600; font-size: 14px;
+    text-decoration: none;
+    transition: gap 0.2s;
+  }
+  .quizSeeResults:hover { gap: 10px; }
+  .quizSeeResults svg { width: 13px; height: 13px; }
+  .quizAgainBtn {
+    padding: 7px 14px;
+    background: transparent;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 600;
+    color: var(--ink-soft); cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .quizAgainBtn:hover { border-color: var(--sky-mid); color: var(--sky-anchor); }
+
+  /* ─── PANEL 2: PROFILE (top-right) ─── */
+  .panelAccent-sky { background: var(--sky-mid); }
+  .profileThumb {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--sky-mid), var(--sky-anchor));
+    display: grid; place-items: center;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 15px;
+    color: white;
+    flex-shrink: 0;
+    margin-bottom: 16px;
+  }
+  .profileFieldRow {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .profileFieldRow:last-child { border-bottom: none; padding-bottom: 0; }
+  .profileFieldLabel {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--ink-muted); margin-bottom: 3px;
+  }
+  .profileFieldValueRow {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .profileFieldValue {
+    font-size: 14px; color: var(--ink); font-weight: 500;
+    flex: 1;
+  }
+  .profileFieldValue.muted { color: var(--ink-muted); font-weight: 400; }
+  .fieldBadge {
+    font-size: 10px; font-weight: 700;
+    color: var(--ink-muted);
+    background: var(--sky-pale);
+    border: 1px solid rgba(31, 95, 160, 0.14);
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .addPhoneLink {
+    font-size: 12px; font-weight: 700;
+    color: var(--sky-anchor);
+    text-decoration: none;
+    padding: 4px 10px;
+    background: var(--sky-pale);
+    border-radius: 999px;
+    transition: background 0.15s;
+  }
+  .addPhoneLink:hover { background: #d5ecfb; }
+
+  /* ─── PANEL 3: SHORTLIST LOCKED (bottom-left) ─── */
+  .panelAccent-grey { background: #c5cdd6; }
+  .lockedWrap {
+    position: relative;
+    flex: 1;
+    display: flex; flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
+  }
+  /* Blurred placeholder cards */
+  .fakeCard {
+    height: 64px;
+    background: var(--sky-pale);
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    filter: blur(2.5px);
+    opacity: 0.6;
+  }
+  .fakeCard:nth-child(2) { background: #fef5ea; }
+  .fakeCard:nth-child(3) { background: #fdf2f8; }
+  /* Lock overlay */
+  .lockOverlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px;
+    background: rgba(251, 252, 254, 0.7);
+    backdrop-filter: blur(1px);
+  }
+  .lockIcon {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: white;
+    border: 1.5px solid var(--line);
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px -4px rgba(31, 95, 160, 0.12);
+  }
+  .lockIcon svg { width: 20px; height: 20px; color: var(--ink-muted); }
+  .lockLabel {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 14px;
+    color: var(--ink);
+    text-align: center;
+  }
+  .lockSub {
+    font-size: 12px; color: var(--ink-muted);
+    text-align: center; max-width: 200px;
+    line-height: 1.5;
+  }
+  .lockBadge {
+    position: absolute; top: 0; right: 0;
+    padding: 3px 10px;
+    background: #e9eef4;
+    border: 1px solid #c5cdd6;
+    border-top: none; border-right: none;
+    border-radius: 0 0 0 10px;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  /* ─── PANEL 4: ACCOUNT & SETTINGS (bottom-right) ─── */
+  .panelAccent-neutral { background: #d1d9e2; }
+  .settingsList { flex: 1; display: flex; flex-direction: column; }
+  .settingRow {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    color: var(--ink-soft);
+    font-size: 14px; font-weight: 500;
+    transition: color 0.12s;
+    cursor: pointer;
+  }
+  .settingRow:last-child { border-bottom: none; padding-bottom: 0; }
+  .settingRow:hover { color: var(--ink); }
+  .settingRow.danger { color: #c0392b; }
+  .settingRow.danger:hover { color: #9b1c1c; }
+  .settingRowLeft { display: flex; align-items: center; gap: 10px; }
+  .settingDot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--line);
+    flex-shrink: 0;
+  }
+  .settingRow.danger .settingDot { background: rgba(192, 57, 43, 0.22); }
+  .settingRow svg { width: 13px; height: 13px; opacity: 0.4; flex-shrink: 0; }
+
+  /* ─── DELETE MODAL ─── */
+  .modalOverlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(13, 40, 64, 0.5);
+    backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modalOverlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 20px;
+    padding: 32px; max-width: 400px;
+    width: calc(100% - 32px);
+    box-shadow: 0 32px 80px -16px rgba(13, 40, 64, 0.35);
+  }
+  .modalTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 19px;
+    color: var(--ink); margin-bottom: 10px;
+  }
+  .modalBody {
+    color: var(--ink-soft); font-size: 14px;
+    line-height: 1.6; margin-bottom: 22px;
+  }
+  .modalActions { display: flex; gap: 10px; }
+  .btnCancel {
+    flex: 1; padding: 11px;
+    border: 1.5px solid var(--line); border-radius: 12px;
+    background: transparent; font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 600;
+    color: var(--ink-soft); cursor: pointer;
+  }
+  .btnDelete {
+    flex: 1; padding: 11px; border: none;
+    border-radius: 12px; background: #c0392b;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 600;
+    color: white; cursor: pointer;
+  }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    background: var(--ink);
+    color: rgba(255, 255, 255, 0.65);
+    padding: 40px 32px 32px;
+    margin-top: 0;
+  }
+  .footerInner { max-width: 1120px; margin: 0 auto; }
+  .footerTop {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 24px;
+  }
+  .footerBrand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 16px;
+    color: white;
+  }
+  .footerMark {
+    width: 26px; height: 26px;
+    background: var(--sky-deep);
+    border-radius: 50%;
+    display: grid; place-items: center;
+  }
+  .footerMark svg { width: 14px; height: 14px; }
+  .footerLinks { display: flex; gap: 32px; }
+  .footerLinks a {
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none; font-size: 13px; font-weight: 500;
+  }
+  .footerLinks a:hover { color: white; }
+  .footerDivider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 20px 0;
+  }
+  .footerBottom {
+    display: flex; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px;
+    color: rgba(255, 255, 255, 0.45); font-size: 12px;
+  }
+
+  /* ─── RESPONSIVE (≤ 980px) ─── */
+  @media (max-width: 980px) {
+    .nav { padding: 12px 20px; }
+    .nav-right { gap: 14px; }
+    .nav-right a.nav-link-hide { display: none; }
+
+    .identityStrip { padding: 16px 20px 14px; }
+
+    .gridWrap {
+      grid-template-columns: 1fr;
+      padding: 20px 20px 60px;
+      gap: 16px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── NAV (signed-in: avatar circle) ─── -->
+<nav class="nav">
+  <a href="/" class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span>Paper Plane</span>
+  </a>
+  <div class="nav-right">
+    <a href="/colleges" class="nav-link-hide">Colleges</a>
+    <a href="/courses" class="nav-link-hide">Courses</a>
+    <!-- Avatar circle (signed in) -->
+    <a href="#" class="nav-avatar" title="My account">N</a>
+    <a href="/quiz" class="nav-cta">Take the quiz</a>
+  </div>
+</nav>
+
+<!-- ─── COMPACT IDENTITY STRIP ─── -->
+<div class="identityStrip">
+  <div class="stripAvatar">N</div>
+  <div>
+    <div class="stripName">Neha</div>
+    <div class="stripEmail">neha.noushad@gmail.com</div>
+  </div>
+  <a href="#" class="stripSignout">Sign out</a>
+</div>
+
+<!-- ─── 2×2 PANEL GRID ─── -->
+<div class="gridWrap">
+
+  <!-- ─── PANEL 1: Quiz summary (top-left, coral accent) ─── -->
+  <div class="panel panel-quiz">
+    <div class="panelHead">
+      <span class="panelAccent panelAccent-coral"></span>
+      <span class="panelTitle display">Quiz summary</span>
+    </div>
+    <div class="panelBody">
+      <div class="quizDateRow">Taken 3 days ago · 22 May 2026</div>
+
+      <div class="quizResultRow">
+        <div class="quizResultLabel">Your top course</div>
+        <div class="quizResultValue coral">B.Tech Computer Science Engineering</div>
+      </div>
+
+      <div class="quizResultRow">
+        <div class="quizResultLabel">Your top college</div>
+        <div class="quizResultValue">Sacred Heart College Thevara</div>
+      </div>
+
+      <div class="quizDivider"></div>
+
+      <div class="quizBottom">
+        <a href="/quiz/results" class="quizSeeResults">
+          See full results
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="/quiz" class="quizAgainBtn">Retake quiz</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── PANEL 2: Profile (top-right, sky accent) ─── -->
+  <div class="panel">
+    <div class="panelHead">
+      <span class="panelAccent panelAccent-sky"></span>
+      <span class="panelTitle display">Profile</span>
+    </div>
+    <div class="panelBody">
+      <div class="profileThumb">N</div>
+
+      <div class="profileFieldRow">
+        <div class="profileFieldLabel">Email</div>
+        <div class="profileFieldValueRow">
+          <span class="profileFieldValue">neha.noushad@gmail.com</span>
+          <span class="fieldBadge">Read-only</span>
+        </div>
+      </div>
+
+      <div class="profileFieldRow">
+        <div class="profileFieldLabel">Phone</div>
+        <div class="profileFieldValueRow">
+          <span class="profileFieldValue muted">Not added</span>
+          <a href="#" class="addPhoneLink">+ Add phone</a>
+        </div>
+      </div>
+
+      <div class="profileFieldRow" style="border-bottom:none;padding-top:14px;">
+        <div style="font-size:12px;color:var(--ink-muted);line-height:1.5;">
+          Your phone is used only for OTP sign-in. We never share your details.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── PANEL 3: Shortlist locked (bottom-left, grey accent) ─── -->
+  <div class="panel" style="position:relative;">
+    <div class="lockBadge">Coming soon</div>
+    <div class="panelHead">
+      <span class="panelAccent panelAccent-grey"></span>
+      <span class="panelTitle display" style="color:var(--ink-muted);">My shortlist</span>
+    </div>
+    <div class="panelBody">
+      <div class="lockedWrap">
+        <!-- Blurred placeholder cards -->
+        <div class="fakeCard"></div>
+        <div class="fakeCard"></div>
+        <div class="fakeCard"></div>
+        <!-- Lock overlay -->
+        <div class="lockOverlay">
+          <div class="lockIcon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <div class="lockLabel">Save colleges you like</div>
+          <div class="lockSub">Compare shortlisted colleges side-by-side. Launching in Phase 4.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── PANEL 4: Account & settings (bottom-right, neutral accent) ─── -->
+  <div class="panel">
+    <div class="panelHead">
+      <span class="panelAccent panelAccent-neutral"></span>
+      <span class="panelTitle display">Account</span>
+    </div>
+    <div class="panelBody">
+      <div class="settingsList">
+
+        <a href="#" class="settingRow">
+          <span class="settingRowLeft">
+            <span class="settingDot"></span>
+            Email preferences
+          </span>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+
+        <a href="#" class="settingRow">
+          <span class="settingRowLeft">
+            <span class="settingDot"></span>
+            Privacy policy
+          </span>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+
+        <a href="#" class="settingRow">
+          <span class="settingRowLeft">
+            <span class="settingDot"></span>
+            Sign out
+          </span>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+
+        <a href="#" class="settingRow danger" id="deleteBtn">
+          <span class="settingRowLeft">
+            <span class="settingDot"></span>
+            Delete account
+          </span>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── FOOTER ─── -->
+<footer class="footer">
+  <div class="footerInner">
+    <div class="footerTop">
+      <div class="footerBrand">
+        <div class="footerMark">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Paper Plane
+      </div>
+      <div class="footerLinks">
+        <a href="/colleges">Colleges</a>
+        <a href="/courses">Courses</a>
+      </div>
+    </div>
+    <div class="footerDivider"></div>
+    <div class="footerBottom">
+      <span>Built in Kerala for Class 12 students.</span>
+      <span>© 2026 Paper Plane.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ─── DELETE CONFIRM MODAL ─── -->
+<div class="modalOverlay" id="deleteModal">
+  <div class="modal">
+    <div class="modalTitle display">Delete your account?</div>
+    <p class="modalBody">
+      This will permanently remove your quiz results and profile.
+      This cannot be undone.
+    </p>
+    <div class="modalActions">
+      <button class="btnCancel" id="cancelDelete">Cancel</button>
+      <button class="btnDelete">Yes, delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('deleteBtn').addEventListener('click', function(e) {
+    e.preventDefault();
+    document.getElementById('deleteModal').classList.add('open');
+  });
+  document.getElementById('cancelDelete').addEventListener('click', function() {
+    document.getElementById('deleteModal').classList.remove('open');
+  });
+  document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+</script>
+
+</body>
+</html>
