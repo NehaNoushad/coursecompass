@@ -189,7 +189,9 @@ export function SkyHero() {
       <View style={styles.heroInner}>
         <View style={styles.eyebrow}>
           <View style={styles.eyebrowDot} />
-          <Text style={styles.eyebrowText}>FOR KERALA 12TH-PASS STUDENTS</Text>
+          <Text style={styles.eyebrowText}>
+            {IS_NARROW ? 'FOR KERALA STUDENTS' : 'FOR KERALA 12TH-PASS STUDENTS'}
+          </Text>
         </View>
 
         <Text style={[styles.h1, { fontSize: HEADLINE_SIZE }]}>Look up.</Text>
