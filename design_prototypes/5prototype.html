@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper Plane — Browse colleges (Atlas)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ───────── DESIGN TOKENS (inherited from prototype 4) ─────────
+     Same sky palette as the home page so the catalogue feels like
+     the same product. The new bit for this layout is the *spatial*
+     framing: Kerala as a vertical strip of district bands. The
+     state's geography is essentially a long thin strip running N-S
+     along the Arabian Sea coast — 14 districts top to bottom —
+     so the abstracted map is just that strip turned into a clickable
+     navigator. The whole page is structured around "where", with
+     "what / which" as secondary filters. */
+  :root {
+    --sky-pale:    #E8F4FD;
+    --sky-bright:  #87CEEB;
+    --sky-mid:     #4FA3E0;
+    --sky-deep:    #2D7DD2;
+    --sky-anchor:  #1F5FA0;
+
+    --cloud:        #FFFFFF;
+    --cloud-shadow: rgba(31, 95, 160, 0.08);
+
+    --sun:          #FFD93D;
+    --sun-glow:     #FFE680;
+    --coral:        #FF8C7A;
+    --coral-deep:   #E66E5A;
+
+    --ink:        #0D2840;
+    --ink-soft:   #4A5A6E;
+    --ink-muted:  #8895A6;
+    --paper:      #FBFCFE;
+    --line:       rgba(31, 95, 160, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display { font-family: 'Sora', system-ui, sans-serif; }
+  .hand    { font-family: 'Caveat', cursive; }
+
+  /* ───────── HEADER (matches the home page treatment) ───────── */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 32px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav-right { display: flex; align-items: center; gap: 28px; }
+  .nav-right a { color: var(--ink-soft); text-decoration: none; font-size: 14px; font-weight: 500; }
+  .nav-right a:hover { color: var(--sky-deep); }
+  .nav-cta {
+    padding: 10px 18px;
+    background: var(--sky-deep); color: white;
+    border-radius: 999px; font-weight: 600; font-size: 14px;
+  }
+
+  /* ───────── PAGE HEADER ─────────
+     Tight strip below the nav: page title + the one-line description
+     + the search bar. No marketing copy, no big hero — the page is a
+     working tool, not a sales page. */
+  .pageHead {
+    max-width: 1320px; margin: 0 auto;
+    padding: 36px 32px 24px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+  }
+  .pageTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 44px;
+    line-height: 1;
+    letter-spacing: -1.5px;
+  }
+  .pageSub {
+    color: var(--ink-soft);
+    font-size: 15px;
+    margin-top: 8px;
+  }
+  .pageSub .hand {
+    color: var(--sky-deep);
+    font-size: 22px; line-height: 1; letter-spacing: 0;
+    transform: rotate(-3deg);
+    display: inline-block;
+    margin: 0 4px;
+  }
+  .searchWrap {
+    position: relative;
+    width: 320px;
+  }
+  .searchWrap svg {
+    position: absolute; left: 16px; top: 50%;
+    transform: translateY(-50%);
+    width: 18px; height: 18px;
+    color: var(--ink-muted);
+  }
+  .searchInput {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px 0 44px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: white;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .searchInput:focus {
+    border-color: var(--sky-deep);
+    box-shadow: 0 0 0 3px rgba(45, 125, 210, 0.15);
+  }
+
+  /* ───────── BODY GRID ─────────
+     Two-column working area: left is the atlas (Kerala as a vertical
+     district strip), right is the results. On narrow screens the
+     atlas collapses to a horizontally scrolling chip row.  */
+  .layout {
+    max-width: 1320px; margin: 0 auto;
+    padding: 0 32px 80px;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 32px;
+  }
+
+  /* ─── Left rail: Kerala atlas + chip filters ─── */
+  .atlas {
+    position: sticky; top: 88px;
+    align-self: start;
+  }
+  .atlasHead {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .atlasMap {
+    background: linear-gradient(180deg, var(--sky-pale) 0%, white 100%);
+    border-radius: 24px;
+    padding: 20px 16px;
+    border: 1px solid var(--line);
+    position: relative;
+  }
+  /* The "map" is just an SVG paper-plane-trail arc on the left edge
+     of the column, with district bands stacked along it. It's not a
+     real Kerala outline — that would be more literal than helpful
+     at this size. The arc serves the same purpose: signals "this is
+     ordered N → S, geographically". */
+  .atlasArc {
+    position: absolute;
+    left: 22px; top: 28px; bottom: 28px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--sky-deep) 0%, var(--coral) 100%);
+    border-radius: 1px;
+  }
+  .district {
+    position: relative;
+    display: flex; align-items: center;
+    padding: 6px 8px 6px 28px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .district::before {
+    content: '';
+    position: absolute; left: 14px; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid var(--sky-mid);
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  }
+  .district:hover { color: var(--ink); background: rgba(255,255,255,0.6); }
+  .district.active {
+    background: white;
+    color: var(--sky-anchor);
+    font-weight: 600;
+  }
+  .district.active::before {
+    background: var(--sky-deep);
+    border-color: var(--sky-deep);
+    transform: translate(-50%, -50%) scale(1.2);
+    box-shadow: 0 0 0 4px rgba(45, 125, 210, 0.15);
+  }
+  .district .count {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .district.active .count { color: var(--sky-deep); }
+
+  /* "Clear" + "All Kerala" row at the bottom of the atlas. */
+  .atlasFoot {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between;
+    font-size: 13px;
+  }
+  .atlasFoot a {
+    color: var(--sky-deep);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .atlasFoot a.muted { color: var(--ink-muted); font-weight: 400; }
+
+  /* Chip filters below the atlas: Course / Type / Fees as chip groups. */
+  .chipGroup {
+    margin-top: 32px;
+  }
+  .chipLabel {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .chipRow {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .chip {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: white;
+    font-size: 13px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--sky-mid); color: var(--ink); }
+  .chip.active {
+    background: var(--sky-deep);
+    border-color: var(--sky-deep);
+    color: white;
+    font-weight: 600;
+  }
+
+  /* ─── Right side: results ─── */
+  .results {
+    min-width: 0;
+  }
+  .resultsHead {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .resultsCount {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+  .resultsCount em {
+    font-style: normal;
+    color: var(--sky-deep);
+  }
+  .resultsHint {
+    color: var(--ink-muted);
+    font-size: 14px;
+  }
+  .sortPill {
+    margin-left: auto;
+    padding: 8px 14px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* ─── College tile ─── */
+  .tileGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+  .tile {
+    position: relative;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 20px 20px 16px;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px -8px rgba(31, 95, 160, 0.18);
+    border-color: var(--sky-mid);
+  }
+  /* District-coloured ribbon on the top edge of every tile.
+     The colour fades from a warm coral at the south (Thiruvananthapuram)
+     to deep sky at the north (Kasaragod), so a glance across the grid
+     reads as geography. */
+  .tile::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--tile-accent, var(--sky-mid));
+  }
+  .tileDistrict {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--tile-accent, var(--sky-deep));
+  }
+  .tileName {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 19px;
+    line-height: 1.25;
+    margin-top: 6px;
+    letter-spacing: -0.3px;
+  }
+  .tileMeta {
+    margin-top: 14px;
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .metaPill {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .metaPill.govt   { background: rgba(45, 125, 210, 0.1);  color: var(--sky-anchor); }
+  .metaPill.aided  { background: rgba(255, 217, 61, 0.18); color: #6a5300; }
+  .metaPill.priv   { background: rgba(255, 140, 122, 0.15); color: var(--coral-deep); }
+  .metaPill.fee-low    { background: rgba(99, 198, 130, 0.15); color: #2f7a4d; }
+  .metaPill.fee-mid    { background: rgba(255, 217, 61, 0.18); color: #6a5300; }
+  .metaPill.fee-high   { background: rgba(255, 140, 122, 0.15); color: var(--coral-deep); }
+  .tileTags {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    line-height: 1.4;
+  }
+
+  /* ─── Loading / empty states ─── */
+  .empty {
+    grid-column: 1 / -1;
+    padding: 60px 40px;
+    text-align: center;
+    background: var(--sky-pale);
+    border-radius: 24px;
+  }
+  .empty .display { font-size: 22px; }
+  .empty p { color: var(--ink-soft); margin: 8px 0 16px; }
+  .empty button {
+    padding: 12px 22px;
+    background: var(--sky-deep);
+    color: white; border: none;
+    border-radius: 999px;
+    font-weight: 600; font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 900px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+    .atlas {
+      position: static;
+      margin-bottom: 8px;
+    }
+    .pageHead {
+      grid-template-columns: 1fr;
+    }
+    .searchWrap { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span>Paper Plane</span>
+  </div>
+  <div class="nav-right">
+    <a href="#">Colleges</a>
+    <a href="#">Courses</a>
+    <a href="#" style="color: var(--sky-deep); font-weight: 600;">Sign in</a>
+    <a href="#" class="nav-cta">Take the quiz</a>
+  </div>
+</nav>
+
+<header class="pageHead">
+  <div>
+    <h1 class="pageTitle display">Browse 394 colleges</h1>
+    <p class="pageSub">
+      Every Kerala college, sorted by where it is.
+      <span class="hand">↓</span> pick a district to start.
+    </p>
+  </div>
+  <div class="searchWrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="7"/>
+      <line x1="21" y1="21" x2="16" y2="16" stroke-linecap="round"/>
+    </svg>
+    <input class="searchInput" placeholder="Search by name…">
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ─── Atlas (left rail) ─── -->
+  <aside class="atlas">
+    <div class="atlasHead">Kerala — N to S</div>
+    <div class="atlasMap">
+      <div class="atlasArc"></div>
+      <div class="district"><span>Kasaragod</span><span class="count">9</span></div>
+      <div class="district"><span>Kannur</span><span class="count">22</span></div>
+      <div class="district"><span>Wayanad</span><span class="count">7</span></div>
+      <div class="district"><span>Kozhikode</span><span class="count">31</span></div>
+      <div class="district"><span>Malappuram</span><span class="count">28</span></div>
+      <div class="district"><span>Palakkad</span><span class="count">26</span></div>
+      <div class="district active"><span>Thrissur</span><span class="count">34</span></div>
+      <div class="district"><span>Ernakulam</span><span class="count">52</span></div>
+      <div class="district"><span>Idukki</span><span class="count">14</span></div>
+      <div class="district"><span>Kottayam</span><span class="count">28</span></div>
+      <div class="district"><span>Alappuzha</span><span class="count">19</span></div>
+      <div class="district"><span>Pathanamthitta</span><span class="count">18</span></div>
+      <div class="district"><span>Kollam</span><span class="count">26</span></div>
+      <div class="district"><span>Thiruvananthapuram</span><span class="count">40</span></div>
+    </div>
+    <div class="atlasFoot">
+      <a href="#">All Kerala</a>
+      <a href="#" class="muted">Clear</a>
+    </div>
+
+    <div class="chipGroup">
+      <div class="chipLabel">Course category</div>
+      <div class="chipRow">
+        <button class="chip active">All</button>
+        <button class="chip">Engineering</button>
+        <button class="chip">Arts &amp; Humanities</button>
+        <button class="chip">Commerce</button>
+        <button class="chip">Sciences</button>
+        <button class="chip">Medical</button>
+        <button class="chip">Law</button>
+        <button class="chip">Design</button>
+      </div>
+    </div>
+
+    <div class="chipGroup">
+      <div class="chipLabel">Type</div>
+      <div class="chipRow">
+        <button class="chip active">Any</button>
+        <button class="chip">Government</button>
+        <button class="chip">Aided</button>
+        <button class="chip">Private</button>
+      </div>
+    </div>
+
+    <div class="chipGroup">
+      <div class="chipLabel">Fees</div>
+      <div class="chipRow">
+        <button class="chip active">Any</button>
+        <button class="chip">Low</button>
+        <button class="chip">Medium</button>
+        <button class="chip">High</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Results (right pane) ─── -->
+  <section class="results">
+    <div class="resultsHead">
+      <div class="resultsCount display"><em>34</em> in Thrissur</div>
+      <div class="resultsHint">— pick a tile to see programmes &amp; fees</div>
+      <button class="sortPill">
+        Sort: NIRF rank
+        <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="tileGrid">
+
+      <!-- Each tile sets --tile-accent to a colour mapped to its district's
+           position on the N→S arc, so the strip of tiles reads as a
+           geographic gradient. -->
+
+      <div class="tile" style="--tile-accent: var(--sky-deep)">
+        <div class="tileDistrict">Thrissur · Aided</div>
+        <div class="tileName">St. Thomas College Thrissur</div>
+        <div class="tileMeta">
+          <span class="metaPill aided">Aided</span>
+          <span class="metaPill fee-mid">Medium fees</span>
+        </div>
+        <div class="tileTags">Arts &amp; Humanities · Pure Sciences · Commerce · Education</div>
+      </div>
+
+      <div class="tile" style="--tile-accent: var(--sky-deep)">
+        <div class="tileDistrict">Thrissur · Government</div>
+        <div class="tileName">Government Engineering College Thrissur</div>
+        <div class="tileMeta">
+          <span class="metaPill govt">Government</span>
+          <span class="metaPill fee-low">Low fees</span>
+        </div>
+        <div class="tileTags">Engineering &amp; Technology (CSE, ECE, ME, Civil, EEE)</div>
+      </div>
+
+      <div class="tile" style="--tile-accent: var(--sky-deep)">
+        <div class="tileDistrict">Thrissur · Aided</div>
+        <div class="tileName">Sree Kerala Varma College</div>
+        <div class="tileMeta">
+          <span class="metaPill aided">Aided</span>
+          <span class="metaPill fee-mid">Medium fees</span>
+        </div>
+        <div class="tileTags">Arts &amp; Humanities · Pure Sciences · Commerce</div>
+      </div>
+
+      <div class="tile" style="--tile-accent: var(--sky-deep)">
+        <div class="tileDistrict">Thrissur · Government</div>
+        <div class="tileName">Vimala College Thrissur</div>
+        <div class="tileMeta">
+          <span class="metaPill govt">Government</span>
+          <span class="metaPill fee-low">Low fees</span>
+        </div>
+        <div class="tileTags">Arts &amp; Humanities · Pure Sciences · Home Science</div>
+      </div>
+
+      <div class="tile" style="--tile-accent: var(--sky-deep)">
+        <div class="tileDistrict">Thrissur · Private</div>
+        <div class="tileName">Jubilee Mission Medical College</div>
+        <div class="tileMeta">
+          <span class="metaPill priv">Private</span>
+          <span class="metaPill fee-high">High fees</span>
+        </div>
+        <div class="tileTags">Medical (MBBS) · Allied Health · Nursing</div>
+      </div>
+
+      <div class="tile" style="--tile-accent: var(--sky-deep)">
+        <div class="tileDistrict">Thrissur · Aided</div>
+        <div class="tileName">Christ College Irinjalakuda</div>
+        <div class="tileMeta">
+          <span class="metaPill aided">Aided</span>
+          <span class="metaPill fee-mid">Medium fees</span>
+        </div>
+        <div class="tileTags">Arts &amp; Humanities · Pure Sciences · Commerce · Management</div>
+      </div>
+
+      <div class="tile" style="--tile-accent: var(--sky-deep)">
+        <div class="tileDistrict">Thrissur · Government</div>
+        <div class="tileName">Government Law College Thrissur</div>
+        <div class="tileMeta">
+          <span class="metaPill govt">Government</span>
+          <span class="metaPill fee-low">Low fees</span>
+        </div>
+        <div class="tileTags">Law (LL.B., 5-yr B.A.LL.B.)</div>
+      </div>
+
+      <div class="tile" style="--tile-accent: var(--sky-deep)">
+        <div class="tileDistrict">Thrissur · Private</div>
+        <div class="tileName">Vidya Academy of Science &amp; Technology</div>
+        <div class="tileMeta">
+          <span class="metaPill priv">Private</span>
+          <span class="metaPill fee-high">High fees</span>
+        </div>
+        <div class="tileTags">Engineering &amp; Technology · Management</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // Small interactions to make the prototype feel alive.
+
+  // Highlight a district when clicked.
+  document.querySelectorAll('.district').forEach(d => {
+    d.addEventListener('click', () => {
+      document.querySelectorAll('.district').forEach(x => x.classList.remove('active'));
+      d.classList.add('active');
+      const name = d.querySelector('span').textContent;
+      const count = d.querySelector('.count').textContent;
+      document.querySelector('.resultsCount').innerHTML = `<em>${count}</em> in ${name}`;
+    });
+  });
+
+  // Toggle chip filters within a group.
+  document.querySelectorAll('.chipGroup').forEach(group => {
+    group.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        group.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

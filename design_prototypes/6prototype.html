@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper Plane — Browse colleges (Editorial)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* ───────── DESIGN TOKENS (inherited from prototype 4) ─────────
+     Same sky palette as the home page. This prototype rethinks the
+     layout the other way from #5 (which goes spatial): here the
+     catalogue is an editorial spread. A short sky-gradient hero strip
+     at the top, a sticky filter panel on the left, and a magazine-
+     style grid of college cards on the right — each with its own
+     coloured gradient header. The page reads as content, not a tool. */
+  :root {
+    --sky-pale:    #E8F4FD;
+    --sky-bright:  #87CEEB;
+    --sky-mid:     #4FA3E0;
+    --sky-deep:    #2D7DD2;
+    --sky-anchor:  #1F5FA0;
+
+    --cloud:        #FFFFFF;
+    --cloud-shadow: rgba(31, 95, 160, 0.08);
+
+    --sun:          #FFD93D;
+    --sun-glow:     #FFE680;
+    --coral:        #FF8C7A;
+    --coral-deep:   #E66E5A;
+
+    --ink:        #0D2840;
+    --ink-soft:   #4A5A6E;
+    --ink-muted:  #8895A6;
+    --paper:      #FBFCFE;
+    --line:       rgba(31, 95, 160, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display { font-family: 'Sora', system-ui, sans-serif; }
+  .hand    { font-family: 'Caveat', cursive; }
+
+  /* ───────── NAV (sits on the sky hero) ───────── */
+  .nav {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink); }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--sky-bright), var(--sky-deep));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 16px rgba(45, 125, 210, 0.3);
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav-right { display: flex; align-items: center; gap: 28px; }
+  .nav-right a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px; font-weight: 500;
+  }
+  .nav-right a:hover { color: var(--sky-anchor); }
+  .nav-cta {
+    padding: 10px 18px;
+    background: var(--ink); color: white;
+    border-radius: 999px; font-weight: 600; font-size: 14px;
+  }
+
+  /* ───────── HERO STRIP ─────────
+     Short — just enough to set the scene and carry the brand. Not a
+     marketing hero. Sky gradient with two or three cloud puffs, the
+     title in display type with a handwritten qualifier and a coral
+     accent on the count. */
+  .hero {
+    position: relative;
+    min-height: 320px;
+    padding: 100px 32px 64px;
+    background: linear-gradient(180deg, var(--sky-bright) 0%, var(--sky-mid) 100%);
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute; inset: auto 0 0 0;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--paper));
+    pointer-events: none;
+  }
+  .heroInner {
+    max-width: 1320px; margin: 0 auto;
+    position: relative; z-index: 1;
+  }
+  .heroEyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--ink);
+    margin-bottom: 18px;
+  }
+  .heroEyebrow::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--coral);
+  }
+  .heroTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 64px;
+    line-height: 1;
+    letter-spacing: -2.5px;
+    color: var(--ink);
+    max-width: 720px;
+  }
+  .heroTitle em {
+    font-style: normal;
+    color: var(--coral);
+  }
+  .heroSub {
+    margin-top: 20px;
+    color: var(--ink-soft);
+    font-size: 17px;
+    max-width: 540px;
+  }
+  .heroSub .hand {
+    color: var(--sky-anchor);
+    font-size: 24px; line-height: 1;
+    display: inline-block;
+    transform: rotate(-3deg);
+    margin: 0 3px;
+  }
+  .cloud {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.9;
+  }
+  .cloud svg { width: 100%; height: 100%; }
+  .cloud-1 { width: 260px; height: 100px; top: 30px; right: 5%; opacity: 0.85; }
+  .cloud-2 { width: 180px; height: 70px; bottom: 30%; right: 25%; opacity: 0.7; }
+  .cloud-3 { width: 220px; height: 85px; bottom: -10px; left: -2%; opacity: 0.6; }
+
+  /* ───────── LAYOUT (sticky sidebar + grid) ─────────
+     The sidebar floats up over the bottom of the sky hero (negative
+     top margin) so the page feels stitched together rather than a
+     hero + a separate body. */
+  .layout {
+    max-width: 1320px; margin: -28px auto 80px;
+    padding: 0 32px;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+    position: relative; z-index: 2;
+  }
+
+  /* ─── Sidebar ─── */
+  .sidebar {
+    position: sticky; top: 24px;
+    align-self: start;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 12px 32px -16px rgba(31, 95, 160, 0.18);
+  }
+  .sidebarHead {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 20px;
+  }
+  .sidebarTitle {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.3px;
+  }
+  .sidebarClear {
+    background: none; border: 0;
+    color: var(--sky-deep);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  .sidebarSearch {
+    width: 100%;
+    height: 42px;
+    padding: 0 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--paper);
+    font-family: inherit; font-size: 14px;
+    outline: none;
+    margin-bottom: 24px;
+  }
+  .sidebarSearch:focus {
+    border-color: var(--sky-deep);
+    background: white;
+  }
+  .filterSection { margin-bottom: 24px; }
+  .filterSection:last-child { margin-bottom: 0; }
+  .filterLabel {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  /* Small "estimated / approx." pill that sits next to a filter label
+     when the data it filters on isn't precise. Used on the Fee band
+     filter — exact per-college fees aren't reliably public, so the
+     bands are a rough guide, not a quote. */
+  .filterBadge {
+    text-transform: none;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  .filterNote {
+    color: var(--ink-muted);
+    font-size: 12px;
+    line-height: 1.4;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--paper);
+    border-radius: 8px;
+    border-left: 2px solid var(--line);
+  }
+  .filterList { display: flex; flex-direction: column; gap: 4px; }
+  .filterRow {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .filterRow:hover { background: var(--sky-pale); color: var(--ink); }
+  .filterRow.active { background: var(--sky-pale); color: var(--sky-anchor); font-weight: 600; }
+  .filterRow .dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--ink-muted);
+    flex-shrink: 0;
+  }
+  .filterRow.active .dot {
+    border-color: var(--sky-deep);
+    background: var(--sky-deep);
+    box-shadow: inset 0 0 0 3px white;
+  }
+  .filterRow .pill {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--ink-muted);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 1px 8px;
+    border-radius: 999px;
+  }
+  .filterRow.active .pill {
+    color: var(--sky-deep);
+    border-color: var(--sky-deep);
+    background: white;
+  }
+
+  /* Multi-select chip group for district */
+  .districtChips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dChip {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: white;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .dChip:hover { border-color: var(--sky-mid); }
+  .dChip.active {
+    background: var(--sky-deep);
+    border-color: var(--sky-deep);
+    color: white;
+    font-weight: 600;
+  }
+
+  /* ─── Right side: results ─── */
+  .results { min-width: 0; }
+  .resultsHead {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 12px 0 24px;
+  }
+  .resultsCount {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.3px;
+  }
+  .resultsCount em {
+    font-style: normal;
+    color: var(--sky-deep);
+  }
+  .resultsHint { color: var(--ink-muted); font-size: 14px; }
+  .sortPill {
+    margin-left: auto;
+    padding: 8px 14px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* ─── Magazine card ─── */
+  .cardGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    position: relative;
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px -6px rgba(31, 95, 160, 0.15);
+    transition: transform 0.25s, box-shadow 0.25s;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -12px rgba(31, 95, 160, 0.25);
+  }
+  /* The header is a gradient strip in the card's accent colour. Each
+     college gets a colour by district / type so the grid reads as a
+     watercolour map at a glance. Decorative cloud puffs in the corner. */
+  .cardHeader {
+    position: relative;
+    height: 140px;
+    background: var(--card-gradient, linear-gradient(135deg, var(--sky-bright), var(--sky-deep)));
+    padding: 20px;
+    overflow: hidden;
+  }
+  .cardHeader::after {
+    content: '';
+    position: absolute;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    bottom: -50px; right: -50px;
+  }
+  .cardHeader::before {
+    content: '';
+    position: absolute;
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    top: 20px; right: 60px;
+  }
+  .cardDistrict {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink);
+    position: relative; z-index: 1;
+  }
+  .cardBody {
+    padding: 20px 22px 22px;
+    display: flex; flex-direction: column;
+    flex: 1;
+  }
+  .cardName {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 21px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+  }
+  .cardTagline {
+    margin-top: 6px;
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .cardStats {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px dashed var(--line);
+    display: flex; justify-content: space-between;
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+  .cardStats div { text-align: center; flex: 1; }
+  .cardStats strong {
+    display: block;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+  }
+  .cardCta {
+    margin-top: 14px;
+    color: var(--sky-deep);
+    font-weight: 600;
+    font-size: 14px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .cardCta svg {
+    width: 14px; height: 14px;
+    transition: transform 0.2s;
+  }
+  .card:hover .cardCta svg { transform: translateX(4px); }
+
+  /* ───────── FOOTER ─────────
+     Dark navy slab matching the home page's site-footer treatment.
+     Brand mark + Sora wordmark on the left, the two primary nav
+     links on the right, then a thin divider, then a "built in Kerala"
+     + copyright row. The grid above ends at a fade, then this slab
+     starts — gives the page a deliberate close. */
+  .footer {
+    background: var(--ink);
+    color: rgba(255, 255, 255, 0.65);
+    padding: 40px 32px 32px;
+    margin-top: 40px;
+  }
+  .footerInner {
+    max-width: 1320px; margin: 0 auto;
+  }
+  .footerTop {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 24px;
+  }
+  .footerBrand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700; font-size: 16px;
+    color: white;
+  }
+  .footerMark {
+    width: 26px; height: 26px;
+    background: var(--sky-deep);
+    border-radius: 50%;
+    display: grid; place-items: center;
+  }
+  .footerMark svg { width: 14px; height: 14px; }
+  .footerLinks {
+    display: flex; gap: 32px;
+  }
+  .footerLinks a {
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .footerLinks a:hover { color: white; }
+  .footerDivider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 20px 0;
+  }
+  .footerBottom {
+    display: flex; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 12px;
+  }
+
+  @media (max-width: 980px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .heroTitle { font-size: 44px; letter-spacing: -1.5px; }
+    .hero { padding-top: 90px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span>Paper Plane</span>
+  </div>
+  <div class="nav-right">
+    <a href="#" style="color: var(--ink); font-weight: 600;">Colleges</a>
+    <a href="#">Courses</a>
+    <a href="#" style="color: var(--sky-anchor); font-weight: 600;">Sign in</a>
+    <a href="#" class="nav-cta">Take the quiz</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="cloud cloud-1">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+  <div class="cloud cloud-2">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+  <div class="cloud cloud-3">
+    <svg viewBox="0 0 240 100"><ellipse cx="60" cy="65" rx="50" ry="32" fill="white"/><ellipse cx="115" cy="50" rx="55" ry="38" fill="white"/><ellipse cx="170" cy="60" rx="45" ry="32" fill="white"/></svg>
+  </div>
+
+  <div class="heroInner">
+    <div class="heroEyebrow">EVERY KERALA COLLEGE, IN ONE PLACE</div>
+    <h1 class="heroTitle display">Browse <em>394</em> colleges.</h1>
+    <p class="heroSub">
+      Filter by district, course, fees, type. <span class="hand">or →</span>
+      take the 6-question quiz and we'll narrow it for you.
+    </p>
+  </div>
+</section>
+
+<div class="layout">
+
+  <!-- ─── Sidebar (sticky, left) ─── -->
+  <aside class="sidebar">
+    <div class="sidebarHead">
+      <span class="sidebarTitle">Filters</span>
+      <button class="sidebarClear">Clear</button>
+    </div>
+
+    <input class="sidebarSearch" placeholder="Search by name…">
+
+    <div class="filterSection">
+      <div class="filterLabel">Course category</div>
+      <div class="filterList">
+        <div class="filterRow active">
+          <span class="dot"></span><span>All courses</span><span class="pill">394</span>
+        </div>
+        <div class="filterRow">
+          <span class="dot"></span><span>Engineering</span><span class="pill">112</span>
+        </div>
+        <div class="filterRow">
+          <span class="dot"></span><span>Arts &amp; Humanities</span><span class="pill">98</span>
+        </div>
+        <div class="filterRow">
+          <span class="dot"></span><span>Commerce</span><span class="pill">76</span>
+        </div>
+        <div class="filterRow">
+          <span class="dot"></span><span>Pure Sciences</span><span class="pill">54</span>
+        </div>
+        <div class="filterRow">
+          <span class="dot"></span><span>Medical</span><span class="pill">22</span>
+        </div>
+        <div class="filterRow">
+          <span class="dot"></span><span>Law</span><span class="pill">9</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filterSection">
+      <div class="filterLabel">District (pick any)</div>
+      <div class="districtChips">
+        <button class="dChip active">Ernakulam</button>
+        <button class="dChip">Thiruvananthapuram</button>
+        <button class="dChip">Kozhikode</button>
+        <button class="dChip">Thrissur</button>
+        <button class="dChip">Kollam</button>
+        <button class="dChip">Kannur</button>
+        <button class="dChip">+ 8 more</button>
+      </div>
+    </div>
+
+    <div class="filterSection">
+      <div class="filterLabel">Type</div>
+      <div class="filterList">
+        <div class="filterRow active"><span class="dot"></span><span>Any</span></div>
+        <div class="filterRow"><span class="dot"></span><span>Government</span></div>
+        <div class="filterRow"><span class="dot"></span><span>Aided</span></div>
+        <div class="filterRow"><span class="dot"></span><span>Private</span></div>
+      </div>
+    </div>
+
+    <div class="filterSection">
+      <div class="filterLabel">
+        Fee band
+        <span class="filterBadge">Estimated</span>
+      </div>
+      <div class="filterList">
+        <div class="filterRow active"><span class="dot"></span><span>Any</span></div>
+        <div class="filterRow"><span class="dot"></span><span>Low</span></div>
+        <div class="filterRow"><span class="dot"></span><span>Medium</span></div>
+        <div class="filterRow"><span class="dot"></span><span>High</span></div>
+      </div>
+      <p class="filterNote">
+        Real per-college fees aren't always public — bands are a rough
+        guide, not a quote.
+      </p>
+    </div>
+  </aside>
+
+  <!-- ─── Magazine grid ─── -->
+  <section class="results">
+    <div class="resultsHead">
+      <span class="resultsCount display"><em>52</em> colleges in Ernakulam</span>
+      <span class="resultsHint">— matching your filters</span>
+      <button class="sortPill">
+        Sort: Best match
+        <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="cardGrid">
+
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #87CEEB 0%, #2D7DD2 100%)">
+        <div class="cardHeader">
+          <span class="cardDistrict">Ernakulam · Government</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">Cochin University of Science &amp; Technology</div>
+          <div class="cardTagline">Research-heavy autonomous university with a strong B.Tech CSE / ECE programme and one of India's premier marine engineering schools.</div>
+          <div class="cardStats">
+            <div><strong>28</strong>courses</div>
+            <div><strong>2,400</strong>seats</div>
+            <div><strong>Low</strong>fees</div>
+          </div>
+          <div class="cardCta">
+            View college
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #FFD93D 0%, #FF8C7A 100%)">
+        <div class="cardHeader">
+          <span class="cardDistrict">Ernakulam · Aided</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">St. Teresa's College Ernakulam</div>
+          <div class="cardTagline">100-year-old women's college on Marine Drive — long-running Commerce, English Lit and Psychology streams; strong placement record.</div>
+          <div class="cardStats">
+            <div><strong>22</strong>courses</div>
+            <div><strong>1,800</strong>seats</div>
+            <div><strong>Medium</strong>fees</div>
+          </div>
+          <div class="cardCta">
+            View college
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #4FA3E0 0%, #1F5FA0 100%)">
+        <div class="cardHeader">
+          <span class="cardDistrict">Ernakulam · Aided</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">Sacred Heart College Thevara</div>
+          <div class="cardTagline">Autonomous arts &amp; sciences college that's a regular feature in the NIRF top 50 — known for English, Economics, Maths and Physics.</div>
+          <div class="cardStats">
+            <div><strong>26</strong>courses</div>
+            <div><strong>2,100</strong>seats</div>
+            <div><strong>Medium</strong>fees</div>
+          </div>
+          <div class="cardCta">
+            View college
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #FF8C7A 0%, #E66E5A 100%)">
+        <div class="cardHeader">
+          <span class="cardDistrict">Ernakulam · Private</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">Rajagiri College of Social Sciences</div>
+          <div class="cardTagline">Strong MBA and Social Work programmes; well-known for placement consultancies, with a sprawling Kalamassery campus.</div>
+          <div class="cardStats">
+            <div><strong>14</strong>courses</div>
+            <div><strong>1,200</strong>seats</div>
+            <div><strong>High</strong>fees</div>
+          </div>
+          <div class="cardCta">
+            View college
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #87CEEB 0%, #4FA3E0 100%)">
+        <div class="cardHeader">
+          <span class="cardDistrict">Ernakulam · Government</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">Maharaja's College Ernakulam</div>
+          <div class="cardTagline">Government autonomous arts college with a 145-year history; offers a sweep of Arts and Sciences UG and PG programmes.</div>
+          <div class="cardStats">
+            <div><strong>32</strong>courses</div>
+            <div><strong>2,800</strong>seats</div>
+            <div><strong>Low</strong>fees</div>
+          </div>
+          <div class="cardCta">
+            View college
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="--card-gradient: linear-gradient(135deg, #2D7DD2 0%, #1F5FA0 100%)">
+        <div class="cardHeader">
+          <span class="cardDistrict">Ernakulam · Aided</span>
+        </div>
+        <div class="cardBody">
+          <div class="cardName">St. Albert's College Ernakulam</div>
+          <div class="cardTagline">Long-standing aided arts &amp; sciences college near MG Road — Commerce, Mathematics and Economics among its strongest departments.</div>
+          <div class="cardStats">
+            <div><strong>18</strong>courses</div>
+            <div><strong>1,500</strong>seats</div>
+            <div><strong>Medium</strong>fees</div>
+          </div>
+          <div class="cardCta">
+            View college
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer class="footer">
+  <div class="footerInner">
+    <div class="footerTop">
+      <div class="footerBrand">
+        <div class="footerMark">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Paper Plane
+      </div>
+      <div class="footerLinks">
+        <a href="#">Colleges</a>
+        <a href="#">Courses</a>
+      </div>
+    </div>
+    <div class="footerDivider"></div>
+    <div class="footerBottom">
+      <span>Built in Kerala for Class 12 students.</span>
+      <span>© 2026 Paper Plane.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Toggle filterRow selection per section.
+  document.querySelectorAll('.filterSection').forEach(section => {
+    const rows = section.querySelectorAll('.filterRow');
+    rows.forEach(row => {
+      row.addEventListener('click', () => {
+        rows.forEach(r => r.classList.remove('active'));
+        row.classList.add('active');
+      });
+    });
+  });
+
+  // District chips are multi-select.
+  document.querySelectorAll('.dChip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+
+  // Clear-all
+  document.querySelector('.sidebarClear').addEventListener('click', () => {
+    document.querySelectorAll('.dChip.active').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.filterSection').forEach(s => {
+      s.querySelectorAll('.filterRow').forEach((r, i) => r.classList.toggle('active', i === 0));
+    });
+  });
+</script>
+
+</body>
+</html>
