@@ -88,8 +88,7 @@ export function SkyFeatures() {
     <View style={styles.section}>
       <LinearGradient
         colors={[colors.background, colors.skyPale]}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}
       />
       <View style={styles.inner}>
         <Text style={styles.eyebrow}>WHAT YOU CAN DO HERE</Text>
@@ -98,7 +97,7 @@ export function SkyFeatures() {
         <View style={styles.grid}>
           {FEATURES.map((feature) => (
             <View key={feature.title} style={styles.card}>
-              <View style={styles.cornerPuff} pointerEvents="none" />
+              <View style={styles.cornerPuff} />
               <View style={styles.iconWrap}>
                 <LinearGradient
                   colors={feature.iconGradient}
@@ -165,10 +164,8 @@ const styles = StyleSheet.create({
     padding: spacing.x2l,
     overflow: 'hidden',
     // Soft shadow approximating the prototype's `0 10px 40px -10px rgba(31, 95, 160, 0.15)`
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity.
+    boxShadow: '0px 10px 24px rgba(31, 95, 160, 0.12)',
     elevation: 4,
   },
   cornerPuff: {
@@ -180,6 +177,7 @@ const styles = StyleSheet.create({
     top: -20,
     right: -20,
     opacity: 0.7,
+    pointerEvents: 'none',
   },
   iconWrap: {
     width: 60,

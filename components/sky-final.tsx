@@ -83,18 +83,18 @@ export function SkyFinal() {
       />
 
       {/* Drifting clouds */}
-      <View style={[styles.cloud, styles.cloudA]} pointerEvents="none">
+      <View style={[styles.cloud, styles.cloudA]}>
         <Cloud size={220} />
       </View>
-      <View style={[styles.cloud, styles.cloudB]} pointerEvents="none">
+      <View style={[styles.cloud, styles.cloudB]}>
         <Cloud size={180} />
       </View>
-      <View style={[styles.cloud, styles.cloudC]} pointerEvents="none">
+      <View style={[styles.cloud, styles.cloudC]}>
         <Cloud size={140} />
       </View>
 
       {/* Paper plane "arriving" */}
-      <View style={styles.planeWrap} pointerEvents="none">
+      <View style={styles.planeWrap}>
         <PaperPlane size={60} />
       </View>
 
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 540,
   },
-  cloud: { position: 'absolute', opacity: 0.65 },
+  cloud: { position: 'absolute', opacity: 0.65, pointerEvents: 'none' },
   cloudA: { top: '12%', left: '-6%' },
   cloudB: { top: '22%', right: '-4%' },
   cloudC: { bottom: '18%', left: '24%', opacity: 0.5 },
@@ -138,6 +138,7 @@ const styles = StyleSheet.create({
     top: 60,
     left: '20%',
     transform: [{ rotate: '15deg' }],
+    pointerEvents: 'none',
   },
   inner: {
     width: '100%',

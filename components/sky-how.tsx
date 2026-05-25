@@ -153,10 +153,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 6px 18px rgba(31, 95, 160, 0.18)',
     elevation: 4,
   },
   badgeNum: {

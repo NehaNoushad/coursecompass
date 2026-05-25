@@ -80,8 +80,8 @@ export function SkyCourses() {
                   style={StyleSheet.absoluteFill}
                 />
                 {/* Decorative translucent circles in the top-right */}
-                <View style={styles.bigPuff} pointerEvents="none" />
-                <View style={styles.smallPuff} pointerEvents="none" />
+                <View style={styles.bigPuff} />
+                <View style={styles.smallPuff} />
                 <View style={styles.tileBody}>
                   <Text style={[styles.tileLabel, { color: labelColor }]}>
                     {tile.label.toUpperCase()}
@@ -150,6 +150,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     top: -40,
     right: -40,
+    pointerEvents: 'none',
   },
   smallPuff: {
     position: 'absolute',
@@ -159,6 +160,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     top: 30,
     right: 20,
+    pointerEvents: 'none',
   },
   tileBody: {
     position: 'absolute',

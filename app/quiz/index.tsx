@@ -233,7 +233,7 @@ function ShimmerTile() {
   return (
     <View style={shimStyles.tile}>
       {/* Shimmer overlay */}
-      <Animated.View style={[StyleSheet.absoluteFill, shimStyle]} pointerEvents="none">
+      <Animated.View style={[StyleSheet.absoluteFill, shimStyle, { pointerEvents: 'none' }]}>
         <LinearGradient
           colors={['transparent', 'rgba(255,255,255,0.65)', 'transparent']}
           start={{ x: 0, y: 0.5 }}
@@ -643,10 +643,8 @@ const profileStyles = StyleSheet.create({
     borderColor: 'rgba(31,95,160,0.12)',
     borderRadius: 20,
     padding: spacing.xl,
-    shadowColor: 'rgba(31,95,160,0.18)',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 1,
-    shadowRadius: 32,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 12px 32px rgba(31, 95, 160, 0.18)',
     elevation: 6,
   },
   head: {

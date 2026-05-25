@@ -142,11 +142,8 @@ const ha = StyleSheet.create({
     // outer ring
     borderWidth: 4,
     borderColor: skyPale,
-    // shadow
-    shadowColor: skyAnchor,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.28,
-    shadowRadius: 24,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 8px 24px rgba(31, 95, 160, 0.28)',
     elevation: 8,
     // break slightly out of hero bottom boundary
     marginBottom: IS_NARROW ? -24 : -32,
@@ -883,10 +880,8 @@ const pf = StyleSheet.create({
     borderColor: line,
     borderRadius: radius.xl,
     overflow: 'hidden',
-    shadowColor: skyAnchor,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 4px 20px rgba(31, 95, 160, 0.10)',
     elevation: 2,
   },
   row: {
@@ -973,10 +968,8 @@ const ac = StyleSheet.create({
     borderColor: line,
     borderRadius: radius.xl,
     overflow: 'hidden',
-    shadowColor: skyAnchor,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 4px 20px rgba(31, 95, 160, 0.10)',
     elevation: 2,
   },
   row: {

@@ -38,8 +38,8 @@ export function BrowseGateOverlay({
 
   if (state === 'nudge') {
     return (
-      <View style={styles.nudgeWrap} pointerEvents="box-none">
-        <View style={styles.nudgeInner} pointerEvents="auto">
+      <View style={styles.nudgeWrap}>
+        <View style={styles.nudgeInner}>
           <Card style={styles.nudgeCard}>
             <View style={styles.nudgeRow}>
               <View style={styles.nudgeText}>
@@ -72,7 +72,7 @@ export function BrowseGateOverlay({
   // spends the one-time grace, hiding the modal for FIRM_GRACE_MS of active
   // time. On its second appearance there's no escape but signup.
   return (
-    <View style={styles.firmWrap} pointerEvents="auto">
+    <View style={styles.firmWrap}>
       <View style={styles.backdrop} />
       <View style={styles.firmInner}>
         <Card style={styles.firmCard}>
@@ -136,17 +136,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     padding: spacing.lg,
+    pointerEvents: 'box-none',
   },
   nudgeInner: {
     width: '100%',
     maxWidth: layout.maxContentWidth,
+    pointerEvents: 'auto',
   },
   nudgeCard: {
     backgroundColor: colors.background,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.12)',
     elevation: 8,
     padding: spacing.lg,
   },
@@ -178,6 +178,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
+    pointerEvents: 'auto',
   },
   backdrop: {
     position: 'absolute',
@@ -195,10 +196,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderRadius: radius.xl,
     padding: spacing.x2l,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 40,
-    shadowOffset: { width: 0, height: 16 },
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 16px 40px rgba(0, 0, 0, 0.25)',
     elevation: 16,
     // `position: relative` so the absolute-positioned ✕ anchors to the card.
     position: 'relative',

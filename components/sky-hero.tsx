@@ -109,7 +109,7 @@ function DriftingCloud({
   }));
 
   return (
-    <Animated.View style={[styles.cloud, style, animStyle]} pointerEvents="none">
+    <Animated.View style={[styles.cloud, style, animStyle]}>
       <CloudShape size={size} />
     </Animated.View>
   );
@@ -159,11 +159,10 @@ export function SkyHero() {
       <LinearGradient
         colors={['transparent', colors.background]}
         style={styles.heroFade}
-        pointerEvents="none"
       />
 
       {/* Sun — radial glow in the top-right */}
-      <View style={styles.sunWrap} pointerEvents="none">
+      <View style={styles.sunWrap}>
         <View style={styles.sunOuter}>
           <View style={styles.sunMid}>
             <View style={styles.sunCore} />
@@ -181,7 +180,7 @@ export function SkyHero() {
       <DriftingCloud size={200} duration={15_000} direction="left"  distance={70}  style={styles.cloud4} />
 
       {/* Paper plane — the brand mascot */}
-      <View style={styles.planeWrap} pointerEvents="none">
+      <View style={styles.planeWrap}>
         <PaperPlane size={80} />
       </View>
 
@@ -239,6 +238,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: 80,
+    pointerEvents: 'none',
   },
 
   // ─── Sun (concentric radial-ish via nested circles) ───
@@ -246,6 +246,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '10%',
     right: '8%',
+    pointerEvents: 'none',
   },
   sunOuter: {
     width: 200,
@@ -274,6 +275,7 @@ const styles = StyleSheet.create({
   cloud: {
     position: 'absolute',
     opacity: 0.95,
+    pointerEvents: 'none',
   },
   // Cloud base positions. With the new back-and-forth motion the
   // clouds stay roughly where they're placed; the offsets pull each
@@ -290,6 +292,7 @@ const styles = StyleSheet.create({
     top: '32%',
     right: '20%',
     transform: [{ rotate: '-12deg' }],
+    pointerEvents: 'none',
   },
 
   // ─── Content ───

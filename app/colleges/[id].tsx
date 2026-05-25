@@ -671,8 +671,8 @@ export default function CollegeDetailScreen() {
 
             {/* ── Closing quiz CTA ─────────────────────────── */}
             <View style={s.quizStrip}>
-              <View style={s.quizOrb1} pointerEvents="none" />
-              <View style={s.quizOrb2} pointerEvents="none" />
+              <View style={s.quizOrb1} />
+              <View style={s.quizOrb2} />
               <View style={s.quizStripLeft}>
                 <Text style={s.quizStripTitle}>
                   Does {college.name} fit your picture?
@@ -1147,10 +1147,8 @@ const s = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.skyDeep,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 4px 8px rgba(45, 125, 210, 0.35)',
     elevation: 4,
   },
   mapLabel: {
@@ -1207,6 +1205,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
     right: -60,
     top: -80,
+    pointerEvents: 'none',
   },
   quizOrb2: {
     position: 'absolute',
@@ -1216,6 +1215,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     bottom: -40,
     left: '40%',
+    pointerEvents: 'none',
   },
   quizStripLeft: {
     flex: 1,
@@ -1254,10 +1254,8 @@ const s = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 20,
     padding: 22,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 8px 20px rgba(31, 95, 160, 0.08)',
     elevation: 2,
   },
   sCardGap: {

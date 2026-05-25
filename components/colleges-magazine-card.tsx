@@ -137,8 +137,8 @@ export function CollegesMagazineCard({ college, from }: Props) {
             style={StyleSheet.absoluteFill}
           />
           {/* Translucent cloud-puff decorations */}
-          <View style={styles.puffBig} pointerEvents="none" />
-          <View style={styles.puffSmall} pointerEvents="none" />
+          <View style={styles.puffBig} />
+          <View style={styles.puffSmall} />
           <View style={styles.districtPill}>
             <Text style={styles.districtPillText}>
               {college.district.toUpperCase()} · {TYPE_LABELS[college.type].toUpperCase()}
@@ -194,17 +194,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     overflow: 'hidden',
     // Soft drop shadow at rest; lifts on hover.
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity.
+    boxShadow: '0px 4px 14px rgba(31, 95, 160, 0.12)',
     elevation: 3,
   },
   cardHover: {
     transform: [{ translateY: -4 }],
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.2,
-    shadowRadius: 32,
+    // Full boxShadow override for hover state (replaces partial shadow* props).
+    boxShadow: '0px 20px 32px rgba(31, 95, 160, 0.20)',
   },
 
   // ─── Gradient header ───
@@ -222,6 +219,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
     bottom: -50,
     right: -50,
+    pointerEvents: 'none',
   },
   puffSmall: {
     position: 'absolute',
@@ -231,6 +229,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
     top: spacing.lg,
     right: 60,
+    pointerEvents: 'none',
   },
   districtPill: {
     alignSelf: 'flex-start',

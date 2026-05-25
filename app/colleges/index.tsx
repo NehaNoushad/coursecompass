@@ -448,10 +448,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.xl,
     padding: spacing.xl,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 12px 24px rgba(31, 95, 160, 0.12)',
     elevation: 4,
   },
   sidebarHead: {

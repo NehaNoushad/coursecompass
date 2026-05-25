@@ -285,7 +285,6 @@ export default function SignInScreen() {
         start={{ x: 1, y: 0 }}
         end={{ x: 0.2, y: 0.6 }}
         style={styles.sunGlow}
-        pointerEvents="none"
       />
 
       {/* ── Cloud TL — always visible ── */}
@@ -294,28 +293,27 @@ export default function SignInScreen() {
           styles.bgCloud,
           styles.cloudTL,
           IS_NARROW && styles.cloudTLNarrow,
-        ]}
-        pointerEvents="none">
+        ]}>
         <Cloud size={IS_NARROW ? 220 : 360} />
       </View>
 
       {/* ── Cloud TR — hidden on narrow ── */}
       {!IS_NARROW && (
-        <View style={[styles.bgCloud, styles.cloudTR]} pointerEvents="none">
+        <View style={[styles.bgCloud, styles.cloudTR]}>
           <Cloud size={200} />
         </View>
       )}
 
       {/* ── Cloud mid-left — hidden on narrow ── */}
       {!IS_NARROW && (
-        <View style={[styles.bgCloud, styles.cloudMidL]} pointerEvents="none">
+        <View style={[styles.bgCloud, styles.cloudMidL]}>
           <Cloud size={280} />
         </View>
       )}
 
       {/* ── Cloud mid-right — hidden on narrow ── */}
       {!IS_NARROW && (
-        <View style={[styles.bgCloud, styles.cloudMidR]} pointerEvents="none">
+        <View style={[styles.bgCloud, styles.cloudMidR]}>
           <Cloud size={240} />
         </View>
       )}
@@ -326,22 +324,20 @@ export default function SignInScreen() {
           styles.bgCloud,
           styles.cloudBR,
           IS_NARROW && styles.cloudBRNarrow,
-        ]}
-        pointerEvents="none">
+        ]}>
         <Cloud size={IS_NARROW ? 240 : 320} />
       </View>
 
       {/* ── Cloud BL — hidden on narrow ── */}
       {!IS_NARROW && (
-        <View style={[styles.bgCloud, styles.cloudBL]} pointerEvents="none">
+        <View style={[styles.bgCloud, styles.cloudBL]}>
           <Cloud size={200} />
         </View>
       )}
 
       {/* ── Distant paper plane ── */}
       <View
-        style={[styles.bgPlane, IS_NARROW && styles.bgPlaneNarrow]}
-        pointerEvents="none">
+        style={[styles.bgPlane, IS_NARROW && styles.bgPlaneNarrow]}>
         <BackgroundPlane size={IS_NARROW ? 40 : 64} />
       </View>
 
@@ -610,10 +606,9 @@ const styles = StyleSheet.create({
     borderRadius: IS_NARROW ? 20 : radius.xl,
     padding: IS_NARROW ? 22 : 40,
     // "sticker peeling off the sky" shadow — asymmetric layers
-    shadowColor: colors.skyAnchor,
-    shadowOffset: { width: 0, height: IS_NARROW ? 12 : 18 },
-    shadowOpacity: IS_NARROW ? 0.22 : 0.12,
-    shadowRadius: IS_NARROW ? 28 : 40,
+    // boxShadow uses desktop values (18px/0.12/40px); IS_NARROW variants dropped — web is typically wider.
+    // elevation stays for native parity.
+    boxShadow: '0px 18px 40px rgba(31, 95, 160, 0.12)',
     elevation: 16,
     zIndex: 10,
   },
@@ -632,10 +627,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.skyDeep, // gradient approximation; not worth LinearGradient inside tiny circle
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.skyDeep,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 4px 10px rgba(45, 125, 210, 0.28)',
     elevation: 6,
   },
   cardTitle: {
@@ -668,16 +661,14 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: `rgba(31,95,160,0.12)`,
     borderRadius: radius.md,
-    shadowColor: colors.skyAnchor,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 1px 4px rgba(31, 95, 160, 0.06)',
     elevation: 2,
   },
   googlePressed: {
     borderColor: colors.skyMid,
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    // Full boxShadow override for pressed state (replaces partial shadow* props).
+    boxShadow: '0px 1px 8px rgba(31, 95, 160, 0.15)',
   },
   googleLabel: {
     fontFamily: fontFamily.displaySemibold,
@@ -728,16 +719,14 @@ const styles = StyleSheet.create({
     height: 50,
     backgroundColor: colors.accent,
     borderRadius: radius.md,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.38,
-    shadowRadius: 16,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 6px 16px rgba(255, 140, 122, 0.38)',
     elevation: 8,
     marginTop: 2,
   },
   sendBtnPressed: {
-    shadowOpacity: 0.44,
-    shadowRadius: 20,
+    // Full boxShadow override for pressed state (replaces partial shadow* props).
+    boxShadow: '0px 6px 20px rgba(255, 140, 122, 0.44)',
     opacity: 0.93,
   },
   sendBtnLabel: {
@@ -793,10 +782,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 18,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.36,
-    shadowRadius: 18,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 8px 18px rgba(255, 140, 122, 0.36)',
     elevation: 10,
   },
   sentTitle: {

@@ -192,11 +192,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    // Soft shadow matching the prototype.
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    // Soft shadow matching the prototype. RN-web wants `boxShadow`
+    // now (the `shadow*` props log a deprecation warning); elevation
+    // stays for native parity.
+    boxShadow: '0px 4px 12px rgba(31, 95, 160, 0.3)',
     elevation: 4,
   },
   markIcon: {

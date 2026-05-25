@@ -320,7 +320,7 @@ export default function CourseDetailScreen() {
               <View style={styles.desktopJourney}>
 
                 {/* Dotted connector SVG behind the cards */}
-                <View style={styles.connectorWrap} pointerEvents="none">
+                <View style={styles.connectorWrap}>
                   <Svg
                     style={styles.connectorSvg}
                     viewBox="0 0 1200 40"
@@ -739,6 +739,7 @@ const styles = StyleSheet.create({
     right: 0,
     height: 40,
     zIndex: 0,
+    pointerEvents: 'none',
   },
   connectorSvg: {
     width: '100%',
@@ -888,10 +889,8 @@ const stepLabelStyles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 0px 6px rgba(31, 95, 160, 0.20)',
     elevation: 2,
   },
   dotNum: {
@@ -956,10 +955,8 @@ const nodeCardStyles = StyleSheet.create({
     borderRadius: radius.xl,
     padding: IS_NARROW ? spacing.lg : spacing.xl,
     backgroundColor: colors.background,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
+    boxShadow: '0px 4px 12px rgba(31, 95, 160, 0.08)',
     elevation: 2,
   },
   cardBase: {

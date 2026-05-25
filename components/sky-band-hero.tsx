@@ -54,13 +54,13 @@ export function SkyBandHero({ children, minHeight }: Props) {
 
       {/* Three canonical cloud positions — same across every page so
           the sky reads as continuous when the user navigates. */}
-      <View style={[styles.cloud, styles.cloud1]} pointerEvents="none">
+      <View style={[styles.cloud, styles.cloud1]}>
         <Cloud size={IS_NARROW ? 200 : 260} />
       </View>
-      <View style={[styles.cloud, styles.cloud2]} pointerEvents="none">
+      <View style={[styles.cloud, styles.cloud2]}>
         <Cloud size={IS_NARROW ? 140 : 180} />
       </View>
-      <View style={[styles.cloud, styles.cloud3]} pointerEvents="none">
+      <View style={[styles.cloud, styles.cloud3]}>
         <Cloud size={IS_NARROW ? 160 : 220} />
       </View>
 
@@ -68,7 +68,6 @@ export function SkyBandHero({ children, minHeight }: Props) {
       <LinearGradient
         colors={['transparent', colors.background]}
         style={styles.fade}
-        pointerEvents="none"
       />
 
       <View style={styles.inner}>{children}</View>
@@ -90,6 +89,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: 60,
+    pointerEvents: 'none',
   },
   inner: {
     width: '100%',
