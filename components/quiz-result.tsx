@@ -168,8 +168,11 @@ const bk = StyleSheet.create({
 
 // ─── Path card ───────────────────────────────────────────────────────────────
 
-const MAX_PATH_COURSES = 4;
-const MAX_PATH_EXAMS = 6;
+const MAX_PATH_COURSES = IS_NARROW ? 3 : 5;
+const MAX_PATH_EXAMS = IS_NARROW ? 4 : 6;
+// Cap the bottom evidence grids to avoid infinite-scroll on phones.
+const MAX_GRID_COURSES = IS_NARROW ? 6 : 30;
+const MAX_GRID_COLLEGES = IS_NARROW ? 4 : 30;
 
 function PathCard({
   rank,
@@ -267,7 +270,7 @@ function PathCard({
         <>
           <SectionLabel text="WHERE IT CAN LEAD" />
           <View style={pc.careers}>
-            {path.careers.map((c) => (
+            {path.careers.slice(0, IS_NARROW ? 2 : 3).map((c) => (
               <View key={c.role} style={pc.careerRow}>
                 <Text style={pc.careerRole}>{c.role}</Text>
                 <Text style={pc.careerScope}>{c.scope}</Text>
@@ -443,6 +446,7 @@ const pc = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(45,125,210,0.25)',
     backgroundColor: colors.skyPale,
+    maxWidth: IS_NARROW ? 220 : 300,
   },
   courseChipText: {
     fontSize: fontSize.xs,
@@ -619,19 +623,26 @@ export function QuizResult({
             </>
           ) : null}
 
-          {/* Supporting evidence — the full match grids. */}
+          {/* Supporting evidence — match grids (capped on mobile). */}
           <SectionHead
             title="Every course that fits you"
-            sub={`All ${result.courses.length} matches, best first.`}
+            sub={`${Math.min(result.courses.length, MAX_GRID_COURSES)} of ${result.courses.length} matches, best first.`}
           />
           <View style={rs.grid}>
-            {result.courses.map((m) => (
+            {result.courses.slice(0, MAX_GRID_COURSES).map((m) => (
               <View key={m.course.id} style={rs.cell}>
                 <CourseCard course={m.course} from="quiz" />
                 <MatchReasons reasons={m.reasons} />
               </View>
             ))}
           </View>
+          {result.courses.length > MAX_GRID_COURSES ? (
+            <LinkButton
+              href="/courses"
+              label={`Browse all ${result.courses.length} matching courses →`}
+              variant="ghost"
+            />
+          ) : null}
 
           <SectionHead title="Colleges to consider" />
           {result.colleges.length === 0 ? (
@@ -643,14 +654,23 @@ export function QuizResult({
               </Text>
             </Card>
           ) : (
-            <View style={rs.grid}>
-              {result.colleges.map((m) => (
-                <View key={m.college.id} style={rs.cell}>
-                  <CollegeCard college={m.college} from="quiz" />
-                  <MatchReasons reasons={m.reasons} />
-                </View>
-              ))}
-            </View>
+            <>
+              <View style={rs.grid}>
+                {result.colleges.slice(0, MAX_GRID_COLLEGES).map((m) => (
+                  <View key={m.college.id} style={rs.cell}>
+                    <CollegeCard college={m.college} from="quiz" />
+                    <MatchReasons reasons={m.reasons} />
+                  </View>
+                ))}
+              </View>
+              {result.colleges.length > MAX_GRID_COLLEGES ? (
+                <LinkButton
+                  href="/colleges"
+                  label={`Browse all ${result.colleges.length} matching colleges →`}
+                  variant="ghost"
+                />
+              ) : null}
+            </>
           )}
 
           <View style={rs.nav}>
@@ -700,8 +720,8 @@ const rs = StyleSheet.create({
     width: '100%',
     maxWidth: layout.maxContentWidth,
     alignSelf: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.x2l,
+    paddingHorizontal: IS_NARROW ? spacing.lg : spacing.xl,
+    paddingVertical: IS_NARROW ? spacing.xl : spacing.x2l,
   },
   marksCard: {
     marginTop: spacing.lg,

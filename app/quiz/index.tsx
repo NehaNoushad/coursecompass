@@ -102,17 +102,17 @@ const COLLEGE_TYPE_OPTIONS: { value: CollegeType; label: string; description: st
   {
     value: 'government',
     label: 'Government',
-    description: 'Lowest fees overall but most competitive — merit + entrance score really matter.',
+    description: 'Lowest fees, most competitive. Merit + entrance score really matter.',
   },
   {
     value: 'aided',
     label: 'Aided',
-    description: 'Government-funded with private management. Mid-range fees; often the strongest reputation in arts and sciences.',
+    description: 'Government-funded, private management. Mid-range fees; strong reputation in arts and sciences.',
   },
   {
     value: 'private',
     label: 'Private / Self-financing',
-    description: 'More seats and easier admission, but fees vary widely between colleges and between seat categories.',
+    description: 'More seats, easier admission. Fees vary between colleges and seat categories.',
   },
 ];
 
@@ -1128,9 +1128,9 @@ const qpStyles = StyleSheet.create({
   },
   qTitle: {
     fontFamily: fontFamily.displayHeavy,
-    fontSize: fontSize.x3l,
-    lineHeight: fontSize.x3l * 1.05,
-    letterSpacing: -1.5,
+    fontSize: IS_NARROW ? fontSize.x2l : fontSize.x3l,
+    lineHeight: IS_NARROW ? fontSize.x2l * 1.1 : fontSize.x3l * 1.05,
+    letterSpacing: IS_NARROW ? -0.5 : -1.5,
     color: colors.text,
     maxWidth: 700,
   },
