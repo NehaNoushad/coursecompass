@@ -9,8 +9,7 @@
  *   - Left: key-facts pills, About (derived tagline + pull-quote), What's on
  *     offer (courses per category), Getting in (exam pills), Where it is (map
  *     placeholder + address), closing quiz CTA.
- *   - Right sidebar: At a glance, Contact, Fees (estimated), Shortlist
- *     (phase-4 placeholder).
+ *   - Right sidebar: At a glance, Contact, Shortlist (phase-4 placeholder).
  *
  * Page does NOT use <Screen> — SkyBandHero needs to be full-bleed, so we
  * draw SiteHeader / ScrollView / SiteFooter directly (same pattern as
@@ -33,7 +32,6 @@ import {
   CATEGORY_BY_ID,
   COLLEGE_BY_ID,
   EXAM_BY_ID,
-  FEE_BAND_LABELS,
   TYPE_LABELS,
   getCoursesForCollege,
 } from '@/data';
@@ -190,19 +188,6 @@ function IconBookmark() {
   );
 }
 
-function IconWarning() {
-  return (
-    <Svg width={10} height={10} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-        stroke="#8a6a00"
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 /** Pill in the hero's accreditation row. accent=true → dark ink background. */
@@ -302,11 +287,9 @@ function ContactLink({
 function SidebarCards({
   college,
   typeLabel,
-  feeBandLabel,
 }: {
   college: NonNullable<(typeof COLLEGE_BY_ID)[string]>;
   typeLabel: string;
-  feeBandLabel: string;
 }) {
   return (
     <>
@@ -326,7 +309,6 @@ function SidebarCards({
         ) : null}
         {college.naacGrade ? <SRow label="NAAC grade" badge={college.naacGrade} /> : null}
         {college.nirfRank ? <SRow label="NIRF rank" badge={`#${college.nirfRank}`} /> : null}
-        <SRow label="Fee band" value={feeBandLabel} />
       </View>
 
       {/* Contact — only render if at least one field exists */}
@@ -362,22 +344,6 @@ function SidebarCards({
           ) : null}
         </View>
       ) : null}
-
-      {/* Fees */}
-      <View style={[s.sCard, s.sCardGap]}>
-        <View style={s.sCardTitle}>
-          <Text style={s.sCardTitleText}>Fees (estimated)</Text>
-          <View style={s.sCardDot} />
-        </View>
-        <View style={s.feesBadge}>
-          <IconWarning />
-          <Text style={s.feesBadgeText}>Estimated · verify with college</Text>
-        </View>
-        <SRow label="Fee band" value={feeBandLabel} />
-        <Text style={s.feesNote}>
-          Real per-college fees aren&apos;t always public — bands are a rough guide, not a quote.
-        </Text>
-      </View>
 
       {/* Shortlist — phase-4 placeholder */}
       <View style={[s.shortlistCard, s.sCardGap]}>
@@ -439,7 +405,6 @@ export default function CollegeDetailScreen() {
   const paragraphs = aboutParagraphs(college);
   const pq = pullQuote(college);
 
-  const feeBandLabel = FEE_BAND_LABELS[college.feeBand];
   const typeLabel = TYPE_LABELS[college.type];
   const eyebrow = `${college.district.toUpperCase()} · ${typeLabel.toUpperCase()} COLLEGE`;
 
@@ -449,14 +414,12 @@ export default function CollegeDetailScreen() {
   if (college.nirfRank) heroPills.push({ label: `NIRF #${college.nirfRank}` });
   if (college.established) heroPills.push({ label: `Est. ${college.established}` });
   if (college.totalSeats)
-    heroPills.push({ label: `~${college.totalSeats.toLocaleString()} seats` });
-  heroPills.push({ label: feeBandLabel, accent: true });
+    heroPills.push({ label: `~${college.totalSeats.toLocaleString()} seats`, accent: true });
 
   // Key-facts pills — same data, slightly different phrasing.
   const kfPills: { label: string; value: string }[] = [
     { label: 'District', value: college.district },
     { label: 'Type', value: typeLabel },
-    { label: 'Fees', value: feeBandLabel },
   ];
   if (college.naacGrade) kfPills.push({ label: 'Accreditation', value: `NAAC ${college.naacGrade}` });
   if (college.nirfRank) kfPills.push({ label: 'NIRF', value: `#${college.nirfRank}` });
@@ -678,8 +641,8 @@ export default function CollegeDetailScreen() {
                   Does {college.name} fit your picture?
                 </Text>
                 <Text style={s.quizStripSub}>
-                  Answer 6 quick questions — stream, district, budget, goals — and
-                  we&apos;ll rank your top colleges and courses in under a minute.
+                  Answer 6 quick questions — stream, district, college type, goals —
+                  and we&apos;ll rank your top colleges and courses in under a minute.
                 </Text>
               </View>
               <LinkButton
@@ -709,7 +672,6 @@ export default function CollegeDetailScreen() {
                 <SidebarCards
                   college={college}
                   typeLabel={typeLabel}
-                  feeBandLabel={feeBandLabel}
                 />
               </View>
             </View>
@@ -724,7 +686,6 @@ export default function CollegeDetailScreen() {
             <SidebarCards
               college={college}
               typeLabel={typeLabel}
-              feeBandLabel={feeBandLabel}
             />
           </View>
         ) : null}
@@ -1341,30 +1302,6 @@ const s = StyleSheet.create({
   contactValue: {
     fontSize: 13,
     color: colors.textMuted,
-  },
-  feesBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#fff8e6',
-    borderWidth: 1,
-    borderColor: '#ffd966',
-    borderRadius: 6,
-    paddingVertical: 3,
-    paddingHorizontal: spacing.sm,
-    alignSelf: 'flex-start',
-    marginBottom: 12,
-  },
-  feesBadgeText: {
-    fontSize: 10,
-    fontWeight: fontWeight.bold,
-    color: '#8a6a00',
-  },
-  feesNote: {
-    marginTop: 10,
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.textSubtle,
   },
   shortlistCard: {
     borderWidth: 2,

@@ -33,7 +33,7 @@ const FEATURES: {
 }[] = [
   {
     title: 'Take the 6-question quiz',
-    body: 'Stream, marks, district, fees, interests, fears. We match you to courses in seconds — with the reasons we picked them, not just rankings.',
+    body: 'Stream, marks, district, college type, interests, exams. We match you to courses in seconds — with the reasons we picked them, not just rankings.',
     icon: ({ color, size = 28 }) => (
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
         <Circle cx="12" cy="12" r="4" stroke={color} strokeWidth={2} />
@@ -49,7 +49,7 @@ const FEATURES: {
   },
   {
     title: 'Browse the catalogue',
-    body: 'Every Kerala college, every course they offer. Filter by district, type, fees, entrance exam. No ads. No "sponsored" tiles. No 2019 listicles.',
+    body: 'Every Kerala college, every course they offer. Filter by district, type, entrance exam. No ads. No "sponsored" tiles. No 2019 listicles.',
     icon: ({ color, size = 28 }) => (
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
         <Rect x="3" y="6" width="18" height="14" rx="2" stroke={color} strokeWidth={2} />

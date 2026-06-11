@@ -25,7 +25,7 @@ const STEPS = [
   {
     num: '01',
     title: 'Tell us about you',
-    body: 'Stream, marks, district, fees you can afford, interests, fears.',
+    body: 'Stream, marks, district, college type, interests, exams.',
   },
   {
     num: '02',

@@ -6,8 +6,8 @@
  * that offer this course" sections). This one is the discovery-mode
  * card: a 140-tall gradient header in the college's accent colour,
  * district + type pill on the header, big name in display type, a
- * derived tagline, a tri-column stat strip (courses / seats / fee
- * band), and a "View college →" cue at the bottom.
+ * derived tagline, a two-column stat strip (courses / seats), and a
+ * "View college →" cue at the bottom.
  *
  * Accent gradient is picked by college *type* so the grid reads as
  * a watercolour map at a glance — three palettes:
@@ -26,7 +26,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import type { College } from '@/types';
-import { CATEGORY_BY_ID, FEE_BAND_LABELS, TYPE_LABELS } from '@/data';
+import { CATEGORY_BY_ID, TYPE_LABELS } from '@/data';
 import {
   colors,
   fontFamily,
@@ -119,7 +119,6 @@ export function CollegesMagazineCard({ college, from }: Props) {
 
   const courseCount = college.courses?.length ?? college.categories.length;
   const seats = college.totalSeats;
-  const feeLabel = FEE_BAND_LABELS[college.feeBand];
 
   const href = from
     ? ({ pathname: '/colleges/[id]', params: { id: college.id, from } } as const)
@@ -170,11 +169,6 @@ export function CollegesMagazineCard({ college, from }: Props) {
             <View style={styles.stat}>
               <Text style={styles.statNum}>{seats ? seats.toLocaleString() : '—'}</Text>
               <Text style={styles.statLabel}>seats</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statNum}>{feeLabel.split(' ')[0]}</Text>
-              <Text style={styles.statLabel}>fees</Text>
             </View>
           </View>
 

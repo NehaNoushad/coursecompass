@@ -2,7 +2,6 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
-import { SkyCourses } from '@/components/sky-courses';
 import { SkyFeatures } from '@/components/sky-features';
 import { SkyFinal } from '@/components/sky-final';
 import { SkyHero } from '@/components/sky-hero';
@@ -16,8 +15,7 @@ import { colors } from '@/constants/theme';
  *   2. Stats (382 colleges, 176 courses, 37 exams, 6 quiz questions)
  *   3. Features ("Three ways to figure out what fits")
  *   4. How it works (4 steps along a flight path)
- *   5. Courses peek (4 sample tiles from the 176-course catalogue)
- *   6. Final CTA ("Where will you go?")
+ *   5. Final CTA ("Where will you go?")
  *
  * Each section is its own component under `components/sky-*.tsx` so the
  * page reads top-to-bottom without the visual logic crowding this file.
@@ -31,7 +29,6 @@ export default function HomeScreen() {
         <SkyStats />
         <SkyFeatures />
         <SkyHow />
-        <SkyCourses />
         <SkyFinal />
         <SiteFooter />
       </ScrollView>

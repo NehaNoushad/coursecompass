@@ -5,7 +5,7 @@
  *   Node 1 — Where you are  (Class 12 + stream requirements)
  *   Node 2 — The gate       (entrance exams, or "Direct admission")
  *   Node 3 — The course     (central card: subjects, campus note)
- *   Node 4 — Where it leads (career roles + salary band)
+ *   Node 4 — Where it leads (career roles + honest scope, no salary)
  *
  * On desktop (≥ 980 px) the 4 nodes are laid out in a row with a dotted
  * SVG path running behind them. On mobile they collapse into a single-
@@ -25,10 +25,12 @@ import Svg, { Path } from 'react-native-svg';
 
 import {
   CATEGORY_BY_ID,
+  CAREER_OUTLOOK,
   COURSE_BY_ID,
   STREAM_LABELS,
   getCollegesForCourse,
   getExamsForCourse,
+  type CareerPath,
 } from '@/data';
 import {
   colors,
@@ -78,92 +80,6 @@ const SUBJECT_MAP: Record<string, string[]> = {
   'fine-arts': ['Drawing & Painting', 'Sculpture', 'Art History', 'Applied Arts', 'Digital Art', 'Portfolio Development'],
   education: ['Educational Psychology', 'Curriculum Design', 'Pedagogy', 'School Management', 'ICT in Education', 'Teaching Practice'],
   polytechnic: ['Engineering Drawing', 'Workshop Practice', 'Applied Mathematics', 'Applied Sciences', 'Core Trade Subjects', 'Industrial Training'],
-};
-
-/** Placeholder career roles per category. */
-const CAREER_MAP: Record<string, { role: string; bg: string }[]> = {
-  engineering: [
-    { role: 'Software Engineer', bg: 'rgba(45,125,210,0.1)' },
-    { role: 'Data Analyst', bg: 'rgba(255,217,61,0.15)' },
-    { role: 'ML Engineer', bg: 'rgba(31,95,160,0.1)' },
-    { role: 'Product Engineer', bg: 'rgba(79,163,224,0.12)' },
-    { role: 'Cybersecurity Analyst', bg: 'rgba(230,110,90,0.12)' },
-    { role: 'Higher studies — M.Tech / MS / MBA', bg: 'rgba(135,206,235,0.15)' },
-  ],
-  medical: [
-    { role: 'General Practitioner', bg: 'rgba(45,125,210,0.1)' },
-    { role: 'Hospital Specialist', bg: 'rgba(31,95,160,0.1)' },
-    { role: 'Surgeon', bg: 'rgba(79,163,224,0.12)' },
-    { role: 'Research Physician', bg: 'rgba(255,217,61,0.15)' },
-    { role: 'Medical Officer (Govt)', bg: 'rgba(230,110,90,0.12)' },
-    { role: 'Higher studies — MD / MS / DM', bg: 'rgba(135,206,235,0.15)' },
-  ],
-  dental: [
-    { role: 'Dental Surgeon', bg: 'rgba(45,125,210,0.1)' },
-    { role: 'Oral Physician', bg: 'rgba(31,95,160,0.1)' },
-    { role: 'Orthodontist', bg: 'rgba(79,163,224,0.12)' },
-    { role: 'Own Dental Clinic', bg: 'rgba(255,217,61,0.15)' },
-    { role: 'Dental Officer (Govt)', bg: 'rgba(230,110,90,0.12)' },
-    { role: 'Higher studies — MDS', bg: 'rgba(135,206,235,0.15)' },
-  ],
-  nursing: [
-    { role: 'Staff Nurse (hospital)', bg: 'rgba(45,125,210,0.1)' },
-    { role: 'ICU / Emergency Nurse', bg: 'rgba(31,95,160,0.1)' },
-    { role: 'Nurse Educator', bg: 'rgba(79,163,224,0.12)' },
-    { role: 'Community Health Nurse', bg: 'rgba(255,217,61,0.15)' },
-    { role: 'Nursing Superintendent', bg: 'rgba(230,110,90,0.12)' },
-    { role: 'International nursing (Gulf / UK)', bg: 'rgba(135,206,235,0.15)' },
-  ],
-  pharmacy: [
-    { role: 'Hospital Pharmacist', bg: 'rgba(45,125,210,0.1)' },
-    { role: 'Retail Pharmacist', bg: 'rgba(31,95,160,0.1)' },
-    { role: 'Drug Inspector', bg: 'rgba(79,163,224,0.12)' },
-    { role: 'Pharmaceutical Sales', bg: 'rgba(255,217,61,0.15)' },
-    { role: 'R&D / QA Analyst', bg: 'rgba(230,110,90,0.12)' },
-    { role: 'Higher studies — M.Pharm / PhD', bg: 'rgba(135,206,235,0.15)' },
-  ],
-  architecture: [
-    { role: 'Architect', bg: 'rgba(45,125,210,0.1)' },
-    { role: 'Urban Planner', bg: 'rgba(31,95,160,0.1)' },
-    { role: 'Interior Designer', bg: 'rgba(79,163,224,0.12)' },
-    { role: 'Construction Manager', bg: 'rgba(255,217,61,0.15)' },
-    { role: 'Government Town Planner', bg: 'rgba(230,110,90,0.12)' },
-    { role: 'Higher studies — M.Arch', bg: 'rgba(135,206,235,0.15)' },
-  ],
-  law: [
-    { role: 'Advocate (courts)', bg: 'rgba(45,125,210,0.1)' },
-    { role: 'Corporate Lawyer', bg: 'rgba(31,95,160,0.1)' },
-    { role: 'Public Prosecutor', bg: 'rgba(79,163,224,0.12)' },
-    { role: 'Legal Advisor (companies)', bg: 'rgba(255,217,61,0.15)' },
-    { role: 'Judicial Services', bg: 'rgba(230,110,90,0.12)' },
-    { role: 'Higher studies — LLM / PhD', bg: 'rgba(135,206,235,0.15)' },
-  ],
-  commerce: [
-    { role: 'Accountant / Auditor', bg: 'rgba(45,125,210,0.1)' },
-    { role: 'Financial Analyst', bg: 'rgba(31,95,210,0.1)' },
-    { role: 'Banking Officer', bg: 'rgba(79,163,224,0.12)' },
-    { role: 'Tax Consultant', bg: 'rgba(255,217,61,0.15)' },
-    { role: 'MBA / CA / CMA (higher)', bg: 'rgba(230,110,90,0.12)' },
-    { role: 'Entrepreneur / Business', bg: 'rgba(135,206,235,0.15)' },
-  ],
-};
-
-/** Salary range placeholder per broad category tier. */
-const SALARY_MAP: Record<string, { range: string; senior: string }> = {
-  engineering:     { range: '₹3.5 – 12 LPA', senior: 'Senior roles after 3–5 years: ₹18 – 40 LPA+' },
-  medical:         { range: '₹5 – 15 LPA (govt + private)', senior: 'Specialists after PG: ₹20 – 60 LPA+' },
-  dental:          { range: '₹3 – 8 LPA (employed)', senior: 'Own practice income: ₹10 – 30 LPA+' },
-  nursing:         { range: '₹2 – 6 LPA (India)', senior: 'International placements: ₹8 – 25 LPA' },
-  pharmacy:        { range: '₹2.5 – 7 LPA', senior: 'R&D / senior roles: ₹10 – 20 LPA' },
-  architecture:    { range: '₹3 – 8 LPA', senior: 'Principal Architect / own firm: ₹15 – 40 LPA' },
-  agriculture:     { range: '₹2.5 – 6 LPA', senior: 'Research / Govt Officer: ₹8 – 15 LPA' },
-  law:             { range: '₹3 – 10 LPA', senior: 'Senior counsel / partner: ₹20 – 60 LPA+' },
-  commerce:        { range: '₹2.5 – 7 LPA', senior: 'CA / senior finance: ₹12 – 30 LPA' },
-  arts:            { range: '₹2 – 5 LPA', senior: 'Civil services / academia: ₹8 – 18 LPA' },
-  design:          { range: '₹3 – 9 LPA', senior: 'Senior designer / lead: ₹12 – 25 LPA' },
-  'hotel-management': { range: '₹2.5 – 6 LPA', senior: 'F&B Manager / GM: ₹10 – 22 LPA' },
-  education:       { range: '₹2 – 5 LPA', senior: 'Principal / HM: ₹6 – 14 LPA' },
-  default:         { range: '₹2 – 8 LPA (varies by role)', senior: 'Senior roles: ₹10 – 20 LPA+' },
 };
 
 /** Required subjects per stream. */
@@ -233,8 +149,7 @@ export default function CourseDetailScreen() {
 
   const catId        = course.categoryId as string;
   const subjects     = SUBJECT_MAP[catId] ?? SUBJECT_MAP['engineering'];
-  const careers      = CAREER_MAP[catId] ?? CAREER_MAP['engineering'];
-  const salary       = SALARY_MAP[catId] ?? SALARY_MAP['default'];
+  const careers      = CAREER_OUTLOOK[course.categoryId];
   const campusNote   = CAMPUS_NOTE[catId] ?? CAMPUS_NOTE['default'];
   const categoryName = category?.name ?? 'Course';
   const streamLabels = course.streams.map((s) => STREAM_LABELS[s]);
@@ -312,7 +227,7 @@ export default function CourseDetailScreen() {
                 </TimelineStep>
 
                 <TimelineStep number="4" label="Where it leads" accentColor={colors.accent} last>
-                  <Node4Content careers={careers} salary={salary} />
+                  <Node4Content careers={careers} />
                 </TimelineStep>
               </View>
             ) : (
@@ -362,7 +277,7 @@ export default function CourseDetailScreen() {
                     />
                   </View>
                   <View style={[styles.cardCell, styles.cardCellNode4]}>
-                    <Node4Content careers={careers} salary={salary} />
+                    <Node4Content careers={careers} />
                   </View>
                 </View>
 
@@ -415,7 +330,7 @@ export default function CourseDetailScreen() {
                 Find the college that fits your journey.
               </Text>
               <Text muted style={styles.ctaSub}>
-                6 questions about your district, budget, exam score, and interests — matched to the right {course.name} college.
+                6 questions about your district, marks, exams and interests — matched to the right {course.name} college.
               </Text>
               <LinkButton
                 href="/quiz"
@@ -634,27 +549,15 @@ function Node3Content({
   );
 }
 
-function Node4Content({
-  careers,
-  salary,
-}: {
-  careers: { role: string; bg: string }[];
-  salary: { range: string; senior: string };
-}) {
+function Node4Content({ careers }: { careers: CareerPath[] }) {
   return (
-    <View>
-      <View style={{ gap: spacing.sm, marginBottom: spacing.lg }}>
-        {careers.map(({ role, bg }) => (
-          <View key={role} style={[careerStyles.row, { backgroundColor: bg }]}>
-            <Text style={careerStyles.roleText}>{role}</Text>
-          </View>
-        ))}
-      </View>
-      <View style={careerStyles.salaryBlock}>
-        <Text style={careerStyles.salaryMicro}>Average starting salary (first job)</Text>
-        <Text style={careerStyles.salaryFig}>{salary.range}</Text>
-        <Text style={careerStyles.salaryFoot}>{salary.senior}</Text>
-      </View>
+    <View style={{ gap: spacing.sm }}>
+      {careers.map(({ role, scope }) => (
+        <View key={role} style={careerStyles.row}>
+          <Text style={careerStyles.roleText}>{role}</Text>
+          <Text style={careerStyles.scopeText}>{scope}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -1143,41 +1046,25 @@ const examCardStyles = StyleSheet.create({
 
 const careerStyles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    gap: 3,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(45,125,210,0.15)',
+    borderLeftWidth: 3,
+    borderLeftColor: colors.skyMid,
+    backgroundColor: colors.skyPale,
   },
   roleText: {
-    fontSize: 13,
-    fontWeight: fontWeight.medium,
-    color: colors.textMuted,
-  },
-  salaryBlock: {
-    backgroundColor: colors.skyPale,
-    borderWidth: 1,
-    borderColor: 'rgba(45,125,210,0.15)',
-    borderRadius: radius.md,
-    padding: spacing.lg,
-  },
-  salaryMicro: {
-    fontSize: 11,
-    color: colors.textSubtle,
-    marginBottom: spacing.xs,
-  },
-  salaryFig: {
-    fontFamily: fontFamily.displayHeavy,
-    fontSize: 20,
-    letterSpacing: -0.5,
+    fontSize: 14,
+    fontWeight: fontWeight.semibold,
     color: colors.text,
   },
-  salaryFoot: {
-    fontSize: 11,
-    color: colors.textSubtle,
-    marginTop: spacing.xs,
+  scopeText: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.textMuted,
   },
 });
 

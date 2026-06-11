@@ -433,7 +433,7 @@ export default function CoursesScreen() {
                 Not sure which exam to aim for?
               </Text>
               <Text style={styles.quizNudgeSub}>
-                Answer 6 quick questions — we&apos;ll match courses and colleges to your marks, district, and budget.
+                Answer 6 quick questions — we&apos;ll match courses and colleges to your marks, district, and interests.
               </Text>
             </View>
             <Link href="/quiz" asChild>

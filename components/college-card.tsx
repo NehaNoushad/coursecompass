@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { College } from '@/types';
-import { CATEGORY_BY_ID, FEE_BAND_LABELS, TYPE_LABELS } from '@/data';
+import { CATEGORY_BY_ID, TYPE_LABELS } from '@/data';
 import { colors, radius, spacing } from '@/constants/theme';
 import { Badge } from '@/components/ui/badge';
 import { Text } from '@/components/ui/text';
@@ -47,7 +47,6 @@ export function CollegeCard({
         <View style={styles.badges}>
           <Badge label={college.district} tone="primary" />
           <Badge label={TYPE_LABELS[college.type]} />
-          <Badge label={FEE_BAND_LABELS[college.feeBand]} tone="accent" />
         </View>
         <Text variant="bodySmall" muted>
           {shown.join(' · ')}

@@ -25,6 +25,7 @@ export { COLLEGES, COLLEGE_BY_ID } from './colleges';
 export { COURSES, COURSE_BY_ID } from './courses';
 export { COURSE_CATEGORIES, CATEGORY_BY_ID } from './course-categories';
 export { EXAMS, EXAM_BY_ID } from './exams';
+export { CAREER_OUTLOOK, type CareerPath } from './career-outlook';
 
 /** All 14 Kerala districts, in the conventional north-to-south list order. */
 export const DISTRICTS: District[] = [

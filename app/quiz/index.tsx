@@ -1544,8 +1544,8 @@ function QuizResult({
             <Card muted>
               <Text variant="subheading">No exact college matches</Text>
               <Text muted style={{ marginTop: spacing.sm }}>
-                Your district and budget filters were strict. Try retaking the quiz with
-                &quot;Anywhere in Kerala&quot; or a higher fee preference.
+                Your district and college-type choices were strict. Try retaking the quiz with
+                &quot;Anywhere in Kerala&quot; or &quot;No preference&quot; on college type.
               </Text>
             </Card>
           ) : (

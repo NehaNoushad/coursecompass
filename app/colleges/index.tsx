@@ -29,13 +29,12 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import type { CollegeType, CourseCategoryId, District, FeeBand } from '@/types';
+import type { CollegeType, CourseCategoryId, District } from '@/types';
 import {
   COLLEGES,
   COURSE_BY_ID,
   COURSE_CATEGORIES,
   DISTRICTS,
-  FEE_BAND_LABELS,
   TYPE_LABELS,
   getCollegesForCourse,
 } from '@/data';
@@ -59,7 +58,6 @@ const IS_NARROW = Dimensions.get('window').width < 980;
 
 type CategoryFilter = 'all' | CourseCategoryId;
 type TypeFilter = 'all' | CollegeType;
-type FeeFilter = 'all' | FeeBand;
 
 const CATEGORY_OPTIONS: { value: CategoryFilter; label: string }[] = [
   { value: 'all', label: 'All courses' },
@@ -71,13 +69,6 @@ const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
   { value: 'government', label: TYPE_LABELS.government },
   { value: 'aided', label: TYPE_LABELS.aided },
   { value: 'private', label: TYPE_LABELS.private },
-];
-
-const FEE_OPTIONS: { value: FeeFilter; label: string }[] = [
-  { value: 'all', label: 'Any fees' },
-  { value: 'low', label: FEE_BAND_LABELS.low },
-  { value: 'medium', label: FEE_BAND_LABELS.medium },
-  { value: 'high', label: FEE_BAND_LABELS.high },
 ];
 
 export default function CollegesScreen() {
@@ -105,7 +96,6 @@ export default function CollegesScreen() {
   const [category, setCategory] = useState<CategoryFilter>(initialCategory);
   const [districts, setDistricts] = useState<District[]>(initialDistricts);
   const [type, setType] = useState<TypeFilter>('all');
-  const [fee, setFee] = useState<FeeFilter>('all');
 
   // Counts per category — shown next to each row so users can see how
   // much each filter would narrow the list before clicking.
@@ -128,10 +118,9 @@ export default function CollegesScreen() {
       if (category !== 'all' && !c.categories.includes(category)) return false;
       if (districts.length > 0 && !districts.includes(c.district)) return false;
       if (type !== 'all' && c.type !== type) return false;
-      if (fee !== 'all' && c.feeBand !== fee) return false;
       return true;
     });
-  }, [search, category, districts, type, fee, courseParam]);
+  }, [search, category, districts, type, courseParam]);
 
   function toggleDistrict(d: District) {
     setDistricts((prev) =>
@@ -144,15 +133,13 @@ export default function CollegesScreen() {
     setCategory('all');
     setDistricts([]);
     setType('all');
-    setFee('all');
   }
 
   const anyFilterActive =
     !!search ||
     category !== 'all' ||
     districts.length > 0 ||
-    type !== 'all' ||
-    fee !== 'all';
+    type !== 'all';
 
   return (
     <View style={styles.root}>
@@ -164,7 +151,7 @@ export default function CollegesScreen() {
           prefix="Browse"
           count={COLLEGES.length}
           suffix="colleges."
-          sub="Filter by district, course, fees, type."
+          sub="Filter by district, course and type."
           handAccent="or take the quiz →"
         />
 
@@ -250,20 +237,10 @@ export default function CollegesScreen() {
                       onPress={() => setType(opt.value)}
                     />
                   ))}
-                </FilterSection>
-
-                <FilterSection label="Fee band" badge="Estimated">
-                  {FEE_OPTIONS.map((opt) => (
-                    <FilterRow
-                      key={opt.value}
-                      label={opt.label}
-                      active={fee === opt.value}
-                      onPress={() => setFee(opt.value)}
-                    />
-                  ))}
                   <Text style={styles.filterNote}>
-                    Real per-college fees aren&apos;t always public — bands are a
-                    rough guide, not a quote.
+                    Government / aided / private is the honest cost signal — what
+                    you actually pay also depends on your seat type (merit /
+                    management / NRI) and any scholarships.
                   </Text>
                 </FilterSection>
               </View>
