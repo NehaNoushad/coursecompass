@@ -16,7 +16,7 @@
  * Save buttons will be inert.
  */
 
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -59,31 +59,11 @@ const coralDeep  = colors.accentDark;
 const inkMuted   = colors.textSubtle;
 const line       = colors.border;
 
-// ─── helpers ─────────────────────────────────────────────────────────
-
-function daysAgo(iso: string): number {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-}
-
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
 // ─── types ───────────────────────────────────────────────────────────
 
 interface Profile {
   phone: string | null;
   avatar_url: string | null;
-}
-
-interface QuizSummary {
-  taken_at: string;
-  top_course_name: string | null;
-  top_college_name: string | null;
 }
 
 // ─── sub-components ──────────────────────────────────────────────────
@@ -209,7 +189,6 @@ const gb = StyleSheet.create({
 export default function AccountScreen() {
   const { session, user, loading: authLoading, signOut } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [quiz, setQuiz] = useState<QuizSummary | null>(null);
   const [dbReady, setDbReady] = useState(true);
 
   const [phone, setPhone] = useState('');
@@ -235,22 +214,13 @@ export default function AccountScreen() {
     if (!session) return;
     let cancelled = false;
     (async () => {
-      const [profileRes, quizRes] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('phone, avatar_url')
-          .eq('id', session.user.id)
-          .maybeSingle(),
-        supabase
-          .from('quiz_results')
-          .select('taken_at, top_course_name, top_college_name')
-          .eq('user_id', session.user.id)
-          .order('taken_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
+      const profileRes = await supabase
+        .from('profiles')
+        .select('phone, avatar_url')
+        .eq('id', session.user.id)
+        .maybeSingle();
       if (cancelled) return;
-      // If both tables 404, the DB isn't set up.
+      // If the table doesn't exist, the DB isn't set up yet.
       if (profileRes.error && /relation .* does not exist/i.test(profileRes.error.message)) {
         setDbReady(false);
         return;
@@ -259,7 +229,6 @@ export default function AccountScreen() {
         setProfile(profileRes.data);
         setPhone(profileRes.data.phone ?? '');
       }
-      if (quizRes.data) setQuiz(quizRes.data);
     })();
     return () => {
       cancelled = true;
@@ -374,73 +343,6 @@ export default function AccountScreen() {
               </Text>
             </Card>
           ) : null}
-
-          {/* ── MY QUIZ RESULTS ──────────────────────────────────── */}
-          <View style={page.section}>
-            <SectionLabel label="My quiz results" />
-            {quiz ? (
-              <Card style={qz.card}>
-                <View style={IS_NARROW ? qz.colLayout : qz.rowLayout}>
-                  <View style={qz.left}>
-                    {/* Meta dot + date */}
-                    <View style={qz.metaRow}>
-                      <View style={qz.dot} />
-                      <Text style={qz.meta}>
-                        {`Taken ${daysAgo(quiz.taken_at)} day${daysAgo(quiz.taken_at) !== 1 ? 's' : ''} ago · ${fmtDate(quiz.taken_at)}`}
-                      </Text>
-                    </View>
-                    {quiz.top_course_name ? (
-                      <View style={qz.dataRow}>
-                        <Text style={qz.rowLabel}>YOUR TOP COURSE</Text>
-                        <Text style={[qz.rowValue, { color: coralDeep }]}>
-                          {quiz.top_course_name}
-                        </Text>
-                      </View>
-                    ) : null}
-                    {quiz.top_college_name ? (
-                      <View style={qz.dataRow}>
-                        <Text style={qz.rowLabel}>YOUR TOP COLLEGE</Text>
-                        <Text style={qz.rowValue}>{quiz.top_college_name}</Text>
-                      </View>
-                    ) : null}
-                    {/* See full results → */}
-                    <Link href="/quiz" asChild>
-                      <Pressable style={qz.linkRow}>
-                        <Text style={qz.linkText}>See full results</Text>
-                        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-                          <Path
-                            d="M5 12h14M13 6l6 6-6 6"
-                            stroke={skyDeep}
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </Svg>
-                      </Pressable>
-                    </Link>
-                  </View>
-
-                  <View style={IS_NARROW ? qz.rightNarrow : qz.rightWide}>
-                    <LinkButton
-                      href="/quiz"
-                      label="Take the quiz again"
-                      variant="ghost"
-                    />
-                  </View>
-                </View>
-              </Card>
-            ) : (
-              /* Empty state */
-              <Card style={qz.emptyCard} muted>
-                <Text style={qz.emptyText}>
-                  You haven&apos;t taken the quiz yet.
-                </Text>
-                <View style={{ marginTop: spacing.lg }}>
-                  <LinkButton href="/quiz" label="Take the 6-question quiz →" />
-                </View>
-              </Card>
-            )}
-          </View>
 
           {/* ── MY SHORTLIST ─────────────────────────────────────── */}
           <View style={page.section}>
@@ -753,65 +655,6 @@ const hero = StyleSheet.create({
   email: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
-  },
-});
-
-const qz = StyleSheet.create({
-  card: { padding: spacing.xl },
-  rowLayout: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.x2l },
-  colLayout: { flexDirection: 'column', gap: spacing.lg },
-  left: { flex: 1 },
-  rightWide: { flexShrink: 0, alignItems: 'flex-end', paddingTop: 2 },
-  rightNarrow: { alignItems: 'flex-start' },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: spacing.md,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.accent,
-    flexShrink: 0,
-  },
-  meta: {
-    fontSize: fontSize.xs,
-    color: inkMuted,
-  },
-  dataRow: { marginBottom: 10 },
-  rowLabel: {
-    fontSize: 11,
-    fontWeight: fontWeight.semibold,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase' as const,
-    color: inkMuted,
-    marginBottom: 2,
-  },
-  rowValue: {
-    fontFamily: fontFamily.display,
-    fontSize: fontSize.lg,
-    color: colors.text,
-    letterSpacing: -0.3,
-  },
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: spacing.lg,
-  },
-  linkText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: skyDeep,
-  },
-  emptyCard: {
-    padding: spacing.xl,
-  },
-  emptyText: {
-    color: inkMuted,
-    fontSize: fontSize.sm,
   },
 });
 
