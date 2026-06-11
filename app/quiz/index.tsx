@@ -38,7 +38,6 @@ import {
 } from '@/data';
 import { useAuth } from '@/lib/auth';
 import {
-  marksNote,
   recommend,
   type MarksBand,
   type QuizAnswers,
@@ -54,13 +53,8 @@ import {
   radius,
   spacing,
 } from '@/constants/theme';
-import { Badge } from '@/components/ui/badge';
-import { Button, LinkButton } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { CollegeCard } from '@/components/college-card';
-import { CourseCard } from '@/components/course-card';
+import { QuizResult } from '@/components/quiz-result';
 import { SiteHeader } from '@/components/site-header';
-import { SkyBandHero } from '@/components/sky-band-hero';
 import { Text } from '@/components/ui/text';
 
 // ─── Layout breakpoint ──────────────────────────────────────────────────────
@@ -1297,7 +1291,9 @@ export default function QuizScreen() {
   const [collegeTypeTouched, setCollegeTypeTouched] = useState(false);
   const [interests, setInterests] = useState<CourseCategoryId[]>([]);
   const [exams, setExams] = useState<string[]>([]);
-  const [result, setResult] = useState<Recommendation | null>(null);
+  // The result screen needs the answers too (profile chips, marks note),
+  // so keep them alongside the recommendation.
+  const [result, setResult] = useState<{ answers: QuizAnswers; rec: Recommendation } | null>(null);
 
   const canContinue = [
     streams.length > 0,
@@ -1321,7 +1317,7 @@ export default function QuizScreen() {
       examsAttempted: exams,
     };
     const recommendation = recommend(answers);
-    setResult(recommendation);
+    setResult({ answers, rec: recommendation });
 
     // Persist the attempt for signed-in users so it shows up on /account.
     // Fire-and-forget: a failed insert (table missing, network blip,
@@ -1366,7 +1362,7 @@ export default function QuizScreen() {
   }
 
   if (result) {
-    return <QuizResult result={result} marks={marks} onRestart={restart} />;
+    return <QuizResult answers={result.answers} result={result.rec} onRestart={restart} />;
   }
 
   const slotValues = buildSlotValues(
@@ -1475,147 +1471,3 @@ const rootStyles = StyleSheet.create({
   },
 });
 
-// ─── Result screen ─────────────────────────────────────────────────────────
-
-function MatchReasons({ reasons }: { reasons: string[] }) {
-  if (reasons.length === 0) return null;
-  return (
-    <View style={resultStyles.reasons}>
-      {reasons.map((r) => (
-        <Text key={r} variant="caption" color={colors.primaryDark}>
-          • {r}
-        </Text>
-      ))}
-    </View>
-  );
-}
-
-function QuizResult({
-  result,
-  marks,
-  onRestart,
-}: {
-  result: Recommendation;
-  marks: MarksBand | null;
-  onRestart: () => void;
-}) {
-  return (
-    <View style={resultStyles.root}>
-      <SiteHeader />
-
-      <ScrollView
-        contentContainerStyle={resultStyles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Sky-band hero is INSIDE the ScrollView so it scrolls up
-            out of view as the user reads through their matches. When
-            it sat above the ScrollView, the cards moved but the blue
-            strip stayed pinned at the top — bad UX. */}
-        <SkyBandHero>
-          <Badge label="Your results" tone="success" />
-          <Text variant="title" style={resultStyles.heroTitle}>
-            Here&apos;s what fits you
-          </Text>
-        </SkyBandHero>
-
-        <View style={resultStyles.inner}>
-          {marks ? (
-            <Card muted style={resultStyles.marksCard}>
-              <Text variant="bodySmall">{marksNote(marks)}</Text>
-            </Card>
-          ) : null}
-
-          <Text variant="heading" style={resultStyles.section}>
-            Courses that fit you
-          </Text>
-          <View style={resultStyles.grid}>
-            {result.courses.map((m) => (
-              <View key={m.course.id} style={resultStyles.cell}>
-                <CourseCard course={m.course} from="quiz" />
-                <MatchReasons reasons={m.reasons} />
-              </View>
-            ))}
-          </View>
-
-          <Text variant="heading" style={resultStyles.section}>
-            Colleges to consider
-          </Text>
-          {result.colleges.length === 0 ? (
-            <Card muted>
-              <Text variant="subheading">No exact college matches</Text>
-              <Text muted style={{ marginTop: spacing.sm }}>
-                Your district and college-type choices were strict. Try retaking the quiz with
-                &quot;Anywhere in Kerala&quot; or &quot;No preference&quot; on college type.
-              </Text>
-            </Card>
-          ) : (
-            <View style={resultStyles.grid}>
-              {result.colleges.map((m) => (
-                <View key={m.college.id} style={resultStyles.cell}>
-                  <CollegeCard college={m.college} from="quiz" />
-                  <MatchReasons reasons={m.reasons} />
-                </View>
-              ))}
-            </View>
-          )}
-
-          <View style={resultStyles.nav}>
-            <Button label="Retake the quiz" variant="secondary" onPress={onRestart} />
-            <LinkButton href="/colleges" label="Browse all colleges" variant="ghost" />
-          </View>
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
-
-const resultStyles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  heroTitle: {
-    marginTop: spacing.sm,
-    color: colors.text,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    // No `alignItems: 'center'` — that shrinks SkyBandHero to fit
-    // the centred body. inner block sets its own alignSelf:center.
-  },
-  inner: {
-    width: '100%',
-    maxWidth: layout.maxContentWidth,
-    alignSelf: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.x2l,
-  },
-  marksCard: {
-    marginTop: spacing.lg,
-  },
-  section: {
-    marginTop: spacing.x2l,
-    marginBottom: spacing.md,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  cell: {
-    flexGrow: 1,
-    flexBasis: 300,
-    maxWidth: 540,
-    gap: spacing.sm,
-  },
-  reasons: {
-    gap: 2,
-    paddingHorizontal: spacing.xs,
-  },
-  nav: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginTop: spacing.xl,
-  },
-});
