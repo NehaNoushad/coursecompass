@@ -20,7 +20,7 @@
  */
 
 import { Link } from 'expo-router';
-import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
+import { Dimensions, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { District } from '@/types';
 import { STREAM_LABELS, TYPE_LABELS } from '@/data';
@@ -545,6 +545,164 @@ const dc = StyleSheet.create({
   },
 });
 
+// ─── PDF report generation ───────────────────────────────────────────────────
+
+/**
+ * Opens a new browser tab with a formatted A4 HTML report and immediately
+ * triggers the print dialog so the student can save it as a PDF. Zero
+ * dependencies — the browser does all the heavy lifting.
+ */
+function buildReportHtml(answers: QuizAnswers, result: Recommendation): string {
+  const chips = profileChips(answers);
+
+  const blockedHtml = result.blocked.map((b) => `
+    <div class="blocked-card">
+      <strong>About ${b.category.name}</strong>
+      <p>${b.note}</p>
+    </div>`).join('');
+
+  const pathsHtml = result.paths.map((p, i) => `
+    <div class="path-card">
+      <div class="path-header">
+        <span class="rank">${i + 1}</span>
+        <div class="path-title">
+          <h3>${p.category.name}</h3>
+          <p class="desc">${p.category.description}</p>
+        </div>
+        ${i === 0 ? '<span class="badge-top">Top match</span>' : ''}
+      </div>
+      <div class="section-label">WHY IT FITS YOU</div>
+      <ul class="bullets">${p.whyItFits.map((r) => `<li>${r}</li>`).join('')}</ul>
+      ${p.cautions.length > 0 ? `
+        <div class="caution-box">
+          ${p.cautions.map((c) => `<p>⚠ ${c}</p>`).join('')}
+        </div>` : ''}
+      <div class="section-label">THE GATE</div>
+      <div class="pills">
+        ${p.exams.length === 0
+          ? '<span class="pill pill-ok">No entrance exam — direct admission</span>'
+          : p.exams.slice(0, 6).map((e) =>
+              `<span class="pill ${e.attempted ? 'pill-ok' : ''}">${e.attempted ? '✓ ' : ''}${e.exam.name}</span>`
+            ).join('')
+        }
+        ${p.directAdmissionCount > 0 && p.exams.length > 0
+          ? `<span class="pill pill-ok">+${plural(p.directAdmissionCount, 'course')} direct admission</span>`
+          : ''}
+      </div>
+      ${p.careers.length > 0 ? `
+        <div class="section-label">WHERE IT CAN LEAD</div>
+        <div class="careers">
+          ${p.careers.map((c) => `
+            <div class="career-row">
+              <strong>${c.role}</strong>
+              <span>${c.scope}</span>
+            </div>`).join('')}
+        </div>` : ''}
+    </div>`).join('');
+
+  const discoveriesHtml = result.discoveries.length > 0 ? `
+    <h2>Worth a look — fields you didn't pick</h2>
+    <div class="discoveries">
+      ${result.discoveries.map((d) => `
+        <div class="discovery-card">
+          <div class="eyebrow">HAVE YOU CONSIDERED</div>
+          <h4>${d.category.name}</h4>
+          <p>${d.reason}</p>
+        </div>`).join('')}
+    </div>` : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Your CollegeDash Report</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         color: #0D2840; background: #fff; }
+  @page { margin: 1.5cm; size: A4 portrait; }
+  h1  { font-size: 22px; font-weight: 800; }
+  h2  { font-size: 17px; font-weight: 700; color: #1F5FA0;
+        border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;
+        margin: 28px 0 14px; }
+  h3  { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+  h4  { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  p   { font-size: 13px; color: #4A5A6E; line-height: 1.55; margin-top: 3px; }
+  .report-header { background: linear-gradient(135deg,#87CEEB,#2D7DD2);
+                   padding: 20px 24px; color: #fff; }
+  .report-header h1 { color: #fff; margin-bottom: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip  { background: rgba(255,255,255,0.88); padding: 3px 11px;
+           border-radius: 999px; font-size: 12px; color: #0D2840; font-weight: 500; }
+  .body  { padding: 20px 24px; }
+  .marks-note { background: #F2F6FB; border-radius: 8px; padding: 11px 14px;
+                font-size: 13px; color: #4A5A6E; margin-bottom: 18px; }
+  .blocked-card { background: #FFFBEB; border-left: 3px solid #FFD93D;
+                  padding: 9px 13px; border-radius: 7px; margin-bottom: 10px; }
+  .blocked-card strong { font-size: 13px; }
+  .path-card { border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;
+               margin-bottom: 16px; page-break-inside: avoid; }
+  .path-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+  .rank  { width: 28px; height: 28px; border-radius: 14px; background: #2D7DD2;
+           color: #fff; display: flex; align-items: center; justify-content: center;
+           font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .path-title { flex: 1; }
+  .desc  { font-size: 12px; color: #8895A6; margin-top: 1px; }
+  .badge-top { background: #DCFCE7; color: #16A34A; font-size: 11px; font-weight: 700;
+               padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+               align-self: flex-start; }
+  .section-label { font-size: 10px; letter-spacing: 1.5px; color: #8895A6;
+                   font-weight: 700; text-transform: uppercase; margin: 12px 0 6px; }
+  .bullets { padding-left: 18px; }
+  .bullets li { font-size: 13px; color: #4A5A6E; margin-bottom: 4px; line-height: 1.5; }
+  .caution-box { background: #FFFBEB; border-left: 3px solid #FFD93D;
+                 padding: 8px 12px; border-radius: 6px; margin: 8px 0; }
+  .caution-box p { font-size: 12px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill  { border: 1px solid #E2E8F0; padding: 3px 10px; border-radius: 999px;
+           font-size: 12px; color: #4A5A6E; }
+  .pill-ok { border-color: #16A34A; background: #DCFCE7; color: #16A34A; font-weight: 600; }
+  .careers { display: flex; flex-direction: column; gap: 7px; }
+  .career-row { border-left: 3px solid #4FA3E0; background: #E8F4FD;
+                padding: 7px 11px; border-radius: 6px; }
+  .career-row strong { font-size: 13px; display: block; }
+  .career-row span   { font-size: 12px; color: #4A5A6E; }
+  .discoveries { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
+  .discovery-card { background: #E8F4FD; border-radius: 10px; padding: 13px;
+                    flex: 1; min-width: 180px; page-break-inside: avoid; }
+  .eyebrow { font-size: 10px; letter-spacing: 1.5px; color: #1F5FA0;
+             font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
+  .footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #E2E8F0;
+            font-size: 11px; color: #8895A6; text-align: center; }
+</style>
+</head>
+<body>
+<div class="report-header">
+  <h1>Your CollegeDash Report</h1>
+  <div class="chips">${chips.map((c) => `<span class="chip">${c}</span>`).join('')}</div>
+</div>
+<div class="body">
+  <div class="marks-note">${marksNote(answers.marksBand)}</div>
+  ${blockedHtml ? `<h2>Honest heads-up</h2>${blockedHtml}` : ''}
+  <h2>Your best-fit paths</h2>
+  ${pathsHtml || '<p>No paths matched. Try retaking the quiz with broader interests.</p>'}
+  ${discoveriesHtml}
+  <p class="footer">Generated by CollegeDash · collegedash.in</p>
+</div>
+<script>window.onload = function(){ window.print(); }</script>
+</body>
+</html>`;
+}
+
+function downloadReport(answers: QuizAnswers, result: Recommendation) {
+  if (Platform.OS !== 'web') return;
+  const html = buildReportHtml(answers, result);
+  const win = typeof window !== 'undefined' ? window.open('', '_blank') : null;
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+}
+
 // ─── Main result screen ──────────────────────────────────────────────────────
 
 export function QuizResult({
@@ -583,6 +741,20 @@ export function QuizResult({
           <Card muted style={rs.marksCard}>
             <Text variant="bodySmall">{marksNote(answers.marksBand)}</Text>
           </Card>
+
+          {/* Quick-access download — visible without scrolling on desktop */}
+          {Platform.OS === 'web' ? (
+            <View style={rs.downloadRow}>
+              <Button
+                label="⬇ Download Report as PDF"
+                variant="primary"
+                onPress={() => downloadReport(answers, result)}
+              />
+              <Text variant="caption" muted style={{ alignSelf: 'center' }}>
+                Opens in a new tab → save with browser print → PDF
+              </Text>
+            </View>
+          ) : null}
 
           {/* Honest part first — interests their stream can't enter. */}
           {result.blocked.length > 0 ? (
@@ -675,6 +847,11 @@ export function QuizResult({
 
           <View style={rs.nav}>
             <Button label="Retake the quiz" variant="secondary" onPress={onRestart} />
+            <Button
+              label="⬇ Download as PDF"
+              variant="primary"
+              onPress={() => downloadReport(answers, result)}
+            />
             <LinkButton href="/colleges" label="Browse all colleges" variant="ghost" />
           </View>
         </View>
@@ -724,6 +901,12 @@ const rs = StyleSheet.create({
     paddingVertical: IS_NARROW ? spacing.xl : spacing.x2l,
   },
   marksCard: {
+    marginTop: spacing.lg,
+  },
+  downloadRow: {
+    flexDirection: IS_NARROW ? 'column' : 'row',
+    alignItems: IS_NARROW ? 'flex-start' : 'center',
+    gap: spacing.md,
     marginTop: spacing.lg,
   },
   blockedList: {
