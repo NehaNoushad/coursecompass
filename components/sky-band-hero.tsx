@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingTop: IS_NARROW ? spacing.x3l : spacing.x4l,
     paddingBottom: IS_NARROW ? spacing.x3l : spacing.x4l + spacing.lg,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: IS_NARROW ? layout.gutterNarrow : layout.gutter,
   },
   fade: {
     position: 'absolute',

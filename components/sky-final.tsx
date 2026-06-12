@@ -21,7 +21,7 @@ import Svg, {
 
 import { LinkButton } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { colors, fontFamily, spacing } from '@/constants/theme';
+import { colors, fontFamily, layout, spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth';
 
 // Shared narrow breakpoint — see `components/site-header.tsx`.
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   section: {
     position: 'relative',
     paddingVertical: spacing.x4l * 2,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: IS_NARROW ? layout.gutterNarrow : layout.gutter,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',

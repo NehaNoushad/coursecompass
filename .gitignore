@@ -46,3 +46,4 @@ app-example
 # at the repo root or in .playwright-mcp/ during verification sessions.
 .playwright-mcp/
 /*.png
+.vercel

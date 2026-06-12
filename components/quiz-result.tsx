@@ -904,7 +904,7 @@ const rs = StyleSheet.create({
     width: '100%',
     maxWidth: layout.maxContentWidth,
     alignSelf: 'center',
-    paddingHorizontal: IS_NARROW ? spacing.lg : spacing.xl,
+    paddingHorizontal: IS_NARROW ? layout.gutterNarrow : layout.gutter,
     paddingVertical: IS_NARROW ? spacing.xl : spacing.x2l,
   },
   marksCard: {

@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: colors.background,
     paddingVertical: spacing.x4l,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: IS_NARROW ? layout.gutterNarrow : layout.gutter,
     alignItems: 'center',
   },
   row: {

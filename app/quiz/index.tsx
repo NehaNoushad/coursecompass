@@ -355,7 +355,7 @@ function ProgressStrip({ step }: { step: number }) {
 const progressStyles = StyleSheet.create({
   strip: {
     paddingVertical: 20,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: IS_NARROW ? layout.gutterNarrow : layout.gutter,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(31,95,160,0.10)',
   },
@@ -1448,13 +1448,13 @@ const rootStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: 48,
     alignItems: 'flex-start',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: layout.gutter,
     paddingTop: 48,
   },
   bodyNarrow: {
     flexDirection: 'column',
     gap: 16,
-    paddingHorizontal: 20,
+    paddingHorizontal: layout.gutterNarrow,
     paddingTop: 16,
   },
   profileCol: {

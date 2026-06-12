@@ -113,9 +113,9 @@ function HeroAvatar({ avatarUrl, initial }: { avatarUrl: string | null; initial:
 }
 const ha = StyleSheet.create({
   circle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: IS_NARROW ? 72 : 96,
+    height: IS_NARROW ? 72 : 96,
+    borderRadius: IS_NARROW ? 36 : 48,
     backgroundColor: skyMid,
     alignItems: 'center',
     justifyContent: 'center',
@@ -125,15 +125,18 @@ const ha = StyleSheet.create({
     // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
     boxShadow: '0px 8px 24px rgba(31, 95, 160, 0.28)',
     elevation: 8,
-    // break slightly out of hero bottom boundary
-    marginBottom: IS_NARROW ? -24 : -32,
+    // Wide: break slightly out of the hero's bottom boundary (the body
+    // adds matching top padding). Narrow: the avatar sits at the TOP of
+    // a column layout, so a negative margin would just pull the greeting
+    // up into it — no overlap trick on phones.
+    marginBottom: IS_NARROW ? 0 : -32,
     flexShrink: 0,
   },
   initial: {
     fontFamily: fontFamily.displayHeavy,
-    fontSize: 38,
+    fontSize: IS_NARROW ? 30 : 38,
     color: colors.textInverse,
-    lineHeight: 38,
+    lineHeight: IS_NARROW ? 30 : 38,
   },
 });
 
@@ -593,10 +596,12 @@ const page = StyleSheet.create({
     width: '100%',
     maxWidth: layout.maxContentWidth,
     alignSelf: 'center',
-    paddingHorizontal: IS_NARROW ? spacing.xl : spacing.x2l,
-    paddingTop: spacing.x3l + spacing.lg, // extra room for the avatar overlap
+    paddingHorizontal: IS_NARROW ? layout.gutterNarrow : layout.gutter,
+    // Wide needs extra top room for the avatar that breaks out of the
+    // hero; narrow has no overlap, so a normal section gap is enough.
+    paddingTop: IS_NARROW ? spacing.xl : spacing.x3l + spacing.lg,
     paddingBottom: spacing.x3l,
-    gap: spacing.x3l,
+    gap: IS_NARROW ? spacing.x2l : spacing.x3l,
   },
   section: {},
 });

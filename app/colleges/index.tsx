@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: layout.maxContentWidth,
     alignSelf: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: IS_NARROW ? layout.gutterNarrow : layout.gutter,
     paddingTop: IS_NARROW ? spacing.xl : 0,
     // Negative top margin so the layout floats over the hero's fade —
     // stitches the band into the rest of the page rather than reading

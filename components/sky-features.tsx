@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   section: {
     position: 'relative',
     paddingVertical: spacing.x4l,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: IS_NARROW ? layout.gutterNarrow : layout.gutter,
     overflow: 'hidden',
   },
   inner: {

@@ -105,6 +105,13 @@ export const fontFamily = {
 /** Max width of centred content on wide (web/desktop) screens. */
 export const layout = {
   maxContentWidth: 1120,
+  /**
+   * Shared page gutter — the horizontal padding every page body, hero
+   * band, and footer uses, so content lines up to the same edge on every
+   * screen. Use `gutterNarrow` under the page's narrow breakpoint.
+   */
+  gutter: 24,
+  gutterNarrow: 16,
 } as const;
 
 /** Theme passed to react-navigation's ThemeProvider. */

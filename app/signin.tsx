@@ -35,6 +35,7 @@ import {
   colors,
   fontFamily,
   fontWeight,
+  layout,
   radius,
   spacing,
 } from '@/constants/theme';
@@ -498,7 +499,7 @@ export default function SignInScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const CARD_MAX_W = 440;
-const NARROW_SIDE_MARGIN = 18;
+const NARROW_SIDE_MARGIN = layout.gutterNarrow;
 
 const styles = StyleSheet.create({
   root: {

@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: colors.skyPale,
     paddingVertical: spacing.x4l,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: IS_NARROW ? layout.gutterNarrow : layout.gutter,
   },
   inner: {
     width: '100%',

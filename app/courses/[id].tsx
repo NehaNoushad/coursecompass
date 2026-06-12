@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: layout.maxContentWidth,
     alignSelf: 'center',
-    paddingHorizontal: IS_NARROW ? spacing.xl : spacing.x2l,
+    paddingHorizontal: IS_NARROW ? layout.gutterNarrow : layout.gutter,
     paddingBottom: spacing.x4l,
   },
 
