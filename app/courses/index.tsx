@@ -72,6 +72,8 @@ const TABS: TabDef[] = [
 interface ExamGroup {
   key: string;
   label: string;
+  /** Short label for the filter chip near the search bar. */
+  chipLabel: string;
   /** Which stream tabs show this group. Empty = shown for all tabs. */
   streams: StreamTab[];
   /** A course belongs to this group if it has at least one of these exam ids. */
@@ -85,6 +87,7 @@ const EXAM_GROUPS: ExamGroup[] = [
   {
     key: 'jee-keam',
     label: 'Need JEE / KEAM',
+    chipLabel: 'JEE / KEAM',
     streams: ['pcm', 'any'],
     examIds: ['jee-main', 'jee-advanced', 'keam', 'cusat-cat'],
     accentColor: colors.skyDeep,
@@ -92,6 +95,7 @@ const EXAM_GROUPS: ExamGroup[] = [
   {
     key: 'neet',
     label: 'Need NEET-UG',
+    chipLabel: 'NEET-UG',
     streams: ['pcb', 'any'],
     examIds: ['neet-ug'],
     accentColor: '#C0392B',
@@ -99,6 +103,7 @@ const EXAM_GROUPS: ExamGroup[] = [
   {
     key: 'agri-vet',
     label: 'Need ICAR / KAU / KVASU / KUFOS',
+    chipLabel: 'Agriculture / Vet',
     streams: ['pcb', 'pcm', 'any'],
     examIds: ['icar-aieea', 'kau-entrance', 'kvasu-entrance', 'kufos-entrance'],
     accentColor: '#16A34A',
@@ -106,6 +111,7 @@ const EXAM_GROUPS: ExamGroup[] = [
   {
     key: 'design',
     label: 'Need a design exam (UCEED / NID DAT / NIFT)',
+    chipLabel: 'Design (UCEED / NIFT)',
     streams: [],
     examIds: ['uceed', 'nid-dat', 'nift-entrance'],
     accentColor: '#059669',
@@ -113,6 +119,7 @@ const EXAM_GROUPS: ExamGroup[] = [
   {
     key: 'other',
     label: 'Other entrance exams (CLAT / NCHMCT JEE / NDA / IMU CET…)',
+    chipLabel: 'Other exams (CLAT / NDA…)',
     streams: [],
     examIds: [
       'clat', 'klee',
@@ -130,6 +137,7 @@ const EXAM_GROUPS: ExamGroup[] = [
   {
     key: 'cuet-direct',
     label: 'Direct / CUET-UG / University entrance',
+    chipLabel: 'Direct / CUET',
     streams: [],
     examIds: [
       'cuet-ug',
@@ -142,6 +150,7 @@ const EXAM_GROUPS: ExamGroup[] = [
   {
     key: 'no-exam',
     label: 'Direct admission — no entrance exam',
+    chipLabel: 'No entrance exam',
     streams: [],
     examIds: [],
     noExam: true,
@@ -172,6 +181,14 @@ export default function CoursesScreen() {
 
   const [activeStream, setActiveStream] = useState<StreamTab>(initialStream);
   const [search, setSearch] = useState('');
+  // Multi-select exam-path filter (chip row under the search bar). Empty
+  // set = no filter, every exam path shows. Keyed by EXAM_GROUPS.key.
+  const [selectedExams, setSelectedExams] = useState<string[]>([]);
+
+  const toggleExam = (key: string) =>
+    setSelectedExams((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
 
   // Courses visible for the active stream (before the search filter).
   const streamFilteredCourses = useMemo(
@@ -214,20 +231,43 @@ export default function CoursesScreen() {
       const streamVisible =
         group.streams.length === 0 || group.streams.includes(activeStream);
 
-      if (!streamVisible) return { ...group, courses: [] };
+      if (!streamVisible) return { ...group, courses: [], streamVisible };
 
       const courses = visibleCourses.filter((c) => {
         if (group.noExam) return c.examIds.length === 0;
         return c.examIds.some((eid) => group.examIds.includes(eid));
       });
 
-      return { ...group, courses };
+      return { ...group, courses, streamVisible };
     });
   }, [visibleCourses, activeStream]);
+
+  // Chips shown under the search bar: only exam paths valid for the
+  // current stream (so e.g. NEET-UG doesn't appear under Commerce) and
+  // that actually have at least one course in the current view.
+  const examChips = useMemo(
+    () => groups.filter((g) => g.streamVisible && g.courses.length > 0),
+    [groups],
+  );
+
+  // Apply the chip selection: when one or more chips are active, only
+  // those exam paths render. Empty selection = show everything.
+  const shownGroups = useMemo(
+    () =>
+      groups.filter(
+        (g) => selectedExams.length === 0 || selectedExams.includes(g.key),
+      ),
+    [groups, selectedExams],
+  );
 
   const activeTab = TABS.find((t) => t.id === activeStream)!;
   const isSearching = search.trim().length > 0;
   const noResults = isSearching && visibleCourses.length === 0;
+  // Selection is active but every selected path is empty for this stream/search.
+  const noFilterResults =
+    !noResults &&
+    selectedExams.length > 0 &&
+    shownGroups.every((g) => g.courses.length === 0);
 
   return (
     <View style={styles.root}>
@@ -325,6 +365,55 @@ export default function CoursesScreen() {
             ) : null}
           </View>
 
+          {/* Exam-path multi-select — tap one or more to focus the list on
+              just those entrance exams. */}
+          <View style={styles.examFilter}>
+            <Text style={styles.examFilterLabel}>FILTER BY EXAM</Text>
+            <View style={styles.examChipRow}>
+              {examChips.map((g) => {
+                const on = selectedExams.includes(g.key);
+                return (
+                  <Pressable
+                    key={g.key}
+                    onPress={() => toggleExam(g.key)}
+                    style={[
+                      styles.examChip,
+                      on && { backgroundColor: g.accentColor, borderColor: g.accentColor },
+                    ]}>
+                    <Text style={[styles.examChipText, on && styles.examChipTextOn]}>
+                      {g.chipLabel}
+                    </Text>
+                    <Text style={[styles.examChipCount, on && styles.examChipCountOn]}>
+                      {g.courses.length}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+              {selectedExams.length > 0 ? (
+                <Pressable onPress={() => setSelectedExams([])} style={styles.examClear}>
+                  <Text style={styles.examClearText}>Clear ✕</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+
+          {/* Empty state when the selected exams have no courses */}
+          {noFilterResults ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>
+                No courses for the selected exam{selectedExams.length === 1 ? '' : 's'}
+                {activeStream !== 'any' ? <> in {activeTab.summaryLabel}</> : null}
+                {isSearching ? <> matching &ldquo;{search.trim()}&rdquo;</> : null}
+              </Text>
+              <Text style={styles.emptyBody}>
+                Try selecting a different exam, clearing the filter, or switching stream.
+              </Text>
+              <Pressable onPress={() => setSelectedExams([])} style={styles.emptyBtn}>
+                <Text style={styles.emptyBtnText}>Clear exam filter</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
           {/* Empty state when search returns nothing */}
           {noResults ? (
             <View style={styles.emptyCard}>
@@ -343,7 +432,7 @@ export default function CoursesScreen() {
           ) : null}
 
           {/* Course groups */}
-          {groups.map((group) => {
+          {shownGroups.map((group) => {
             if (group.courses.length === 0) return null;
             return (
               <View key={group.key} style={styles.pathGroup}>
@@ -650,6 +739,60 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: fontWeight.semibold,
     color: colors.textMuted,
+  },
+
+  // ── Exam-path multi-select ───────────────────────────────────────────────────
+  examFilter: {
+    marginBottom: spacing.x2l,
+  },
+  examFilterLabel: {
+    fontFamily: fontFamily.displaySemibold,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: colors.textSubtle,
+    marginBottom: spacing.md,
+  },
+  examChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  examChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  examChipText: {
+    fontSize: 13,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+  },
+  examChipTextOn: {
+    color: colors.textInverse,
+  },
+  examChipCount: {
+    fontSize: 12,
+    fontWeight: fontWeight.bold,
+    color: colors.textSubtle,
+  },
+  examChipCountOn: {
+    color: 'rgba(255,255,255,0.85)',
+  },
+  examClear: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  examClearText: {
+    fontSize: 13,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSubtle,
   },
 
   // ── Empty state when search returns nothing ──────────────────────────────────

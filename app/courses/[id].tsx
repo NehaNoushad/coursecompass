@@ -335,10 +335,13 @@ export default function CourseDetailScreen() {
               <Text muted style={styles.ctaSub}>
                 6 questions about your district, marks, exams and interests — matched to the right {course.name} college.
               </Text>
+              {/* secondary (dark label) because ctaBtn paints the button
+                  white to pop on the blue card — a primary button's white
+                  label would be invisible on white. */}
               <LinkButton
                 href="/quiz"
                 label="Take the quiz to see which fits you best →"
-                variant="primary"
+                variant="secondary"
                 size="lg"
                 style={styles.ctaBtn}
               />
