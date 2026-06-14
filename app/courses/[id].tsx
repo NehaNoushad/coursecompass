@@ -241,11 +241,11 @@ export default function CourseDetailScreen() {
                 <View style={styles.connectorWrap}>
                   <Svg
                     style={styles.connectorSvg}
-                    viewBox="0 0 1200 18"
+                    viewBox="0 0 1200 30"
                     preserveAspectRatio="none"
                   >
                     <Path
-                      d="M 150 9 Q 300 3, 450 9 T 750 9 T 1050 9"
+                      d="M 150 15 Q 300 5, 450 15 T 750 15 T 1050 15"
                       fill="none"
                       stroke={colors.skyDeep}
                       strokeWidth={2.5}
@@ -640,24 +640,26 @@ const styles = StyleSheet.create({
   },
   connectorWrap: {
     position: 'absolute',
-    // The step-label dots end ~28px down; the cards start ~52px down.
-    // Park the connector in that gap so it links the dots without
-    // touching any card content.
-    top: 32,
+    // Park the connector in the gap between the step-label dots and the
+    // cards (widened via stepLabelsRow.marginBottom) so the line has room
+    // to breathe and never touches any card content.
+    top: 40,
     left: 0,
     right: 0,
-    height: 18,
+    height: 30,
     zIndex: 0,
     pointerEvents: 'none',
   },
   connectorSvg: {
     width: '100%',
-    height: 18,
+    height: 30,
   },
   stepLabelsRow: {
     flexDirection: 'row',
     gap: spacing.xl,
-    marginBottom: spacing.md,
+    // Wide gap so the dashed connector below has room to breathe between
+    // the step dots and the card tops.
+    marginBottom: spacing.x2l,
     position: 'relative',
     zIndex: 1,
   },
