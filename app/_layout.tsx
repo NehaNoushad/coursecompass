@@ -19,6 +19,7 @@ import { StyleSheet, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { BrowseGateOverlay } from '@/components/browse-gate-overlay';
+import { PrototypeNotice } from '@/components/prototype-notice';
 import { navigationTheme } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { BrowseGateProvider } from '@/lib/browse-gate';
@@ -74,6 +75,8 @@ function GatedShell() {
       <View style={styles.root}>
         <Stack screenOptions={{ headerShown: false }} />
         <BrowseGateOverlay />
+        {/* Shown once per full page load, on top of everything. */}
+        <PrototypeNotice />
       </View>
     </BrowseGateProvider>
   );
