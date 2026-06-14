@@ -234,15 +234,18 @@ export default function CourseDetailScreen() {
               // ── DESKTOP: horizontal 4-column ───────────────────────
               <View style={styles.desktopJourney}>
 
-                {/* Dotted connector SVG behind the cards */}
+                {/* Dotted connector — sits in the empty band between the
+                    step-label dots and the cards, linking the four dots.
+                    Kept clear of the cards so it never crosses the gate
+                    box's translucent-yellow note. */}
                 <View style={styles.connectorWrap}>
                   <Svg
                     style={styles.connectorSvg}
-                    viewBox="0 0 1200 40"
+                    viewBox="0 0 1200 18"
                     preserveAspectRatio="none"
                   >
                     <Path
-                      d="M 150 20 Q 300 0, 450 20 T 750 20 T 1050 20"
+                      d="M 150 9 Q 300 3, 450 9 T 750 9 T 1050 9"
                       fill="none"
                       stroke={colors.skyDeep}
                       strokeWidth={2.5}
@@ -637,16 +640,19 @@ const styles = StyleSheet.create({
   },
   connectorWrap: {
     position: 'absolute',
-    top: 52,
+    // The step-label dots end ~28px down; the cards start ~52px down.
+    // Park the connector in that gap so it links the dots without
+    // touching any card content.
+    top: 32,
     left: 0,
     right: 0,
-    height: 40,
+    height: 18,
     zIndex: 0,
     pointerEvents: 'none',
   },
   connectorSvg: {
     width: '100%',
-    height: 40,
+    height: 18,
   },
   stepLabelsRow: {
     flexDirection: 'row',
