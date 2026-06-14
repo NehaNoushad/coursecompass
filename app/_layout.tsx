@@ -19,6 +19,7 @@ import { StyleSheet, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { BrowseGateOverlay } from '@/components/browse-gate-overlay';
+import { FeedbackPrompt } from '@/components/feedback-prompt';
 import { PrototypeNotice } from '@/components/prototype-notice';
 import { navigationTheme } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -75,6 +76,8 @@ function GatedShell() {
       <View style={styles.root}>
         <Stack screenOptions={{ headerShown: false }} />
         <BrowseGateOverlay />
+        {/* Nudges feedback after ~1hr with the tab open. */}
+        <FeedbackPrompt />
         {/* Shown once per full page load, on top of everything. */}
         <PrototypeNotice />
       </View>

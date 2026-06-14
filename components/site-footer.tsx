@@ -27,6 +27,7 @@ const IS_NARROW = Dimensions.get('window').width < 640;
 const LINKS = [
   { label: 'Colleges', href: '/colleges' as const },
   { label: 'Courses', href: '/courses' as const },
+  { label: 'Feedback', href: '/feedback' as const },
 ] as const;
 
 export function SiteFooter() {

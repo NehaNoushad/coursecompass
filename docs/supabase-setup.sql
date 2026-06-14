@@ -151,3 +151,28 @@ revoke all on function public.increment_visitors() from public;
 revoke all on function public.get_visitor_count() from public;
 grant execute on function public.increment_visitors() to anon, authenticated;
 grant execute on function public.get_visitor_count()  to anon, authenticated;
+
+-- ─────────────────────────────────────────────────────────────────────
+-- Feedback inbox (powers /feedback). Anyone — signed in or not — can
+-- submit; only you (via the Supabase dashboard / service role) can read.
+-- ─────────────────────────────────────────────────────────────────────
+create table if not exists public.feedback (
+  id         uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  type       text not null check (type in ('feedback', 'recommendation', 'complaint')),
+  message    text not null,
+  name       text,
+  email      text,
+  user_id    uuid references auth.users (id) on delete set null
+);
+
+alter table public.feedback enable row level security;
+
+-- Allow inserts from anyone (anon + authenticated). No select policy is
+-- defined, so the anon/authenticated keys cannot read rows back — you
+-- view submissions from the Supabase dashboard.
+drop policy if exists "anyone can submit feedback" on public.feedback;
+create policy "anyone can submit feedback"
+  on public.feedback for insert
+  to anon, authenticated
+  with check (true);
