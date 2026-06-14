@@ -121,6 +121,18 @@ function pullQuote(college: NonNullable<(typeof COLLEGE_BY_ID)[string]>): string
   return `${college.name} is a ${TYPE_LABELS[college.type].toLowerCase()} college in ${college.district} offering pathways across ${college.categories.length} subject areas.`;
 }
 
+/**
+ * A Google-search link for a college's official website. Used as the
+ * honest fallback when we don't have a verified URL on file — better to
+ * send students to a fresh search than to a hardcoded link we can't
+ * vouch for.
+ */
+function officialSearchHref(name: string, district: string): string {
+  return `https://www.google.com/search?q=${encodeURIComponent(
+    `${name} ${district} Kerala official website`,
+  )}`;
+}
+
 // ─── Small icon components ────────────────────────────────────────────────────
 
 function IconPhone() {
@@ -311,39 +323,45 @@ function SidebarCards({
         {college.nirfRank ? <SRow label="NIRF rank" badge={`#${college.nirfRank}`} /> : null}
       </View>
 
-      {/* Contact — only render if at least one field exists */}
-      {college.phone || college.admissionsEmail || college.website ? (
-        <View style={[s.sCard, s.sCardGap]}>
-          <View style={s.sCardTitle}>
-            <Text style={s.sCardTitleText}>Contact</Text>
-            <View style={s.sCardDot} />
-          </View>
-          {college.phone ? (
-            <ContactLink
-              icon={<IconPhone />}
-              label="Phone"
-              value={college.phone}
-              href={`tel:${college.phone}`}
-            />
-          ) : null}
-          {college.admissionsEmail ? (
-            <ContactLink
-              icon={<IconEmail />}
-              label="Email"
-              value={college.admissionsEmail}
-              href={`mailto:${college.admissionsEmail}`}
-            />
-          ) : null}
-          {college.website ? (
-            <ContactLink
-              icon={<IconGlobe />}
-              label="Website"
-              value={college.website.replace(/^https?:\/\//, '') + ' ↗'}
-              href={college.website}
-            />
-          ) : null}
+      {/* Contact — always rendered; the website row falls back to a
+          Google search when we don't have a verified URL on file. */}
+      <View style={[s.sCard, s.sCardGap]}>
+        <View style={s.sCardTitle}>
+          <Text style={s.sCardTitleText}>Contact</Text>
+          <View style={s.sCardDot} />
         </View>
-      ) : null}
+        {college.phone ? (
+          <ContactLink
+            icon={<IconPhone />}
+            label="Phone"
+            value={college.phone}
+            href={`tel:${college.phone}`}
+          />
+        ) : null}
+        {college.admissionsEmail ? (
+          <ContactLink
+            icon={<IconEmail />}
+            label="Email"
+            value={college.admissionsEmail}
+            href={`mailto:${college.admissionsEmail}`}
+          />
+        ) : null}
+        {college.website ? (
+          <ContactLink
+            icon={<IconGlobe />}
+            label="Website"
+            value={college.website.replace(/^https?:\/\//, '') + ' ↗'}
+            href={college.website}
+          />
+        ) : (
+          <ContactLink
+            icon={<IconGlobe />}
+            label="Official site"
+            value="Find official website ↗"
+            href={officialSearchHref(college.name, college.district)}
+          />
+        )}
+      </View>
 
       {/* Shortlist — phase-4 placeholder */}
       <View style={[s.shortlistCard, s.sCardGap]}>
@@ -627,7 +645,15 @@ export default function CollegeDetailScreen() {
                       }>
                       {college.website.replace(/^https?:\/\//, '')} ↗
                     </Text>
-                  ) : null}
+                  ) : (
+                    <Text
+                      style={s.addressWebsite}
+                      onPress={() =>
+                        Linking.openURL(officialSearchHref(college.name, college.district))
+                      }>
+                      Find official website ↗
+                    </Text>
+                  )}
                 </View>
               </View>
             </View>
