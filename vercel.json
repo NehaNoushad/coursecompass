@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx expo export -p web",
+  "buildCommand": "node scripts/generate-sitemap.mjs && npx expo export -p web && node scripts/inject-jsonld.mjs",
   "outputDirectory": "dist",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,

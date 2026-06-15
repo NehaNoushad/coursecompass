@@ -30,11 +30,13 @@ import Svg, { Circle, Line, Path, Polyline } from 'react-native-svg';
 
 import {
   CATEGORY_BY_ID,
+  COLLEGES,
   COLLEGE_BY_ID,
   EXAM_BY_ID,
   TYPE_LABELS,
   getCoursesForCollege,
 } from '@/data';
+import { Seo } from '@/components/seo';
 import {
   colors,
   fontFamily,
@@ -378,6 +380,14 @@ function SidebarCards({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+/**
+ * Pre-render one static HTML page per college at build time, so each of
+ * the ~390 colleges is a real crawlable page (not a single empty shell).
+ */
+export function generateStaticParams(): { id: string }[] {
+  return COLLEGES.map((c) => ({ id: c.id }));
+}
+
 export default function CollegeDetailScreen() {
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const college = id ? COLLEGE_BY_ID[id] : undefined;
@@ -387,6 +397,7 @@ export default function CollegeDetailScreen() {
   if (!college) {
     return (
       <View style={pg.root}>
+        <Seo title="College not found" noindex />
         <SiteHeader />
         <ScrollView contentContainerStyle={pg.scroll} showsVerticalScrollIndicator={false}>
           <View style={pg.body}>
@@ -445,9 +456,22 @@ export default function CollegeDetailScreen() {
   if (college.totalSeats)
     kfPills.push({ label: 'Seats', value: `~${college.totalSeats.toLocaleString()}` });
 
+  // ── SEO ───────────────────────────────────────────────────────────────────
+  const courseCount = courses.length;
+  const seoTitle = `${college.name} — courses, admission & contact`;
+  const seoDesc = `${college.name} is a ${typeLabel.toLowerCase()} college in ${college.district}, Kerala${
+    college.naacGrade ? ` (NAAC ${college.naacGrade})` : ''
+  }. Explore ${courseCount > 0 ? `${courseCount} courses` : 'courses'} on offer, entrance exams, and how to apply.`;
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={pg.root}>
+      <Seo
+        title={seoTitle}
+        description={seoDesc}
+        path={`/colleges/${college.id}`}
+        type="article"
+      />
       <SiteHeader />
       <ScrollView contentContainerStyle={pg.scroll} showsVerticalScrollIndicator={false}>
 
@@ -471,7 +495,7 @@ export default function CollegeDetailScreen() {
           </View>
 
           {/* College name */}
-          <Text style={s.heroName}>{college.name}</Text>
+          <Text level={1} style={s.heroName}>{college.name}</Text>
 
           {/* Accreditation pill row */}
           <View style={s.heroPills}>

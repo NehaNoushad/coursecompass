@@ -54,6 +54,7 @@ import {
   spacing,
 } from '@/constants/theme';
 import { QuizResult } from '@/components/quiz-result';
+import { Seo } from '@/components/seo';
 import { SiteHeader } from '@/components/site-header';
 import { Text } from '@/components/ui/text';
 
@@ -1391,6 +1392,11 @@ export default function QuizScreen() {
 
   return (
     <View style={rootStyles.root}>
+      <Seo
+        title="Take the free course & college quiz"
+        description="Answer 6 quick questions about your stream, marks, district and interests — get matched to the courses and Kerala colleges that fit you, free."
+        path="/quiz"
+      />
       <SiteHeader />
       {/* Progress strip — thin sky-pale strip below the SiteHeader */}
       <ProgressStrip step={step} />

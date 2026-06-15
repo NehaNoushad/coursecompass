@@ -46,7 +46,7 @@ export function CollegesHero({ eyebrow, prefix, count, suffix, sub, handAccent }
         <Text style={styles.eyebrowText}>{eyebrow}</Text>
       </View>
 
-      <Text style={styles.title}>
+      <Text level={1} style={styles.title}>
         {prefix}
         <Text style={styles.titleAccent}> {count} </Text>
         {suffix}

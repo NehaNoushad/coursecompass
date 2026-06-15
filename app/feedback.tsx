@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Seo } from '@/components/seo';
 import { SkyBandHero } from '@/components/sky-band-hero';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
@@ -86,6 +87,11 @@ export default function FeedbackScreen() {
 
   return (
     <View style={styles.root}>
+      <Seo
+        title="Feedback"
+        description="Tell us what's working and what isn't — complaints, recommendations, and feedback all help us improve Paper Plane."
+        path="/feedback"
+      />
       <SiteHeader />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <SkyBandHero minHeight={220}>
@@ -93,7 +99,7 @@ export default function FeedbackScreen() {
             <View style={styles.eyebrowDot} />
             <Text style={styles.eyebrowText}>WE&apos;RE LISTENING</Text>
           </View>
-          <Text style={styles.heroTitle}>Tell us what you think</Text>
+          <Text level={1} style={styles.heroTitle}>Tell us what you think</Text>
           <Text style={styles.heroSub}>
             Complaints, recommendations, or just feedback — it all helps us make this
             more useful. This is an early prototype, so your input genuinely shapes it.

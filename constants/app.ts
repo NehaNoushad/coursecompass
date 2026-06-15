@@ -6,6 +6,17 @@
 export const APP_NAME = 'Paper Plane';
 
 /**
+ * Canonical public origin — used for SEO canonical links, Open Graph
+ * URLs, and the sitemap. Change this in ONE place when a custom domain
+ * is connected (e.g. https://paperplane.in).
+ */
+export const SITE_URL = 'https://paper-plane-phi.vercel.app';
+
+/** One-line description used as the default meta description / OG copy. */
+export const APP_TAGLINE =
+  'Find the right college and course after Class 12 in Kerala — a free guided quiz plus a browsable catalogue of 390+ colleges, 180+ courses and every entrance exam.';
+
+/**
  * Browse-gate thresholds.
  *
  * Only *active* browsing time counts — the timer pauses when the tab is

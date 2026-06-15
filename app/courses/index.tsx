@@ -35,6 +35,7 @@ import { COURSES } from '@/data';
 import { SkyBandHero } from '@/components/sky-band-hero';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
+import { Seo } from '@/components/seo';
 import { Text } from '@/components/ui/text';
 import {
   colors,
@@ -271,6 +272,11 @@ export default function CoursesScreen() {
 
   return (
     <View style={styles.root}>
+      <Seo
+        title="Courses after Class 12 in Kerala — grouped by entrance exam"
+        description="See every course you can do after 12th in Kerala — grouped by the entrance exam you'd need (JEE, KEAM, NEET, CUET and more). Filter by stream and exam."
+        path="/courses"
+      />
       <SiteHeader />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
@@ -283,7 +289,7 @@ export default function CoursesScreen() {
           </View>
 
           {/* Headline */}
-          <Text style={styles.heroTitle}>
+          <Text level={1} style={styles.heroTitle}>
             What did you study{'\n'}after{' '}
             <Text style={styles.heroTitleEm}>10th</Text>?
           </Text>

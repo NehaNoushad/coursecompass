@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { Seo } from '@/components/seo';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { SkyFeatures } from '@/components/sky-features';
@@ -23,6 +24,11 @@ import { colors } from '@/constants/theme';
 export default function HomeScreen() {
   return (
     <View style={styles.root}>
+      <Seo
+        title="Paper Plane — find your course & college after Class 12 in Kerala"
+        description="A free guided quiz plus a browsable catalogue of 390+ Kerala colleges, 180+ courses and every entrance exam — built for students who've just finished 12th."
+        path="/"
+      />
       <SiteHeader />
       <ScrollView showsVerticalScrollIndicator={false}>
         <SkyHero />

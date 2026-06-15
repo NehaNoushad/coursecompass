@@ -30,6 +30,7 @@ import { APP_NAME } from '@/constants/app';
 
 import { Cloud } from '@/components/cloud';
 import { Text } from '@/components/ui/text';
+import { Seo } from '@/components/seo';
 import { TextInput } from '@/components/ui/text-input';
 import {
   colors,
@@ -260,6 +261,7 @@ export default function SignInScreen() {
   return (
     // Full-screen sky — no Screen wrapper here; we draw everything ourselves.
     <View style={styles.root}>
+      <Seo title="Sign in" path="/signin" noindex />
       {/* ── Sky gradient background ── */}
       <LinearGradient
         colors={[

@@ -1,0 +1,7 @@
+# https://www.sitemaps.org/protocol.html
+User-agent: *
+Allow: /
+Disallow: /account
+Disallow: /signin
+
+Sitemap: https://paper-plane-phi.vercel.app/sitemap.xml

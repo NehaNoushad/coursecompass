@@ -193,7 +193,7 @@ export function SkyHero() {
           </Text>
         </View>
 
-        <Text style={[styles.h1, { fontSize: HEADLINE_SIZE }]}>Look up.</Text>
+        <Text level={1} style={[styles.h1, { fontSize: HEADLINE_SIZE }]}>Look up.</Text>
         <Text style={[styles.h1, styles.h1Accent, { fontSize: HEADLINE_SIZE }]}>
           Way up.
         </Text>

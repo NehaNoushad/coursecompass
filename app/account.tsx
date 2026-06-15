@@ -31,6 +31,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Seo } from '@/components/seo';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { SkyBandHero } from '@/components/sky-band-hero';
@@ -318,6 +319,7 @@ export default function AccountScreen() {
 
   return (
     <View style={page.root}>
+      <Seo title="My account" path="/account" noindex />
       <SiteHeader />
       <ScrollView
         contentContainerStyle={page.scroll}

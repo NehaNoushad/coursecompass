@@ -44,6 +44,7 @@ import { CollegesHero } from '@/components/colleges-hero';
 import { CollegesMagazineCard } from '@/components/colleges-magazine-card';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
+import { Seo } from '@/components/seo';
 import { Text } from '@/components/ui/text';
 import {
   colors,
@@ -143,6 +144,11 @@ export default function CollegesScreen() {
 
   return (
     <View style={styles.root}>
+      <Seo
+        title="Browse colleges in Kerala — by district, course & type"
+        description="Explore 390+ Kerala colleges — government, aided and private — filtered by district, course and type. Find what each offers and how to apply."
+        path="/colleges"
+      />
       <SiteHeader />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 

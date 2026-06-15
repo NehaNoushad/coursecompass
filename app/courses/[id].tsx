@@ -26,12 +26,14 @@ import Svg, { Path } from 'react-native-svg';
 import {
   CATEGORY_BY_ID,
   CAREER_OUTLOOK,
+  COURSES,
   COURSE_BY_ID,
   STREAM_LABELS,
   getCollegesForCourse,
   getExamsForCourse,
   type CareerPath,
 } from '@/data';
+import { Seo } from '@/components/seo';
 import {
   colors,
   fontFamily,
@@ -118,6 +120,15 @@ function backLabel(from: string | undefined): string {
 }
 
 // ─── Main component ────────────────────────────────────────────────────────────
+/**
+ * Pre-render one static HTML page per course at build time. Without this,
+ * `output: static` only emits a single empty [id] shell and crawlers never
+ * see the per-course content — the long-tail SEO that this site depends on.
+ */
+export function generateStaticParams(): { id: string }[] {
+  return COURSES.map((c) => ({ id: c.id }));
+}
+
 export default function CourseDetailScreen() {
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const course = id ? COURSE_BY_ID[id] : undefined;
@@ -126,6 +137,7 @@ export default function CourseDetailScreen() {
   if (!course) {
     return (
       <View style={styles.root}>
+        <Seo title="Course not found" noindex />
         <SiteHeader />
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.pageBody}>
@@ -154,8 +166,23 @@ export default function CourseDetailScreen() {
   const categoryName = category?.name ?? 'Course';
   const streamLabels = course.streams.map((s) => STREAM_LABELS[s]);
 
+  const seoTitle = `${course.name} — eligibility, exams & Kerala colleges`;
+  const gate =
+    exams.length > 0
+      ? `${exams.length} entrance exam${exams.length > 1 ? 's' : ''}`
+      : 'direct admission';
+  const seoDesc = `Study ${course.name} after 12th in Kerala: who qualifies (${streamLabels.join(
+    ', ',
+  )}), ${gate}, what you'll learn, career scope, and ${colleges.length} colleges that offer it.`;
+
   return (
     <View style={styles.root}>
+      <Seo
+        title={seoTitle}
+        description={seoDesc}
+        path={`/courses/${course.id}`}
+        type="article"
+      />
       <SiteHeader />
 
       <ScrollView
@@ -176,7 +203,7 @@ export default function CourseDetailScreen() {
           </View>
 
           {/* Course title */}
-          <Text style={styles.heroTitle}>{course.name}</Text>
+          <Text level={1} style={styles.heroTitle}>{course.name}</Text>
 
           {/* Sub-heading */}
           <Text style={styles.heroSub}>Your {course.name} journey.</Text>
