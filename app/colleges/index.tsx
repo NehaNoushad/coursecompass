@@ -183,7 +183,20 @@ export default function CollegesScreen() {
           <View style={styles.twoCol}>
             {/* ─── Sticky sidebar (filters) ─── */}
             <View style={styles.sidebarWrap}>
-              <View style={styles.sidebar}>
+              {/* On desktop the panel is pinned (sticky) AND capped to the
+                  viewport height with its own scroll, so it travels with the
+                  college list and every filter — including District/Type at
+                  the bottom — stays reachable without scrolling the page. */}
+              <View
+                style={[
+                  styles.sidebar,
+                  !IS_NARROW &&
+                    ({
+                      maxHeight: 'calc(100vh - 48px)',
+                      overflow: 'auto',
+                      scrollbarWidth: 'thin',
+                    } as unknown as ViewStyle),
+                ]}>
                 <View style={styles.sidebarHead}>
                   <Text style={styles.sidebarTitle}>Filters</Text>
                   {anyFilterActive ? (
@@ -204,9 +217,18 @@ export default function CollegesScreen() {
                   onChange={(e) => setSearch(e.currentTarget.value)}
                 />
 
-                {/* District + Type first — they're the filters students reach
-                    for most, and keeping them above the long 20-item category
-                    list means no scrolling to get to them. */}
+                <FilterSection label="Course category">
+                  {CATEGORY_OPTIONS.map((opt) => (
+                    <FilterRow
+                      key={opt.value}
+                      label={opt.label}
+                      pill={String(categoryCounts[opt.value] ?? 0)}
+                      active={category === opt.value}
+                      onPress={() => setCategory(opt.value)}
+                    />
+                  ))}
+                </FilterSection>
+
                 <FilterSection label="District" hint="pick any">
                   <View style={styles.chipRow}>
                     {DISTRICTS.map((d) => {
@@ -239,18 +261,6 @@ export default function CollegesScreen() {
                     you actually pay also depends on your seat type (merit /
                     management / NRI) and any scholarships.
                   </Text>
-                </FilterSection>
-
-                <FilterSection label="Course category">
-                  {CATEGORY_OPTIONS.map((opt) => (
-                    <FilterRow
-                      key={opt.value}
-                      label={opt.label}
-                      pill={String(categoryCounts[opt.value] ?? 0)}
-                      active={category === opt.value}
-                      onPress={() => setCategory(opt.value)}
-                    />
-                  ))}
                 </FilterSection>
               </View>
             </View>
