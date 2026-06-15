@@ -204,18 +204,9 @@ export default function CollegesScreen() {
                   onChange={(e) => setSearch(e.currentTarget.value)}
                 />
 
-                <FilterSection label="Course category">
-                  {CATEGORY_OPTIONS.map((opt) => (
-                    <FilterRow
-                      key={opt.value}
-                      label={opt.label}
-                      pill={String(categoryCounts[opt.value] ?? 0)}
-                      active={category === opt.value}
-                      onPress={() => setCategory(opt.value)}
-                    />
-                  ))}
-                </FilterSection>
-
+                {/* District + Type first — they're the filters students reach
+                    for most, and keeping them above the long 20-item category
+                    list means no scrolling to get to them. */}
                 <FilterSection label="District" hint="pick any">
                   <View style={styles.chipRow}>
                     {DISTRICTS.map((d) => {
@@ -248,6 +239,18 @@ export default function CollegesScreen() {
                     you actually pay also depends on your seat type (merit /
                     management / NRI) and any scholarships.
                   </Text>
+                </FilterSection>
+
+                <FilterSection label="Course category">
+                  {CATEGORY_OPTIONS.map((opt) => (
+                    <FilterRow
+                      key={opt.value}
+                      label={opt.label}
+                      pill={String(categoryCounts[opt.value] ?? 0)}
+                      active={category === opt.value}
+                      onPress={() => setCategory(opt.value)}
+                    />
+                  ))}
                 </FilterSection>
               </View>
             </View>
