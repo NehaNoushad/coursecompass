@@ -97,6 +97,9 @@ export default function CollegesScreen() {
   const [category, setCategory] = useState<CategoryFilter>(initialCategory);
   const [districts, setDistricts] = useState<District[]>(initialDistricts);
   const [type, setType] = useState<TypeFilter>('all');
+  // On phones the filter panel collapses behind a toggle so the college
+  // list is visible immediately (desktop ignores this and always shows it).
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Counts per category — shown next to each row so users can see how
   // much each filter would narrow the list before clicking.
@@ -142,6 +145,10 @@ export default function CollegesScreen() {
     districts.length > 0 ||
     type !== 'all';
 
+  // Count of active filters — shown on the mobile "Filters" toggle.
+  const activeFilterCount =
+    (category !== 'all' ? 1 : 0) + districts.length + (type !== 'all' ? 1 : 0);
+
   return (
     <View style={styles.root}>
       <Seo
@@ -183,13 +190,35 @@ export default function CollegesScreen() {
           <View style={styles.twoCol}>
             {/* ─── Sticky sidebar (filters) ─── */}
             <View style={styles.sidebarWrap}>
+              {/* Phone: a tappable bar collapses the long filter panel so the
+                  college list shows immediately. Desktop ignores this. */}
+              {IS_NARROW ? (
+                <Pressable
+                  style={styles.filterToggle}
+                  onPress={() => setFiltersOpen((o) => !o)}
+                  accessibilityRole="button">
+                  <View style={styles.filterToggleLeft}>
+                    <Text style={styles.filterToggleText}>Filters</Text>
+                    {activeFilterCount > 0 ? (
+                      <View style={styles.filterToggleBadge}>
+                        <Text style={styles.filterToggleBadgeText}>{activeFilterCount}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={styles.filterToggleChevron}>{filtersOpen ? '▲' : '▼'}</Text>
+                </Pressable>
+              ) : null}
+
               {/* On desktop the panel is pinned (sticky) AND capped to the
                   viewport height with its own scroll, so it travels with the
                   college list and every filter — including District/Type at
-                  the bottom — stays reachable without scrolling the page. */}
+                  the bottom — stays reachable without scrolling the page. On
+                  phones it's shown only when the toggle above is open. */}
+              {!IS_NARROW || filtersOpen ? (
               <View
                 style={[
                   styles.sidebar,
+                  IS_NARROW && styles.sidebarNarrowOpen,
                   !IS_NARROW &&
                     ({
                       maxHeight: 'calc(100vh - 48px)',
@@ -263,6 +292,7 @@ export default function CollegesScreen() {
                   </Text>
                 </FilterSection>
               </View>
+              ) : null}
             </View>
 
             {/* ─── Results grid ─── */}
@@ -447,6 +477,49 @@ const styles = StyleSheet.create({
     // boxShadow because RN's shadow* props are deprecated on web; elevation stays for native parity
     boxShadow: '0px 12px 24px rgba(31, 95, 160, 0.12)',
     elevation: 4,
+  },
+  sidebarNarrowOpen: {
+    marginTop: spacing.md,
+  },
+  // ─── Mobile filter toggle ───
+  filterToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+  },
+  filterToggleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  filterToggleText: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    color: colors.text,
+  },
+  filterToggleBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterToggleBadgeText: {
+    fontSize: 12,
+    fontWeight: fontWeight.bold,
+    color: colors.textInverse,
+  },
+  filterToggleChevron: {
+    fontSize: 12,
+    color: colors.textMuted,
   },
   sidebarHead: {
     flexDirection: 'row',
