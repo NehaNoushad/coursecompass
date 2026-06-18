@@ -109,7 +109,6 @@ export default function FeedbackScreen() {
         <View style={styles.body}>
           {done ? (
             <View style={styles.card}>
-              <Text style={styles.thanksEmoji}>🙏</Text>
               <Text variant="title" center style={{ marginBottom: spacing.sm }}>
                 Thank you!
               </Text>
@@ -327,10 +326,5 @@ const styles = StyleSheet.create({
     color: colors.textSubtle,
     textAlign: 'center',
     marginTop: spacing.md,
-  },
-  thanksEmoji: {
-    fontSize: 40,
-    textAlign: 'center',
-    marginBottom: spacing.md,
   },
 });
